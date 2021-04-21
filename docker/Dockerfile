@@ -56,16 +56,16 @@ RUN apt-get install -yqq unzip
 RUN wget -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`/chromedriver_linux64.zip
 RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
 
-# install chromedriver
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-RUN dpkg -i --force-depends google-chrome-stable_current_amd64.deb
-RUN LATEST=$(wget -q -O - http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
-RUN wget http://chromedriver.storage.googleapis.com/$LATEST/chromedriver_linux64.zip
-RUN unzip chromedriver_linux64.zip && ln -s $PWD/chromedriver /usr/local/bin/chromedriver.
-RUN chmod +x chromedriver
-RUN mv -f chromedriver /usr/local/share/chromedriver
-RUN ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
-RUN ln -s /usr/local/share/chromedriver /usr/bin/chromedriver
+# Install ChromeDriver.
+#RUN CHROME_DRIVER_VERSION=`curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE`
+#RUN wget -N https://chromedriver.storage.googleapis.com/${CHROME_DRIVER_VERSION}/chromedriver_linux64.zip -P ~/
+#RUN unzip ~/chromedriver_linux64.zip -d ~/
+#RUN rm ~/chromedriver_linux64.zip
+#RUN mv -f ~/chromedriver /usr/local/bin/chromedriver
+#RUN chown root:root /usr/local/bin/chromedriver
+#RUN chmod 0755 /usr/local/bin/chromedriver
+#RUN ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
+#RUN ln -s /usr/local/share/chromedriver /usr/bin/chromedriver
 
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get -y install python3.8-distutils 
@@ -106,6 +106,7 @@ RUN pip3 install \
     tensorflow==2.4.0 \
     oauth2client==4.1.3 \ 
     google-auth-oauthlib==0.4.1 \
+    intake[complete]==0.6.2 \
     netCDF4==1.5.4 \
     utm==0.6.0 \
     wget==3.2 \

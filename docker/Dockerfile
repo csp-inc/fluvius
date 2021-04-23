@@ -78,7 +78,7 @@ RUN pip3 install \
     azure-cli-core==2.21.0 \
     azure-storage-blob==12.6.0 \
     adlfs==0.5.9 \
-    numpy==1.20.2 \
+    numpy==1.19.5 \
     pandas==1.2.4 \
     geopandas==0.9.0 \
     descartes==1.1.0 \

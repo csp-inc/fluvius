@@ -4,7 +4,8 @@ IMAGE=cspinc/fluvius
 IMAGENAME=$IMAGE:$TAG 
 PORT=8080
 IP=0.0.0.0
-docker run \
+#blobcontainer=$BLOBCONTAINER
+docker run --rm \
 	-v $('pwd'):/content\
 	-w /content\
 	-p $PORT:$PORT\

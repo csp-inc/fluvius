@@ -85,34 +85,36 @@ RUN pip3 install \
     shapely==1.7.1 \
     folium==0.12.1 \
     fsspec==2021.4.0 \
-    matplotlib==3.4.1 \
+    python-dateutil==2.8.1 \
     rasterio==1.2.2 \
     dask[complete]==2021.4.0 \
     rtree==0.9.7 \
     xarray==0.17.0 \
     seaborn==0.11.1 \
     jupyterlab==3.0.14 \
+    Pillow==8.2.0 \
+    matplotlib==3.4.1 \
     progressbar==2.5 \
     progressbar2==3.53.1 \
     h5netcdf==0.11.0 \
     geopy==2.1.0 \
     zarr==2.7.1 \
-    earthengine-api==0.1.262 \
     tqdm==4.60.0 \
-    torch==1.8.1 \
-    torchvision==0.9.1 \
     rasterstats==0.15.0 \
     gsutil==4.61 \
-    tensorflow==2.4.1 \
-    oauth2client==4.1.3 \ 
-    google-auth-oauthlib==0.4.4 \
-    intake[complete]==0.6.2 \
     netCDF4==1.5.6 \
     utm==0.7.0 \
     wget==3.2 \
     selenium==3.141.0 \
     beautifulsoup4==4.9.3 \
     webdriver-manager==3.4.0 \
+    earthengine-api==0.1.262 \
+    torch==1.8.1 \
+    torchvision==0.9.1 \
+    tensorflow==2.4.1 \
+    oauth2client==4.1.3 \ 
+    google-auth-oauthlib==0.4.4 \
+    intake[complete]==0.6.2 \
     lxml==4.6.3
 
 #add vim bindings
@@ -122,9 +124,9 @@ RUN mkdir -p $(jupyter --data-dir)/nbextensions &&\
      jupyter nbextension enable vim_binding/vim_binding
 
 #add blobfuse dependencies
-RUN wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
-RUN dpkg -i packages-microsoft-prod.deb
-RUN apt-get update && apt-get install -y blobfuse
-RUN wget http://ftp.us.debian.org/debian/pool/main/i/icu/libicu63_63.2-3_amd64.deb &&\
-    dpkg -i libicu63_63.2-3_amd64.deb
-RUN apt install -y dotnet-runtime-2.1
+#RUN wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
+#RUN dpkg -i packages-microsoft-prod.deb
+#RUN apt-get update && apt-get install -y blobfuse
+#RUN wget http://ftp.us.debian.org/debian/pool/main/i/icu/libicu63_63.2-3_amd64.deb &&\
+#    dpkg -i libicu63_63.2-3_amd64.deb
+#RUN apt install -y dotnet-runtime-2.1

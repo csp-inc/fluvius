@@ -115,6 +115,8 @@ RUN pip3 install \
     oauth2client==4.1.3 \ 
     google-auth-oauthlib==0.4.4 \
     intake[complete]==0.6.2 \
+    planetary-computer==0.1.0 \
+    pystac-client==0.1.0 \
     lxml==4.6.3
 
 #add vim bindings

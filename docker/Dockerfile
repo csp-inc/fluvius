@@ -77,7 +77,7 @@ RUN pip3 install \
     azureml-sdk==1.26.0 \
     azure-cli-core==2.21.0 \
     azure-storage-blob==12.6.0 \
-    adlfs==0.5.9 \
+    adlfs==0.7.4 \
     numpy==1.19.5 \
     pandas==1.2.4 \
     geopandas==0.9.0 \

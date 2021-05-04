@@ -4,10 +4,11 @@ IMAGE=cspinc/fluvius
 IMAGENAME=$IMAGE:$TAG 
 PORT=8080
 IP=0.0.0.0
-#blobcontainer=$BLOBCONTAINER
+BLOB=$BLOBCONTAINER
 docker run --rm \
-	-v $('pwd'):/content\
-	-w /content\
-	-p $PORT:$PORT\
-	$IMAGENAME\
+	-v $('pwd'):/content \
+	-w /content \
+	-v $BLOB:/blob \
+	-p $PORT:$PORT \
+	$IMAGENAME \
 	jupyter notebook --port $PORT --ip $IP --no-browser --allow-root

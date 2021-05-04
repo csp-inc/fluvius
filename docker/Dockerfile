@@ -88,6 +88,7 @@ RUN pip3 install \
     python-dateutil==2.8.1 \
     rasterio==1.2.2 \
     dask[complete]==2021.4.0 \
+    dask-geopandas==0.1.0a2 \
     rtree==0.9.7 \
     xarray==0.17.0 \
     seaborn==0.11.1 \

@@ -91,6 +91,7 @@ RUN pip3 install \
     dask-geopandas==0.1.0a2 \
     rtree==0.9.7 \
     xarray==0.17.0 \
+    xlrd==2.0.1 \
     seaborn==0.11.1 \
     jupyterlab==3.0.14 \
     Pillow==8.2.0 \

@@ -2,7 +2,7 @@
 TAG=data
 IMAGE=cspinc/fluvius
 IMAGENAME=$IMAGE:$TAG 
-PORT=8080
+PORT=8888
 IP=0.0.0.0
 BLOB=$BLOBCONTAINER
 docker run --rm \

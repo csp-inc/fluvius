@@ -1,17 +1,29 @@
+#web scrapping libraries
 from bs4 import BeautifulSoup as bs
 import requests
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
+#data processing libraries
 from shapely.geometry import Point
 import fsspec
-import pandas as pd
-import geopandas as gpd
+import os
 import folium
+import time
 import re
 import numpy as np
-import time
+import pandas as pd
+import geopandas as gpd
+import rasterio as rio
+from rasterio import features
+from rasterio import warp
+from rasterio import windows
 import concurrent.futures
+from PIL import Image
+#planetary computer libraries
+from pystac_client import Client
+import planetary_computer as pc
+
 
 class USGS_Water_DB:
     def __init__(self, verbose=False):
@@ -133,6 +145,7 @@ class USGS_Station:
         if textsoup is not None:
             out = self.process_soup(textsoup) 
         return out 
+
     def get_water_df(self, sleep_time=10, write_to_csv=False):
         #check if the csv file exists, if not download it...
         d = []
@@ -160,113 +173,6 @@ class USGS_Station:
         else:
             self.df = None
 
-
-class WaterStation:
-    ''' 
-    Generalized water station data. May make child class for USGS,ANA, and ITV
-    '''
-    def __init__(self, site_no, container, storage_options):
-        self.site_no = site_no
-        self.container = container
-        self.storage_options = storage_options
-        self.src_url = f'az://{container}/stations/{str(self.site_no)}.csv'
-        self.df = pd.read_csv(src_url, storage_options=self.storage_options).dropna() 
-        self.get_spacetime_bounds()
-
-    def format_time(self):
-        self.df['Date-Time'] = pd.to_datetime(self.df['Date-Time'])
-        self.df['Date-Time'] = self.df['Date-Time'].dt.date
-        self.df = self.df.sort_values(by='Date-Time')
-
-    def get_spacetime_bounds(self):
-        coordinates =  np.dstack(self.site_no.geometry.boundary.coords.xy).tolist()
-        self.area_of_interest = {
-        "type": "Polygon",
-        "coordinates": coordinates,
-        }
-        start = df['Date-Time'].iloc[0].strftime('%Y-%m-%d')
-        end = df['Date-Time'].iloc[-1].strftime('%Y-%m-%d')
-        #use the date range of the data?
-        #time_of_interest = "2019-06-01/2019-08-01"
-        self.time_of_interest = f'{start}/{end}'
-
-    def build_catalog(self, collection='sentinel-2-l2a'):
-        ''' 
-        Use pystac-client to search for Sentinel 2 L2A data
-        '''
-        catalog = Client.open("https://planetarycomputer.microsoft.com/api/stac/v1")
-
-        search = catalog.search(
-            collections=[collection], 
-            intersects=self.area_of_interest, 
-            datetime=self.time_of_interest    
-            )
-        print(f"{search.matched()} Items found")
-        self.catalog = search
-
-    def get_scl_chip(self, signed_url, write_to_filename=None):
-        with rasterio.open(signed_url) as ds:    
-            aoi_bounds = features.bounds(self.area_of_interest)
-            warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
-            aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
-            band_data = ds.read(window=aoi_window)
-            scl = band_data[0].repeat(2, axis=0).repeat(2, axis=1)
-            return scl
-
-    def get_visual_chip(self, signed_url, write_to_filename=None):
-        with rasterio.open(signed_url) as ds:    
-            aoi_bounds = features.bounds(self.area_of_interest)
-            warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
-            aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
-            band_data = ds.read(window=aoi_window)
-            img = Image.fromarray(np.transpose(band_data, axes=[1, 2, 0]))
-            #w = img.size[0]; h = img.size[1]; aspect = w/h
-            #target_w = scl.shape[1]; target_h = scl.shape[0]
-            #img = img.resize((target_w,target_h),Image.BILINEAR)
-            return img
-
-    def get_filtered_cloud_list(search, cloud_thr):
-        scene_list = sorted(search.items(), key=lambda item: item.ext.eo.cloud_cover)
-        cloud_list = pd.DataFrame([{'Date-Time':s.datetime.strftime('%Y-%m-%d'),\
-                'Cloud Cover':s.ext.eo.cloud_cover,\
-                'visual-href':s.assets['visual-10m'].href,\
-                'scl-href':s.assets['SCL-20m'].href} for s in scene_list if s.ext.eo.cloud_cover<cloud_thr])
-        cloud_list['Date-Time'] = pd.to_datetime(cloud_list['Date-Time'])
-        return cloud_list
-
-    def chip_cloud_analysis(scl):
-        n_total_pxls = np.multiply(scl.shape[0], scl.shape[1])
-        n_cloud_pxls = np.sum((scl>=7) & (scl<=10))
-        chip_cloud_pct = 100*(n_cloud_pxls/n_total_pxls)
-        return chip_cloud_pct
-
-    def get_reflectances(df):
-        reflectances=[]
-        for i,scene_query in df.iterrows():
-            visual_href = pc.sign(scene_query['visual-href'])
-            scl_href = pc.sign(scene_query['scl-href'])
-            with rasterio.open(scl_href) as ds:    
-                aoi_bounds = features.bounds(area_of_interest)
-                warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
-                aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
-                band_data = ds.read(window=aoi_window)
-                scl = band_data[0].repeat(2, axis=0).repeat(2, axis=1)
-
-            with rasterio.open(visual_href) as ds:    
-                aoi_bounds = features.bounds(area_of_interest)
-                warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
-                aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
-                band_data = ds.read(window=aoi_window)
-                img = Image.fromarray(np.transpose(band_data, axes=[1, 2, 0]))
-                w = img.size[0]; h = img.size[1]; aspect = w/h
-                target_w = scl.shape[1]; target_h = scl.shape[0]
-                img = img.resize((target_w,target_h),Image.BILINEAR)
-
-            cloud_mask = scl>7
-            water_mask = ((scl==6) | (scl==2))
-            reflectances.append(np.mean(np.array(img)[water_mask],axis=0))
-        return np.array(reflectances)
-
 class WaterData:
 
     def __init__(self, data_source, container, storage_options):
@@ -275,6 +181,7 @@ class WaterData:
         self.storage_options = storage_options
         self.filesystem = 'az'
         self.station_path = f'{self.container}-data/stations'
+        self.station = {}
 
     def get_available_station_list(self):
         '''
@@ -340,3 +247,155 @@ class WaterData:
                 overlay = False,\
                 control = True).add_to(self.plot_map)
 
+    def get_space_bounds(self, geometry):
+        coordinates =  np.dstack(geometry.boundary.coords.xy).tolist()
+        area_of_interest = {
+        "type": "Polygon",
+        "coordinates": coordinates,
+        }
+        return area_of_interest
+
+    def get_station_data(self, station=None):
+        '''
+        gets all the station data if station is None
+        '''
+        if any(self.df['site_no'] == station):
+            geometry =  self.df[self.df['site_no'] == station].buffer_geometry.iloc[0]
+            aoi = self.get_space_bounds(geometry)
+            ws  = WaterStation(station, aoi, self.container, self.storage_options)
+            self.station[station] = ws
+        elif station is None:
+            for s in self.df['site_no']:
+                #use recursion to get all station data
+                self.get_station_data(s)
+        else:
+            print('Invalid station name!')
+        self.sort_station_data()
+        
+    def sort_station_data(self):
+        self.station = {key: value for key, value in sorted(self.station.items())}
+
+
+class WaterStation:
+    ''' 
+    Generalized water station data. May make child class for USGS, ANA, and ITV
+    '''
+    def __init__(self, site_no, area_of_interest, container, storage_options):
+        self.site_no = site_no
+        self.area_of_interest = area_of_interest
+        self.container = container
+        self.storage_options = storage_options
+        self.src_url = f'az://{container}/stations/{str(self.site_no)}.csv'
+        self.df = pd.read_csv(self.src_url, storage_options=self.storage_options).dropna() 
+        self.get_time_bounds()
+
+    def format_time(self):
+        self.df['Date-Time'] = pd.to_datetime(self.df['Date-Time'])
+        self.df['Date-Time'] = self.df['Date-Time'].dt.date
+        self.df = self.df.sort_values(by='Date-Time')
+
+    def get_time_bounds(self):
+        self.format_time()
+        start = self.df['Date-Time'].iloc[0].strftime('%Y-%m-%d')
+        end = self.df['Date-Time'].iloc[-1].strftime('%Y-%m-%d')
+        self.time_of_interest = f'{start}/{end}'
+
+    def build_catalog(self, collection='sentinel-2-l2a'):
+        ''' 
+        Use pystac-client to search for Sentinel 2 L2A data
+        '''
+        catalog = Client.open("https://planetarycomputer.microsoft.com/api/stac/v1")
+        print(f'building catalog for station {self.site_no} with {collection}!')
+
+        search = catalog.search(
+            collections=[collection], 
+            intersects=self.area_of_interest, 
+            datetime=self.time_of_interest    
+            )
+        print(f"{search.matched()} Items found")
+        self.catalog = search
+
+    def get_cloud_filtered_image_df(self, cloud_thr):
+        if not hasattr(self, 'catalog'):
+            self.build_catalog()
+        scene_list = sorted(self.catalog.items(), key=lambda item: item.ext.eo.cloud_cover)
+        cloud_list = pd.DataFrame([{'Date-Time':s.datetime.strftime('%Y-%m-%d'),\
+                'Tile Cloud Cover':s.ext.eo.cloud_cover,\
+                'visual-href':s.assets['visual-10m'].href,\
+                'scl-href':s.assets['SCL-20m'].href} \
+                for s in scene_list if s.ext.eo.cloud_cover<cloud_thr])
+        cloud_list['Date-Time'] = pd.to_datetime(cloud_list['Date-Time'])
+        cloud_list['Date-Time'] = cloud_list['Date-Time'].dt.date
+        self.image_df = cloud_list.sort_values(by='Date-Time')
+
+    def merge_image_df_with_samples(self, day_tolerance=8):
+        self.merged_df = self.df.copy()
+        self.merged_df['Date'] = pd.to_datetime(self.merged_df['Date-Time'])
+        self.image_df['Date'] = pd.to_datetime(self.image_df['Date-Time'])
+        self.merged_df = pd.merge_asof(self.merged_df.sort_values(by='Date'),\
+            self.image_df.sort_values(by='Date'),\
+            on='Date',\
+            suffixes=('', '_Remote'),\
+            tolerance=pd.Timedelta(day_tolerance, 'days')).dropna()
+        self.merged_df['InSitu_Satellite_Diff'] = \
+                self.merged_df['Date-Time']-self.merged_df['Date-Time_Remote']
+        self.total_matched_images = len(self.merged_df)
+                          
+    def get_scl_chip(self, signed_url, write_to_filename=None):
+        with rio.open(signed_url) as ds:    
+            aoi_bounds = features.bounds(self.area_of_interest)
+            warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
+            aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
+            band_data = ds.read(window=aoi_window)
+            scl = band_data[0].repeat(2, axis=0).repeat(2, axis=1)
+            return scl
+
+    def get_visual_chip(self, signed_url, write_to_filename=None):
+        with rio.open(signed_url) as ds:    
+            aoi_bounds = features.bounds(self.area_of_interest)
+            warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
+            aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
+            band_data = ds.read(window=aoi_window)
+            img = Image.fromarray(np.transpose(band_data, axes=[1, 2, 0]))
+            return img
+
+    def perform_chip_cloud_analysis(self):
+        #probably can perform this in parallel
+        '''
+        #with concurrent.futures.ProcessPoolExecutor() as executor:
+        #dt_list = [chip_cloud_analyisis(dt) for dt in executor.map(get_scl_chip )]
+        '''
+        chip_clouds = [self.chip_cloud_analysis(self.get_scl_chip(pc.sign(sc['scl-href']))) for i, sc in self.merged_df.iterrows()]
+        self.merged_df['Chip Cloud Pct']  = chip_clouds
+        
+    def chip_cloud_analysis(self,scl):
+        n_total_pxls = np.multiply(scl.shape[0], scl.shape[1])
+        n_cloud_pxls = np.sum((scl>=7) & (scl<=10))
+        chip_cloud_pct = 100*(n_cloud_pxls/n_total_pxls)
+        return chip_cloud_pct
+
+    def write_tiles_to_blob(self):
+        pass
+
+    def plot_images(self):
+        pass
+
+    def get_reflectances(self):
+        reflectances=[]
+        for i,scene_query in self.merged_df.iterrows():
+            visual_href = pc.sign(scene_query['visual-href'])
+            scl_href = pc.sign(scene_query['scl-href'])
+            scl = self.get_scl_chip(scl_href)
+            img = self.get_visual_chip(visual_href)
+            w = img.size[0]; h = img.size[1]; aspect = w/h
+            target_w = scl.shape[1]; target_h = scl.shape[0]
+            img = img.resize((target_w,target_h),Image.BILINEAR)
+            water_mask = ((scl==6) | (scl==2))
+
+            reflectances.append(np.mean(np.array(img)[water_mask], axis=0))
+        reflectances = np.array(reflectances)
+
+        collection = 'sentinel-2-l2a'
+        bands = ['R', 'G', 'B']
+        for i,band in enumerate(bands):
+            self.merged_df[f'{collection}_{band}'] = reflectances[:,i]

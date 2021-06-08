@@ -23,6 +23,7 @@ from PIL import Image
 #planetary computer libraries
 from pystac_client import Client
 import planetary_computer as pc
+from azure.storage.blob import BlobClient
 
 
 class USGS_Water_DB:
@@ -178,7 +179,9 @@ class WaterData:
     def __init__(self, data_source, container, storage_options):
         self.container = container
         self.data_source = data_source
-        self.storage_options = storage_options
+        self.storage_options = {'account_name':storage_options['account_name'],\
+                                'account_key':storage_options['account_key']}
+        self.connection_string = storage_options['connection_string']
         self.filesystem = 'az'
         self.station_path = f'{self.container}-data/stations'
         self.station = {}
@@ -203,6 +206,7 @@ class WaterData:
         #                                   map(lambda sub:(''.join([ele for ele in sub])), fs_list))})
 
         crs = {'init': 'epsg:4326'}
+        source_df['site_no'] = source_df['site_no'].astype(str)
 
         gdf = gpd.GeoDataFrame(source_df,\
                                geometry=gpd.points_from_xy(source_df.Longitude, source_df.Latitude),\
@@ -230,7 +234,7 @@ class WaterData:
                 cx = sum(x) / len(x)
                 cy = sum(y) / len(y)
         self.plot_map = folium.Map(location=[cy, cx],\
-            zoom_start=7,\
+            zoom_start=5,\
             tiles='CartoDB positron')
         for _, r in self.df.iterrows():
             folium.Marker(location=[r['Latitude'], r['Longitude']],\
@@ -259,15 +263,19 @@ class WaterData:
         '''
         gets all the station data if station is None
         '''
-        if any(self.df['site_no'] == station):
-            geometry =  self.df[self.df['site_no'] == station].buffer_geometry.iloc[0]
+        if any(self.df['site_no'] == str(station)):
+            geometry =  self.df[self.df['site_no'] == str(station)].buffer_geometry.iloc[0]
             aoi = self.get_space_bounds(geometry)
-            ws  = WaterStation(station, aoi, self.container, self.storage_options)
-            self.station[station] = ws
+            ws  = WaterStation(str(station),\
+                    aoi,\
+                    self.container,\
+                    self.storage_options,\
+                    self.connection_string)
+            self.station[str(station)] = ws
         elif station is None:
             for s in self.df['site_no']:
                 #use recursion to get all station data
-                self.get_station_data(s)
+                self.get_station_data(str(s))
         else:
             print('Invalid station name!')
         self.sort_station_data()
@@ -280,14 +288,16 @@ class WaterStation:
     ''' 
     Generalized water station data. May make child class for USGS, ANA, and ITV
     '''
-    def __init__(self, site_no, area_of_interest, container, storage_options):
+    def __init__(self, site_no, area_of_interest, container, storage_options, connection_string):
         self.site_no = site_no
         self.area_of_interest = area_of_interest
         self.container = container
         self.storage_options = storage_options
-        self.src_url = f'az://{container}/stations/{str(self.site_no)}.csv'
+        self.connection_string = connection_string
+        self.src_url = f'az://{container}/stations/{str(site_no)}.csv'
         self.df = pd.read_csv(self.src_url, storage_options=self.storage_options).dropna() 
         self.get_time_bounds()
+        self.df['sample_num'] = np.arange(len(self.df))
 
     def format_time(self):
         self.df['Date-Time'] = pd.to_datetime(self.df['Date-Time'])
@@ -313,7 +323,10 @@ class WaterStation:
             datetime=self.time_of_interest    
             )
         print(f"{search.matched()} Items found")
-        self.catalog = search
+        if search.matched() == 0:
+            self.catalog = None
+        else:
+            self.catalog = search
 
     def get_cloud_filtered_image_df(self, cloud_thr):
         if not hasattr(self, 'catalog'):
@@ -341,22 +354,31 @@ class WaterStation:
                 self.merged_df['Date-Time']-self.merged_df['Date-Time_Remote']
         self.total_matched_images = len(self.merged_df)
                           
-    def get_scl_chip(self, signed_url, write_to_filename=None):
+    def get_scl_chip(self, signed_url, return_meta_transform=False):
         with rio.open(signed_url) as ds:    
             aoi_bounds = features.bounds(self.area_of_interest)
             warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
             aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
             band_data = ds.read(window=aoi_window)
             scl = band_data[0].repeat(2, axis=0).repeat(2, axis=1)
+            scl = Image.fromarray(scl)
+            if return_meta_transform:
+                out_meta = ds.meta
+                out_transform = ds.window_transform(aoi_window)
+                return scl, out_meta, out_transform
             return scl
 
-    def get_visual_chip(self, signed_url, write_to_filename=None):
+    def get_visual_chip(self, signed_url, return_meta_transform=False):
         with rio.open(signed_url) as ds:    
             aoi_bounds = features.bounds(self.area_of_interest)
             warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
             aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
             band_data = ds.read(window=aoi_window)
             img = Image.fromarray(np.transpose(band_data, axes=[1, 2, 0]))
+            if return_meta_transform:
+                out_meta = ds.meta
+                out_transform = ds.window_transform(aoi_window)
+                return img, out_meta, out_transform
             return img
 
     def perform_chip_cloud_analysis(self):
@@ -374,8 +396,54 @@ class WaterStation:
         chip_cloud_pct = 100*(n_cloud_pxls/n_total_pxls)
         return chip_cloud_pct
 
-    def write_tiles_to_blob(self):
-        pass
+    def upload_local_to_blob(self,localfile,blobname):
+        #blobclient = BlobClient.from_connection_string(conn_str=self.connection_string,\
+        #                                            container_name=self.container,\
+        #                                            blob_name=blobname)
+        account_url = f"https://{self.storage_options['account_name']}.blob.core.windows.net"
+        blobclient = BlobClient(account_url=account_url,\
+                container_name=self.container,\
+                blob_name=blobname,\
+                credential=self.storage_options['account_key'])
+        with open(f"{localfile}", "rb") as out_blob:
+            blob_data = blobclient.upload_blob(out_blob, overwrite=True) 
+
+    def write_tiles_to_blob(self, working_dirc):
+        for i, scene_query in self.merged_df.iterrows():
+            visual_href = pc.sign(scene_query['visual-href'])
+            scl_href = pc.sign(scene_query['scl-href'])
+            scl, scl_meta, scl_transform = self.get_scl_chip(scl_href, return_meta_transform=True)
+            img, img_meta, img_transform = self.get_visual_chip(visual_href, return_meta_transform=True)
+            #resize the scl image to match the imagery
+            scl = np.expand_dims(np.array(scl.resize(img.size,Image.NEAREST)),0)
+            rgb = np.moveaxis(np.array(img),-1,0)
+            #write the ID_Date-Time_rgb
+            sample_num = f"{scene_query['sample_num']}_{scene_query['Date-Time']}"
+            h = rgb.shape[1]
+            w = rgb.shape[2]
+            img_meta.update({'driver':'GTiff',\
+                        'height':h,\
+                        'width':w,\
+                        'transform': img_transform})
+            if not os.path.exists(f'{working_dirc}/{self.site_no}'):
+                os.makedirs(f'{working_dirc}/{self.site_no}')
+            out_name = f'{working_dirc}/{self.site_no}/{sample_num}_rgb.tif'
+            blob_name = f'stations/{str(self.site_no).zfill(8)}/{sample_num}_rgb.tif'
+            with rio.open(out_name, 'w', **img_meta) as dest:
+                dest.write(rgb)
+            self.upload_local_to_blob(out_name, blob_name)
+            #write scl
+            #uses the same transform and width and height as the image
+            scl_meta.update({'driver':'GTiff',\
+                        'height':h,\
+                        'width':w,\
+                        'transform': img_transform})   
+            out_name = f'{working_dirc}/{self.site_no}/{sample_num}_scl.tif'
+            blob_name = f'stations/{str(self.site_no).zfill(8)}/{sample_num}_scl.tif'
+            with rio.open(out_name, 'w', **scl_meta) as dest:
+                dest.write(scl)
+            self.upload_local_to_blob(out_name, blob_name)
+            #return sample_num, scl, rgb, scl_meta, img_meta, scl_transform, img_transform
 
     def plot_images(self):
         pass
@@ -387,9 +455,9 @@ class WaterStation:
             scl_href = pc.sign(scene_query['scl-href'])
             scl = self.get_scl_chip(scl_href)
             img = self.get_visual_chip(visual_href)
-            w = img.size[0]; h = img.size[1]; aspect = w/h
-            target_w = scl.shape[1]; target_h = scl.shape[0]
-            img = img.resize((target_w,target_h),Image.BILINEAR)
+            #resize the scl image to match the imagery
+            scl = np.array(scl.resize(img.size,Image.NEAREST))
+
             water_mask = ((scl==6) | (scl==2))
 
             reflectances.append(np.mean(np.array(img)[water_mask], axis=0))

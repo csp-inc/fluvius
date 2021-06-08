@@ -20,6 +20,7 @@ from rasterio import warp
 from rasterio import windows
 import concurrent.futures
 from PIL import Image
+import matplotlib.pyplot as plt
 #planetary computer libraries
 from pystac_client import Client
 import planetary_computer as pc
@@ -206,7 +207,10 @@ class WaterData:
         #                                   map(lambda sub:(''.join([ele for ele in sub])), fs_list))})
 
         crs = {'init': 'epsg:4326'}
-        source_df['site_no'] = source_df['site_no'].astype(str)
+        if self.data_source=='usgs':
+            source_df['site_no'] = [str(f).zfill(8) for f in source_df['site_no']]
+        else:
+            source_df['site_no'] = source_df['site_no'].astype(str)
 
         gdf = gpd.GeoDataFrame(source_df,\
                                geometry=gpd.points_from_xy(source_df.Longitude, source_df.Latitude),\
@@ -234,12 +238,12 @@ class WaterData:
                 cx = sum(x) / len(x)
                 cy = sum(y) / len(y)
         self.plot_map = folium.Map(location=[cy, cx],\
-            zoom_start=5,\
+            zoom_start=4,\
             tiles='CartoDB positron')
         for _, r in self.df.iterrows():
             folium.Marker(location=[r['Latitude'], r['Longitude']],\
                 #popup=f"{r['site_no']}:\n{r['station_name']}").add_to(self.plot_map)
-                popup=f"Site:{r['site_no']}").add_to(self.plot_map)
+                popup=f"Site: {r['site_no']}").add_to(self.plot_map)
             polygons = gpd.GeoSeries(r['buffer_geometry'])
             geo_j = polygons.to_json()
             geo_j = folium.GeoJson(data=geo_j,style_function=lambda x: {'fillColor': 'orange'})
@@ -295,9 +299,11 @@ class WaterStation:
         self.storage_options = storage_options
         self.connection_string = connection_string
         self.src_url = f'az://{container}/stations/{str(site_no)}.csv'
-        self.df = pd.read_csv(self.src_url, storage_options=self.storage_options).dropna() 
+        self.df = pd.read_csv(self.src_url, storage_options=self.storage_options).dropna()
         self.get_time_bounds()
         self.df['sample_num'] = np.arange(len(self.df))
+        #drop duplicates
+        self.df = self.df.drop_duplicates(subset='Date-Time')
 
     def format_time(self):
         self.df['Date-Time'] = pd.to_datetime(self.df['Date-Time'])
@@ -457,13 +463,45 @@ class WaterStation:
             img = self.get_visual_chip(visual_href)
             #resize the scl image to match the imagery
             scl = np.array(scl.resize(img.size,Image.NEAREST))
-
             water_mask = ((scl==6) | (scl==2))
-
-            reflectances.append(np.mean(np.array(img)[water_mask], axis=0))
+            #gets rid of the divide by zero error due to cloudy images
+            masked_array = np.array(img)[water_mask]
+            try:
+                mean_ref = np.nanmean(masked_array, axis=0)
+            except Exception: #divide by zero error
+                pass
+            reflectances.append(mean_ref)
+            
         reflectances = np.array(reflectances)
 
         collection = 'sentinel-2-l2a'
         bands = ['R', 'G', 'B']
         for i,band in enumerate(bands):
             self.merged_df[f'{collection}_{band}'] = reflectances[:,i]
+
+    def visualize_chip(self, sample_num):
+        scene_query = self.merged_df[self.merged_df['sample_num'] == sample_num]
+        visual_href = pc.sign(scene_query['visual-href'].values[0])
+        scl_href = pc.sign(scene_query['scl-href'].values[0])
+        scl = self.get_scl_chip(scl_href)
+        img = self.get_visual_chip(visual_href)
+        scl = np.array(scl.resize(img.size,Image.NEAREST))
+        water_mask = ((scl==6) | (scl==2))
+        masked_array = np.array(img)[water_mask]
+    
+        f, ax = plt.subplots(1,4, figsize=(20,20))
+        cloud_mask = scl>7
+        water_mask = ((scl==6) | (scl==2))
+        #extent = [self.bounds[0], self.bounds[2], self.bounds[1], self.bounds[3]]
+        ax[0].imshow(img)
+        ax[0].set_title('RGB Image')
+        ax[0].axis('off')
+        ax[1].imshow(scl,cmap='Accent')
+        ax[1].set_title('Classification')
+        ax[1].axis('off')
+        ax[2].imshow(cloud_mask)
+        ax[2].set_title('Cloud Mask')
+        ax[2].axis('off')
+        ax[3].imshow(water_mask,cmap='Blues')
+        ax[3].set_title('Water Mask')
+        ax[3].axis('off')

@@ -118,6 +118,8 @@ RUN pip3 install \
     intake[complete]==0.6.2 \
     planetary-computer==0.1.0 \
     pystac-client==0.1.0 \
+    scikit-learn==0.24.2 \
+    imageio==2.9.0 \
     lxml==4.6.3
 
 #add vim bindings

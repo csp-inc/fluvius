@@ -52,12 +52,12 @@ class USGS_Water_DB:
         result = requests.get(url, allow_redirects=False)
         if result.status_code==200:
             if self.verbose:
-                print('Data found!')
+                print(f'Data found at {url}!')
             soup = bs(result.text, 'html.parser') 
             return soup
         else:
             if self.verbose:
-                print('Data does not exist')
+                print(f'{url} response not 202!')
         return None
 
     def process_soup(self, soup):
@@ -84,8 +84,9 @@ class USGS_Water_DB:
 
 class USGS_Station:
 
-    def __init__(self, site_no, verbose=False, year_range=np.arange(2013,2022)):
+    def __init__(self, site_no, instantaneous=False, verbose=False, year_range=np.arange(2013,2022)):
         self.site_no = site_no
+        self.instantaneous = instantaneous
         self.verbose = verbose
         self.year_range = year_range
         self.create_driver()
@@ -125,9 +126,13 @@ class USGS_Station:
                 print('Data does not exist')
             return None
 
-    def process_soup(self,soup):
+    def process_soup(self,soup,attribute):
         #might need to update this method to include instantaneous measurements
-        data_raw = str(soup).split('\n')
+        if ((self.instantaneous) & (attribute=='ssd')):
+            data_raw = str(soup).split('Discrete (laboratory-analyzed)')[1].split('\n')
+            data_raw = [elem for elem in data_raw if not (' data' in elem)]
+        else:
+            data_raw = str(soup).split('\n')
         data_raw = [elem for elem in data_raw if not ('#' in elem)]
         #could use regex here..
         data_split = [d.split('\t') for d in data_raw]
@@ -145,10 +150,10 @@ class USGS_Station:
         textsoup = self.get_url_text(water_url)
         out = None
         if textsoup is not None:
-            out = self.process_soup(textsoup) 
+            out = self.process_soup(textsoup, attribute) 
         return out 
 
-    def get_water_df(self, sleep_time=10, write_to_csv=False):
+    def get_water_df(self, sleep_time=3, write_to_csv=False):
         #check if the csv file exists, if not download it...
         d = []
         for year in self.year_range:
@@ -167,7 +172,7 @@ class USGS_Station:
                     print(f'Timed out for {self.site_no}, year {year}!')
                 continue #could time out due to no data available
         if d:
-            self.df = pd.concat(d).dropna()
+            self.df = pd.concat(d, ignore_index=True).dropna()
             if write_to_csv:
                 sitefile = f'/content/data/{self.site_no}_data.csv' 
                 self.df.to_csv(sitefile, index=False)
@@ -298,11 +303,12 @@ class WaterStation:
         self.container = container
         self.storage_options = storage_options
         self.connection_string = connection_string
-        self.src_url = f'az://{container}/stations/{str(site_no)}.csv'
+        self.src_url = f'az://{container}/stations/{str(site_no).zfill(8)}.csv'
         self.df = pd.read_csv(self.src_url, storage_options=self.storage_options).dropna()
         self.get_time_bounds()
-        self.df['sample_num'] = np.arange(len(self.df))
+        sample_ids = [f'{str(site_no).zfill(8)}_{s:08d}' for s in (1+np.arange(len(self.df)))]
         #drop duplicates
+        self.df.insert(0,'sample_id',sample_ids)
         self.df = self.df.drop_duplicates(subset='Date-Time')
 
     def format_time(self):
@@ -393,14 +399,52 @@ class WaterStation:
         #with concurrent.futures.ProcessPoolExecutor() as executor:
         #dt_list = [chip_cloud_analyisis(dt) for dt in executor.map(get_scl_chip )]
         '''
-        chip_clouds = [self.chip_cloud_analysis(self.get_scl_chip(pc.sign(sc['scl-href']))) for i, sc in self.merged_df.iterrows()]
-        self.merged_df['Chip Cloud Pct']  = chip_clouds
+        chip_clouds_list = []
+        for i, sc in self.merged_df.iterrows():
+            try:
+                chip_clouds = self.chip_cloud_analysis(self.get_scl_chip(pc.sign(sc['scl-href'])))
+                chip_clouds_list.append(chip_clouds)
+            except:
+                chip_clouds_list.append(np.nan)
+                print(f"{sc['scl-href']} 404 error")
+        self.merged_df['Chip Cloud Pct'] = chip_clouds_list
         
     def chip_cloud_analysis(self,scl):
+        scl = np.array(scl)
         n_total_pxls = np.multiply(scl.shape[0], scl.shape[1])
         n_cloud_pxls = np.sum((scl>=7) & (scl<=10))
         chip_cloud_pct = 100*(n_cloud_pxls/n_total_pxls)
         return chip_cloud_pct
+
+    def get_reflectances(self):
+        reflectances=[]
+        for i,scene_query in self.merged_df.iterrows():
+            visual_href = pc.sign(scene_query['visual-href'])
+            scl_href = pc.sign(scene_query['scl-href'])
+            try:
+                scl = self.get_scl_chip(scl_href)
+                img = self.get_visual_chip(visual_href)
+                #resize the scl image to match the imagery
+                scl = np.array(scl.resize(img.size,Image.NEAREST))
+                water_mask = ((scl==6) | (scl==2))
+                #gets rid of the divide by zero error due to cloudy images
+                if np.any(water_mask):
+                    masked_array = np.array(img)[water_mask]
+                    mean_ref = np.nanmean(masked_array, axis=0)
+                    reflectances.append(mean_ref)
+                else: #no water pixels detected
+                    reflectances.append([np.nan, np.nan, np.nan])
+            except:
+                print(f"{scene_query['visual-href']} returned 404 response!")
+                reflectances.append([np.nan, np.nan, np.nan])
+            
+        reflectances = np.array(reflectances)
+
+        collection = 'sentinel-2-l2a'
+        bands = ['R', 'G', 'B']
+        for i,band in enumerate(bands):
+            self.merged_df[f'{collection}_{band}'] = reflectances[:,i]
+
 
     def upload_local_to_blob(self,localfile,blobname):
         #blobclient = BlobClient.from_connection_string(conn_str=self.connection_string,\
@@ -418,69 +462,46 @@ class WaterStation:
         for i, scene_query in self.merged_df.iterrows():
             visual_href = pc.sign(scene_query['visual-href'])
             scl_href = pc.sign(scene_query['scl-href'])
-            scl, scl_meta, scl_transform = self.get_scl_chip(scl_href, return_meta_transform=True)
-            img, img_meta, img_transform = self.get_visual_chip(visual_href, return_meta_transform=True)
-            #resize the scl image to match the imagery
-            scl = np.expand_dims(np.array(scl.resize(img.size,Image.NEAREST)),0)
-            rgb = np.moveaxis(np.array(img),-1,0)
-            #write the ID_Date-Time_rgb
-            sample_num = f"{scene_query['sample_num']}_{scene_query['Date-Time']}"
-            h = rgb.shape[1]
-            w = rgb.shape[2]
-            img_meta.update({'driver':'GTiff',\
-                        'height':h,\
-                        'width':w,\
-                        'transform': img_transform})
-            if not os.path.exists(f'{working_dirc}/{self.site_no}'):
-                os.makedirs(f'{working_dirc}/{self.site_no}')
-            out_name = f'{working_dirc}/{self.site_no}/{sample_num}_rgb.tif'
-            blob_name = f'stations/{str(self.site_no).zfill(8)}/{sample_num}_rgb.tif'
-            with rio.open(out_name, 'w', **img_meta) as dest:
-                dest.write(rgb)
-            self.upload_local_to_blob(out_name, blob_name)
-            #write scl
-            #uses the same transform and width and height as the image
-            scl_meta.update({'driver':'GTiff',\
-                        'height':h,\
-                        'width':w,\
-                        'transform': img_transform})   
-            out_name = f'{working_dirc}/{self.site_no}/{sample_num}_scl.tif'
-            blob_name = f'stations/{str(self.site_no).zfill(8)}/{sample_num}_scl.tif'
-            with rio.open(out_name, 'w', **scl_meta) as dest:
-                dest.write(scl)
-            self.upload_local_to_blob(out_name, blob_name)
-            #return sample_num, scl, rgb, scl_meta, img_meta, scl_transform, img_transform
-
-    def plot_images(self):
-        pass
-
-    def get_reflectances(self):
-        reflectances=[]
-        for i,scene_query in self.merged_df.iterrows():
-            visual_href = pc.sign(scene_query['visual-href'])
-            scl_href = pc.sign(scene_query['scl-href'])
-            scl = self.get_scl_chip(scl_href)
-            img = self.get_visual_chip(visual_href)
-            #resize the scl image to match the imagery
-            scl = np.array(scl.resize(img.size,Image.NEAREST))
-            water_mask = ((scl==6) | (scl==2))
-            #gets rid of the divide by zero error due to cloudy images
-            masked_array = np.array(img)[water_mask]
             try:
-                mean_ref = np.nanmean(masked_array, axis=0)
-            except Exception: #divide by zero error
-                pass
-            reflectances.append(mean_ref)
-            
-        reflectances = np.array(reflectances)
+                scl, scl_meta, scl_transform = self.get_scl_chip(scl_href, return_meta_transform=True)
+                img, img_meta, img_transform = self.get_visual_chip(visual_href, return_meta_transform=True)
+                #resize the scl image to match the imagery
+                scl = np.expand_dims(np.array(scl.resize(img.size,Image.NEAREST)),0)
+                rgb = np.moveaxis(np.array(img),-1,0)
+                #write the ID_Date-Time_rgb
+                sample_id = f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
+                h = rgb.shape[1]
+                w = rgb.shape[2]
+                img_meta.update({'driver':'GTiff',\
+                            'height':h,\
+                            'width':w,\
+                            'transform': img_transform})
+                if not os.path.exists(f'{working_dirc}/{self.site_no}'):
+                    os.makedirs(f'{working_dirc}/{self.site_no}')
+                out_name = f'{working_dirc}/{self.site_no}/{sample_id}_rgb.tif'
+                blob_name = f'stations/{str(self.site_no).zfill(8)}/{sample_id}_rgb.tif'
+                with rio.open(out_name, 'w', **img_meta) as dest:
+                    dest.write(rgb)
+                self.upload_local_to_blob(out_name, blob_name)
+                #write scl
+                #uses the same transform and width and height as the image
+                scl_meta.update({'driver':'GTiff',\
+                            'height':h,\
+                            'width':w,\
+                            'transform': img_transform})   
+                out_name = f'{working_dirc}/{self.site_no}/{sample_id}_scl.tif'
+                blob_name = f'stations/{str(self.site_no).zfill(8)}/{sample_id}_scl.tif'
+                with rio.open(out_name, 'w', **scl_meta) as dest:
+                    dest.write(scl)
+                self.upload_local_to_blob(out_name, blob_name)
+                #return sample_id, scl, rgb, scl_meta, img_meta, scl_transform, img_transform
+            except:
+                with open('/content/log/error.log', 'w') as f:
+                    print(f"{scene_query['visual-href']} returned 404 response!", file=f)
+                    print(f"{scene_query['scl-href']} returned 404 response!", file=f)
 
-        collection = 'sentinel-2-l2a'
-        bands = ['R', 'G', 'B']
-        for i,band in enumerate(bands):
-            self.merged_df[f'{collection}_{band}'] = reflectances[:,i]
-
-    def visualize_chip(self, sample_num):
-        scene_query = self.merged_df[self.merged_df['sample_num'] == sample_num]
+    def visualize_chip(self, sample_id):
+        scene_query = self.merged_df[self.merged_df['sample_id'] == sample_id]
         visual_href = pc.sign(scene_query['visual-href'].values[0])
         scl_href = pc.sign(scene_query['scl-href'].values[0])
         scl = self.get_scl_chip(scl_href)

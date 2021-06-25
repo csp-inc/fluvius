@@ -10,11 +10,9 @@ TAG=data
 IMAGE=cspinc/fluvius
 IMAGENAME=$IMAGE:$TAG 
 IP=0.0.0.0
-BLOB=$BLOBCONTAINER
-docker run --rm \
+docker run --rm -it \
 	-v $('pwd'):/content \
 	-w /content \
-	-v $BLOB:/blob \
 	-p $PORT:$PORT \
 	$IMAGENAME \
-	jupyter notebook --port $PORT --ip $IP --no-browser --allow-root
+	/bin/bash

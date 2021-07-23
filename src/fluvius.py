@@ -406,7 +406,7 @@ class WaterStation:
                 chip_clouds_list.append(chip_clouds)
             except:
                 chip_clouds_list.append(np.nan)
-                print(f"{sc['scl-href']} 404 error")
+                print(f"{sc['scl-href']} cloud chip error!")
         self.merged_df['Chip Cloud Pct'] = chip_clouds_list
         
     def chip_cloud_analysis(self,scl):
@@ -415,6 +415,22 @@ class WaterStation:
         n_cloud_pxls = np.sum((scl>=7) & (scl<=10))
         chip_cloud_pct = 100*(n_cloud_pxls/n_total_pxls)
         return chip_cloud_pct
+
+    def check_response(self,logfile='/content/log/response.log'):
+        for i,scene_query in self.merged_df.iterrows():
+            visual_href = pc.sign(scene_query['visual-href'])
+            scl_href = pc.sign(scene_query['scl-href'])
+            with open(logfile, 'a') as f:
+                try:
+                    vresponse = requests.get(visual_href)
+                    print(f'{visual_href} returned {vresponse.status_code}', file=f)
+                except:
+                    print(f'{visual_href} returned {522}', file=f)
+                try:
+                    sresponse = requests.get(scl_href)
+                    print(f'{scl_href} returned {sresponse.status_code}', file=f)
+                except:
+                    print(f'{visual_href} returned {522}', file=f)
 
     def get_reflectances(self):
         reflectances=[]
@@ -435,7 +451,7 @@ class WaterStation:
                 else: #no water pixels detected
                     reflectances.append([np.nan, np.nan, np.nan])
             except:
-                print(f"{scene_query['visual-href']} returned 404 response!")
+                #print(f"{scene_query['visual-href']} returned response!")
                 reflectances.append([np.nan, np.nan, np.nan])
             
         reflectances = np.array(reflectances)

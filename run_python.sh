@@ -9,9 +9,8 @@ if [[ "$(docker images -q $IMAGE 2> /dev/null)" == "" ]]; then
   docker build --rm -t $IMAGENAME - < $DPATH
 fi
 
-BLOB=$BLOBCONTAINER
 docker run --rm \
 	-v $('pwd'):/fluvius \
+	-v /home/.vscode-server/extensions:/root/.vscode-server/extensions \
 	-w /fluvius \
-	-v $BLOB:/blob \
 	$IMAGENAME 

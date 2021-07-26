@@ -138,8 +138,6 @@ dmypy.json
 # RStudio
 rstudio/
 
-# greta (in R)
-.config/
-.local/
-.keras/
+# VSCode
 .vscode
+.vscode-server

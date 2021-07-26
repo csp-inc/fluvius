@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 #planetary computer libraries
 from pystac_client import Client
 import planetary_computer as pc
+from pystac.extensions.eo import EOExtension as eo
 from azure.storage.blob import BlobClient
 
 
@@ -334,8 +335,9 @@ class WaterStation:
             intersects=self.area_of_interest, 
             datetime=self.time_of_interest    
             )
-        print(f"{search.matched()} Items found")
-        if search.matched() == 0:
+        matched_list = list(search.get_items())
+        print(f"{len(matched_list)} Items found")
+        if  len(matched_list) == 0:
             self.catalog = None
         else:
             self.catalog = search
@@ -343,12 +345,12 @@ class WaterStation:
     def get_cloud_filtered_image_df(self, cloud_thr):
         if not hasattr(self, 'catalog'):
             self.build_catalog()
-        scene_list = sorted(self.catalog.items(), key=lambda item: item.ext.eo.cloud_cover)
+        scene_list = sorted(self.catalog.get_items(), key=lambda item: eo.ext(item).cloud_cover)
         cloud_list = pd.DataFrame([{'Date-Time':s.datetime.strftime('%Y-%m-%d'),\
-                'Tile Cloud Cover':s.ext.eo.cloud_cover,\
+                'Tile Cloud Cover':eo.ext(s).cloud_cover,\
                 'visual-href':s.assets['visual-10m'].href,\
                 'scl-href':s.assets['SCL-20m'].href} \
-                for s in scene_list if s.ext.eo.cloud_cover<cloud_thr])
+                for s in scene_list if eo.ext(s).cloud_cover<cloud_thr])
         cloud_list['Date-Time'] = pd.to_datetime(cloud_list['Date-Time'])
         cloud_list['Date-Time'] = cloud_list['Date-Time'].dt.date
         self.image_df = cloud_list.sort_values(by='Date-Time')

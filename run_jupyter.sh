@@ -6,15 +6,14 @@ else
 	PORT=$1
 fi
 
-TAG=data
+TAG=latest
 IMAGE=cspinc/fluvius
 IMAGENAME=$IMAGE:$TAG 
 IP=0.0.0.0
-BLOB=$BLOBCONTAINER
+#BLOB=$BLOBCONTAINER
 docker run --rm \
 	-v $('pwd'):/content \
 	-w /content \
-	-v $BLOB:/blob \
 	-p $PORT:$PORT \
 	$IMAGENAME \
 	jupyter notebook --port $PORT --ip $IP --no-browser --allow-root

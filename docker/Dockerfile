@@ -73,51 +73,47 @@ RUN apt-get -y install python3.8-distutils
 RUN curl -o /tmp/get_pip.py https://bootstrap.pypa.io/get-pip.py
 RUN python3.8 /tmp/get_pip.py
 RUN pip3 install \
-    azureml-core==1.26.0 \
-    azureml-sdk==1.26.0 \
-    azure-cli-core==2.21.0 \
-    azure-storage-blob==12.6.0 \
-    adlfs==0.7.4 \
-    numpy==1.19.5 \
-    pandas==1.2.4 \
+    azureml-core==1.32.0 \
+    azureml-sdk==1.32.0 \
+    azure-cli-core==2.26.1 \
+    azure-storage-blob==12.8.1 \
+    adlfs==2021.7.1 \
+    numpy==1.21.1 \
+    pandas==1.3.1 \
     geopandas==0.9.0 \
     descartes==1.1.0 \
     shapely==1.7.1 \
     folium==0.12.1 \
-    fsspec==2021.4.0 \
-    python-dateutil==2.8.1 \
-    rasterio==1.2.2 \
-    dask[complete]==2021.4.0 \
-    dask-geopandas==0.1.0a2 \
+    fsspec==2021.7.0 \
+    python-dateutil==2.8.2 \
+    rasterio==1.2.6 \
+    dask[complete]==2021.7.1 \
+    dask-geopandas==0.1.0a4 \
     rtree==0.9.7 \
-    xarray==0.17.0 \
+    xarray==0.19.0 \
     seaborn==0.11.1 \
-    jupyterlab==3.0.14 \
-    Pillow==8.2.0 \
-    matplotlib==3.4.1 \
-    progressbar==2.5 \
+    jupyterlab==3.0.16 \
+    Pillow==8.3.1 \
+    matplotlib==3.4.2 \
     progressbar2==3.53.1 \
     h5netcdf==0.11.0 \
-    geopy==2.1.0 \
-    zarr==2.7.1 \
-    tqdm==4.60.0 \
+    geopy==2.2.0 \
+    zarr==2.8.3 \
+    tqdm==4.61.2 \
     rasterstats==0.15.0 \
-    gsutil==4.61 \
-    netCDF4==1.5.6 \
+    netCDF4==1.5.7 \
     utm==0.7.0 \
     wget==3.2 \
     selenium==3.141.0 \
     beautifulsoup4==4.9.3 \
-    webdriver-manager==3.4.0 \
-    earthengine-api==0.1.262 \
-    torch==1.8.1 \
-    torchvision==0.9.1 \
-    tensorflow==2.4.1 \
+    webdriver-manager==3.4.2 \
+    torch==1.9.0 \
+    torchvision==0.10.0 \
     oauth2client==4.1.3 \ 
-    google-auth-oauthlib==0.4.4 \
     intake[complete]==0.6.2 \
-    planetary-computer==0.1.0 \
-    pystac-client==0.1.0 \
+    planetary-computer==0.3.0rc3 \
+    pystac==1.0.0 \
+    pystac-client==0.2.0-beta.2 \
     scikit-learn==0.24.2 \
     imageio==2.9.0 \
     lxml==4.6.3

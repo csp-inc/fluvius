@@ -142,3 +142,4 @@ rstudio/
 .config/
 .local/
 .keras/
+.vscode

@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import os, sys
 import datetime as dt
-import sklearn as skl
 
 # Set the environment variable PC_SDK_SUBSCRIPTION_KEY, or set it here.
 # The Hub sets PC_SDK_SUBSCRIPTION_KEY automatically.
@@ -13,6 +12,9 @@ with open(".env") as f:
 for var in env_vars:
     key, value = var.split(' = ')
     os.environ[key] = value
+
+storage_options = {'account_name':os.environ['ACCOUNT_NAME'],
+                   'account_key':os.environ['BLOB_KEY']}
 
 def train_test_validate_split(df, proportions, part_colname = "partition"):
     """
@@ -39,14 +41,10 @@ def train_test_validate_split(df, proportions, part_colname = "partition"):
     return pd.concat([train, test, validate])
 
 
-
-storage_options = {'account_name':os.environ['ACCOUNT_NAME'],
-                   'account_key':os.environ['BLOB_KEY']}
-
 data = pd.read_json('az://modeling-data/fluvius_data.json',
                     storage_options=storage_options)
 
-## Add variables to stratifying data partitions
+## Add variables for stratifying data partition
 # SSC Quartile
 ssc = np.array(data["SSC (mg/L)"])
 ssc_quantiles = np.quantile(ssc, [0, 0.5])
@@ -63,7 +61,10 @@ data["SSC Quantile"] = ssc_quantile_bin
 data["Year"] = year
 data["Season"] = julian_partition
 
+## Partition the data into train, test, validate
+# First split data into groups to ensure stratified
 grouped = data.groupby(by = ["SSC Quantile", "Season", "region"], group_keys=False)
+# now apply the train_test_validate_split function to each group
 partitioned = grouped.apply(lambda x: train_test_validate_split(x, [0.7, 0.15, 0.15]))
 
 partitioned.to_json('az://modeling-data/fluvius_data_partitioned.json',

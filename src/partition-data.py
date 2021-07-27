@@ -67,4 +67,3 @@ grouped = data.groupby(by = ["SSC Quantile", "Season", "region"], group_keys=Fal
 
 partitioned = grouped.apply(lambda x: train_test_validate_split(x, [0.7, 0.15, 0.15]))
 
-np.unique(partitioned["partition"], return_counts=True)

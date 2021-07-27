@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import os
+import os, sys
 import datetime as dt
 import sklearn as skl
 
@@ -64,6 +64,7 @@ data["Year"] = year
 data["Season"] = julian_partition
 
 grouped = data.groupby(by = ["SSC Quantile", "Season", "region"], group_keys=False)
-
 partitioned = grouped.apply(lambda x: train_test_validate_split(x, [0.7, 0.15, 0.15]))
 
+partitioned.to_json('az://modeling-data/fluvius_data_partitioned.json',
+                    storage_options=storage_options)

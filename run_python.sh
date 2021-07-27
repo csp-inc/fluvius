@@ -11,6 +11,6 @@ fi
 
 docker run --rm -td \
 	-v $('pwd'):/fluvius \
-	-v /home/.vscode-server/extensions:/root/.vscode-server/extensions \
+	-v /home/$USER/.vscode-server/:/root/.vscode-server/ \
 	-w /fluvius \
 	$IMAGENAME 

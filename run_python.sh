@@ -1,5 +1,5 @@
 #!/bin/bash
-TAG=latest
+TAG=data
 IMAGE=cspinc/fluvius
 IMAGENAME=$IMAGE:$TAG
 DPATH=docker/Dockerfile

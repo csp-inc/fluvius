@@ -212,7 +212,7 @@ class WaterData:
         #station_list = pd.DataFrame({'site_no':filter(None,\
         #                                   map(lambda sub:(''.join([ele for ele in sub])), fs_list))})
 
-        crs = {'init': 'epsg:4326'}
+        crs = 'epsg:4326'
         if self.data_source=='usgs':
             source_df['site_no'] = [str(f).zfill(8) for f in source_df['site_no']]
         else:

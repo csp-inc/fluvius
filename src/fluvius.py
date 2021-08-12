@@ -348,8 +348,8 @@ class WaterStation:
         scene_list = sorted(self.catalog.get_items(), key=lambda item: eo.ext(item).cloud_cover)
         cloud_list = pd.DataFrame([{'Date-Time':s.datetime.strftime('%Y-%m-%d'),\
                 'Tile Cloud Cover':eo.ext(s).cloud_cover,\
-                'visual-href':s.assets['visual-10m'].href,\
-                'scl-href':s.assets['SCL-20m'].href} \
+                'visual-href':s.assets['visual'].href,\
+                'scl-href':s.assets['SCL'].href} \
                 for s in scene_list if eo.ext(s).cloud_cover<cloud_thr])
         cloud_list['Date-Time'] = pd.to_datetime(cloud_list['Date-Time'])
         cloud_list['Date-Time'] = cloud_list['Date-Time'].dt.date

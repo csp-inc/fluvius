@@ -190,7 +190,7 @@ class WaterData:
                                 'account_key':storage_options['account_key']}
         self.connection_string = storage_options['connection_string']
         self.filesystem = 'az'
-        self.station_path = f'{self.container}-data/stations'
+        self.station_path = f'{self.container}/stations'
         self.station = {}
 
     def get_available_station_list(self):

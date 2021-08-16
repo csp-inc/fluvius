@@ -579,7 +579,7 @@ class WaterStation:
         visual_href = pc.sign(scene_query['visual-href'].values[0])
         scl_href = pc.sign(scene_query['scl-href'].values[0])
         img = self.get_visual_chip(visual_href)
-        scl = self.get_scl_chip(scl_href, self.chip_shape_10m)
+        scl = self.get_scl_chip(scl_href)
         water_mask = ((scl==6) | (scl==2))
         # masked_array = np.array(img)[water_mask, :]
         f, ax = plt.subplots(1,4, figsize=(20,20))

@@ -10,7 +10,7 @@ if [[ "$(docker images -q $IMAGE 2> /dev/null)" == "" ]]; then
 fi
 
 docker run --rm -td --ipc "host"  \
-	-v $('pwd'):/fluvius \
+	-v $('pwd'):/content \
 	-v /home/$USER/.vscode-server/:/root/.vscode-server/ \
-	-w /fluvius \
+	-w /content \
 	$IMAGENAME 

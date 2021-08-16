@@ -18,6 +18,7 @@ import rasterio as rio
 from rasterio import features
 from rasterio import warp
 from rasterio import windows
+from rasterio.enums import Resampling
 import concurrent.futures
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -27,6 +28,8 @@ import planetary_computer as pc
 from pystac.extensions.eo import EOExtension as eo
 from azure.storage.blob import BlobClient
 
+BANDS_10M = ['AOT', 'B02', 'B03', 'B04', 'B08', 'WVP']
+BANDS_20M = ['B05', 'B06', 'B07', 'B8A', 'B11']
 
 class USGS_Water_DB:
     def __init__(self, verbose=False):
@@ -348,7 +351,19 @@ class WaterStation:
         scene_list = sorted(self.catalog.get_items(), key=lambda item: eo.ext(item).cloud_cover)
         cloud_list = pd.DataFrame([{'Date-Time':s.datetime.strftime('%Y-%m-%d'),\
                 'Tile Cloud Cover':eo.ext(s).cloud_cover,\
-                'visual-href':s.assets['visual'].href,\
+                'AOT-href':s.assets['AOT'].href,
+                'B02-href':s.assets['B02'].href,
+                'B03-href':s.assets['B03'].href,
+                'B04-href':s.assets['B04'].href,
+                'B05-href':s.assets['B05'].href,
+                'B06-href':s.assets['B06'].href,
+                'B07-href':s.assets['B07'].href,
+                'B08-href':s.assets['B08'].href,
+                'B11-href':s.assets['B11'].href,
+                'B07-href':s.assets['B12'].href,
+                'B8A-href':s.assets['B8A'].href,
+                'WVP-href':s.assets['WVP'].href,
+                'visual-href':s.assets['visual'].href,
                 'scl-href':s.assets['SCL'].href} \
                 for s in scene_list if eo.ext(s).cloud_cover<cloud_thr])
         cloud_list['Date-Time'] = pd.to_datetime(cloud_list['Date-Time'])
@@ -373,9 +388,10 @@ class WaterStation:
             aoi_bounds = features.bounds(self.area_of_interest)
             warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
             aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
-            band_data = ds.read(window=aoi_window)
-            scl = band_data[0].repeat(2, axis=0).repeat(2, axis=1)
-            scl = Image.fromarray(scl)
+            band_data = ds.read(window=aoi_window,
+                                out_shape=self.chip_shape_10m,
+                                resampling = Resampling.nearest)
+            scl = np.array(band_data[0])
             if return_meta_transform:
                 out_meta = ds.meta
                 out_transform = ds.window_transform(aoi_window)
@@ -388,12 +404,46 @@ class WaterStation:
             warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
             aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
             band_data = ds.read(window=aoi_window)
+            self.chip_shape_10m = tuple([1] + list(band_data.shape[1:3])) # need 1st dim to be one since other chips are one band
             img = Image.fromarray(np.transpose(band_data, axes=[1, 2, 0]))
             if return_meta_transform:
                 out_meta = ds.meta
                 out_transform = ds.window_transform(aoi_window)
                 return img, out_meta, out_transform
             return img
+
+    def get_spectral_chip(self, hrefs_10m, hrefs_20m):
+        """
+        Returns an image with one or more bands along the 3rd dimension from a signed url (one for each band)
+        Args:
+            hrefs_10m (list): hrefs for the 10 meter Sentinel bands
+            hrefs_20m (list): hrefs for the 20 meter Sentinel bands
+        """
+        band_data_10m = list()
+        for href in hrefs_10m:
+            signed_href = pc.sign(href)
+            with rio.open(signed_href) as ds:
+                aoi_bounds = features.bounds(self.area_of_interest)
+                warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
+                aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
+                band_data_10m.append(ds.read(window=aoi_window))
+        
+        self.chip_shape_10m = band_data_10m[0].shape
+
+        band_data_20m = list()
+        for href in hrefs_20m:
+            signed_href = pc.sign(href)
+            with rio.open(signed_href) as ds:
+                aoi_bounds = features.bounds(self.area_of_interest)
+                warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
+                aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
+                band_data_20m.append(ds.read(out_shape=self.chip_shape_10m,
+                                             window=aoi_window,
+                                             resampling=Resampling.nearest))
+
+        bands_array = np.transpose(np.concatenate(band_data_10m + band_data_20m, axis=0), axes=[1, 2, 0])
+
+        return bands_array
 
     def perform_chip_cloud_analysis(self):
         #probably can perform this in parallel
@@ -434,35 +484,41 @@ class WaterStation:
                 except:
                     print(f'{visual_href} returned {522}', file=f)
 
-    def get_reflectances(self):
-        reflectances=[]
+    def get_chip_features(self):
+        reflectances = []
+        n_water_pixels = []
         for i,scene_query in self.merged_df.iterrows():
-            visual_href = pc.sign(scene_query['visual-href'])
+            hrefs_10m = scene_query[[band + "-href" for band in BANDS_10M]]
+            hrefs_20m = scene_query[[band + "-href" for band in BANDS_20M]]
             scl_href = pc.sign(scene_query['scl-href'])
+            n_bands = len(hrefs_10m + hrefs_20m)
             try:
+                img = self.get_spectral_chip(hrefs_10m, hrefs_20m)
                 scl = self.get_scl_chip(scl_href)
-                img = self.get_visual_chip(visual_href)
-                #resize the scl image to match the imagery
-                scl = np.array(scl.resize(img.size,Image.NEAREST))
                 water_mask = ((scl==6) | (scl==2))
                 #gets rid of the divide by zero error due to cloudy images
                 if np.any(water_mask):
-                    masked_array = np.array(img)[water_mask]
+                    masked_array = img[water_mask, :]
                     mean_ref = np.nanmean(masked_array, axis=0)
                     reflectances.append(mean_ref)
+                    n_water_pixels.append(np.sum(water_mask))
                 else: #no water pixels detected
-                    reflectances.append([np.nan, np.nan, np.nan])
+                    reflectances.append([np.nan] * n_bands)
+                    n_water_pixels.append(0)
             except:
                 #print(f"{scene_query['visual-href']} returned response!")
-                reflectances.append([np.nan, np.nan, np.nan])
+                reflectances.append([np.nan] * n_bands)
+                n_water_pixels.append(np.nan)
             
         reflectances = np.array(reflectances)
-
+        n_water_pixels = np.array(n_water_pixels)
+        
         collection = 'sentinel-2-l2a'
-        bands = ['R', 'G', 'B']
+        bands = BANDS_10M + BANDS_20M
         for i,band in enumerate(bands):
             self.merged_df[f'{collection}_{band}'] = reflectances[:,i]
 
+        self.merged_df['n_water_pixels'] = n_water_pixels
 
     def upload_local_to_blob(self,localfile,blobname):
         #blobclient = BlobClient.from_connection_string(conn_str=self.connection_string,\
@@ -522,15 +578,12 @@ class WaterStation:
         scene_query = self.merged_df[self.merged_df['sample_id'] == sample_id]
         visual_href = pc.sign(scene_query['visual-href'].values[0])
         scl_href = pc.sign(scene_query['scl-href'].values[0])
-        scl = self.get_scl_chip(scl_href)
         img = self.get_visual_chip(visual_href)
-        scl = np.array(scl.resize(img.size,Image.NEAREST))
+        scl = self.get_scl_chip(scl_href, self.chip_shape_10m)
         water_mask = ((scl==6) | (scl==2))
-        masked_array = np.array(img)[water_mask]
-    
+        # masked_array = np.array(img)[water_mask, :]
         f, ax = plt.subplots(1,4, figsize=(20,20))
         cloud_mask = scl>7
-        water_mask = ((scl==6) | (scl==2))
         #extent = [self.bounds[0], self.bounds[2], self.bounds[1], self.bounds[3]]
         ax[0].imshow(img)
         ax[0].set_title('RGB Image')

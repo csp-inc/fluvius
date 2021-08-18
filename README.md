@@ -78,6 +78,24 @@ Alternatively, one can add their public key and add a user to an existing VM usi
 
 Once the key is generated and public key submitted to the VM, the user needs only start the VM and then connect via ssh from the terminal to the VM. This is now a virtual environment that can be accessed anywhere. 
 
+Go to the terminal and type:
+
+```
+ssh -i $PUBLICKEYFILENAME\
+    -L localhost:$PORT:$DNS:$PORT \
+    $USER@$DNS
+```
+where the following variables are:
+
+- $PUBLICKEYFILENAME : The public key that you generated with ssh-keygen (e.g key-example.pub)
+- $PORT : The port that you wish to mount to the VM (e.g. 8888)
+- $DNS : The IP address for the VM or DNS name (e.g. vm-brazilsouth.cloudapp.azure.com)
+- $USER : The username associated to ssh-key (e.g. itv-user)
+
+Note that the $PORT must be [added to the VM](https://docs.microsoft.com/en-us/azure/virtual-machines/windows/nsg-quickstart-portal) and not already allocated by the local machine. This is commonly '8888' or '8080', but can be anything the user wants to share with the VM. This will be useful when connecting to a Jupyter Notebook instantiated by the VM. 
+
+Using a DNS name for $DNS is useful to not require a new dynamic IP address for the VM each time it is turned on. A DNS can be assign following this [guide](https://docs.microsoft.com/en-us/azure/virtual-machines/custom-domain#add-custom-domain-to-vm-public-ip-address). 
+
 ## Authors
 
 * **Tony Chang** - *Principle Investigator* - [CSP](http://www.csp-inc.org/about-us/core-science-staff/chang-tony/)

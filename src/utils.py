@@ -27,16 +27,16 @@ def local_to_blob(container, localfile, blobname, storage_options):
     with open(f"{localfile}", "rb") as out_blob:
         blob_data = blobclient.upload_blob(out_blob, overwrite=True)
 
-def generate_map(df):
+def generate_map(df, lat_colname='Latitude', lon_colname='Longitude'):
     '''
     plots web map using folium
     '''
-    cx, cy = np.mean(df['Longitude']),np.mean(df['Latitude'])
+    cx, cy = np.mean(df[lon_colname]),np.mean(df[lat_colname])
     plot_map = folium.Map(location=[cy, cx],\
                 zoom_start=2,\
                 tiles='CartoDB positron')
     for _, r in df.iterrows():
-        folium.Marker(location=[r['Latitude'], r['Longitude']],\
+        folium.Marker(location=[r[lat_colname], r[lon_colname]],\
             #popup=f"{r['site_no']}:\n{r['station_name']}").add_to(self.plot_map)
             popup=f"Site: {r['site_no']}").add_to(plot_map)
         #polygons = gpd.GeoSeries(r['buffer_geometry'])

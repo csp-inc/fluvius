@@ -1,9 +1,10 @@
 import sys, os
 import pandas as pd
 from rasterio.enums import Resampling
+
 # Append content dir to path to support import of scripts
 sys.path.append("/content")
-from src.content import *
+from src.fluvius import *
 
 # Gather and parce environment variables to create storage options for
 # blob storage access via pandas
@@ -39,4 +40,4 @@ my_station.merge_image_df_with_samples()
 my_station.get_chip_features()
 
 # Check out the merged dataframe
-
+my_station.merged_df

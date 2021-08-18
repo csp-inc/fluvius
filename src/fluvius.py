@@ -1,5 +1,6 @@
 #web scrapping libraries
 from bs4 import BeautifulSoup as bs
+from pandas.core.dtypes.missing import na_value_for_dtype
 import requests
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
@@ -30,6 +31,14 @@ from azure.storage.blob import BlobClient
 
 BANDS_10M = ['AOT', 'B02', 'B03', 'B04', 'B08', 'WVP']
 BANDS_20M = ['B05', 'B06', 'B07', 'B8A', 'B11']
+
+EMPTY_METADATA_DICT = {
+    "mean_viewing_azimuth": np.nan,
+    "mean_viewing_zenith": np.nan,
+    "mean_solar_azimuth": np.nan,
+    "mean_solar_zenith": np.nan,
+    "sensing_time": pd.NaT
+}
 
 class USGS_Water_DB:
     def __init__(self, verbose=False):
@@ -364,7 +373,8 @@ class WaterStation:
                 'B8A-href':s.assets['B8A'].href,
                 'WVP-href':s.assets['WVP'].href,
                 'visual-href':s.assets['visual'].href,
-                'scl-href':s.assets['SCL'].href} \
+                'scl-href':s.assets['SCL'].href,
+                'meta-href': s.assets['granule-metadata'].href} \
                 for s in scene_list if eo.ext(s).cloud_cover<cloud_thr])
         cloud_list['Date-Time'] = pd.to_datetime(cloud_list['Date-Time'])
         cloud_list['Date-Time'] = cloud_list['Date-Time'].dt.date
@@ -445,6 +455,31 @@ class WaterStation:
 
         return bands_array
 
+    def get_chip_metadata(self, signed_url):
+        req = requests.get(signed_url)
+        soup = bs(req.text, "xml")
+        mean_viewing_angles = soup.find_all("Mean_Viewing_Incidence_Angle")
+        mean_viewing_azimuth = np.mean([float(angles.find("AZIMUTH_ANGLE").get_text()) 
+                                        for angles in mean_viewing_angles])
+        mean_viewing_zenith = np.mean([float(angles.find("ZENITH_ANGLE").get_text()) 
+                                    for angles in mean_viewing_angles])
+
+        mean_sun_angles = soup.find("Mean_Sun_Angle")
+        mean_solar_zenith = float(mean_sun_angles.find("ZENITH_ANGLE").get_text())
+        mean_solar_azimuth = float(mean_sun_angles.find("AZIMUTH_ANGLE").get_text())
+
+        sensing_time = pd.to_datetime(soup.find("SENSING_TIME").get_text())
+
+        meta_attributes = {
+            "mean_viewing_azimuth": mean_viewing_azimuth,
+            "mean_viewing_zenith": mean_viewing_zenith,
+            "mean_solar_azimuth": mean_solar_azimuth,
+            "mean_solar_zenith": mean_solar_zenith,
+            "sensing_time": sensing_time
+        }
+
+        return meta_attributes
+
     def perform_chip_cloud_analysis(self):
         #probably can perform this in parallel
         '''
@@ -487,14 +522,17 @@ class WaterStation:
     def get_chip_features(self):
         reflectances = []
         n_water_pixels = []
+        metadata = []
         for i,scene_query in self.merged_df.iterrows():
             hrefs_10m = scene_query[[band + "-href" for band in BANDS_10M]]
             hrefs_20m = scene_query[[band + "-href" for band in BANDS_20M]]
             scl_href = pc.sign(scene_query['scl-href'])
+            meta_href = pc.sign(scene_query['meta-href'])
             n_bands = len(hrefs_10m + hrefs_20m)
             try:
                 img = self.get_spectral_chip(hrefs_10m, hrefs_20m)
                 scl = self.get_scl_chip(scl_href)
+                granule_metadata = self.get_chip_metadata(meta_href)
                 water_mask = ((scl==6) | (scl==2))
                 #gets rid of the divide by zero error due to cloudy images
                 if np.any(water_mask):
@@ -505,13 +543,16 @@ class WaterStation:
                 else: #no water pixels detected
                     reflectances.append([np.nan] * n_bands)
                     n_water_pixels.append(0)
+                metadata.append(granule_metadata)
             except:
                 #print(f"{scene_query['visual-href']} returned response!")
                 reflectances.append([np.nan] * n_bands)
                 n_water_pixels.append(np.nan)
+                metadata.append(EMPTY_METADATA_DICT)
             
         reflectances = np.array(reflectances)
         n_water_pixels = np.array(n_water_pixels)
+        metadata = pd.DataFrame(metadata)
         
         collection = 'sentinel-2-l2a'
         bands = BANDS_10M + BANDS_20M
@@ -519,6 +560,7 @@ class WaterStation:
             self.merged_df[f'{collection}_{band}'] = reflectances[:,i]
 
         self.merged_df['n_water_pixels'] = n_water_pixels
+        self.merged_df = pd.concat([self.merged_df.reset_index(), metadata], axis = 1).set_index('index')
 
     def upload_local_to_blob(self,localfile,blobname):
         #blobclient = BlobClient.from_connection_string(conn_str=self.connection_string,\

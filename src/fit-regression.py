@@ -14,7 +14,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.lines as mlines
 
 # %%  Get Azure blob strorage info for pandas storage settings
-with open("/content/.env") as f:
+with open("/content/credentials") as f:
     env_vars = f.read().split("\n")
 
 for var in env_vars:

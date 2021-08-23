@@ -2,7 +2,7 @@ from pystac_client import Client
 import planetary_computer as pc
 import os
 
-env_vars = open("/content/.env","r").read().split('\n')
+env_vars = open("/content/credentials","r").read().split('\n')
 
 for var in env_vars[:-1]:
         key, value = var.split(' = ')
@@ -22,7 +22,7 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-        parser.add_argument('--data_src',\
+    parser.add_argument('--data_src',\
         type=str,\
         help="name of data type")
     parser.add_argument('--write-to-csv',\
@@ -92,15 +92,15 @@ if __name__ == "__main__":
             if args.write_to_csv:
                 site_df.to_csv(write_filename, index=False, storage_options=storage_options)
     
-    if args.data_src == 'itv'
+    if args.data_src == 'itv':
         container = 'itv-data'
         station_url = f'az://{container}/itv_station_metadata.csv'
         station_df = pd.read_csv(station_url, storage_options=storage_options)
         for site_no in station_df.site_no:
             station_url = f'az://{container}/{site_no}.csv'
-                            site_df = pd.read_csv(station_url,\
-                            storage_options=storage_options,\
-                            delimiter=',')
+            site_df = pd.read_csv(station_url,\
+                                  storage_options=storage_options,\
+                                  delimiter=',')
 
             site_df['Date-Time'] = pd.to_datetime(site_df['Campaign Date'], \
                                     format='%d/%m/%Y')

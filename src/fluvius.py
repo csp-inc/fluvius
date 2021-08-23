@@ -40,6 +40,9 @@ EMPTY_METADATA_DICT = {
     "sensing_time": pd.NaT
 }
 
+BAD_USGS_COLS = ["Instantaneous computed discharge (cfs)_x", 
+                 "Instantaneous computed discharge (cfs)_y"]
+
 class USGS_Water_DB:
     def __init__(self, verbose=False):
         self.source_url = 'https://nrtwq.usgs.gov'
@@ -200,7 +203,6 @@ class WaterData:
         self.data_source = data_source
         self.storage_options = {'account_name':storage_options['account_name'],\
                                 'account_key':storage_options['account_key']}
-        self.connection_string = storage_options['connection_string']
         self.filesystem = 'az'
         self.station_path = f'{self.container}/stations'
         self.station = {}
@@ -240,8 +242,8 @@ class WaterData:
         srcdf = self.df.copy()
         srcdf = srcdf.to_crs('EPSG:3857')
         srcdf = srcdf.geometry.buffer(buffer_distance,\
-                                               cap_style=buffer_style[buffer_type],\
-                                               resolution=resolution)
+                                      cap_style=buffer_style[buffer_type],\
+                                      resolution=resolution)
         srcdf = srcdf.to_crs('EPSG:4326')
         self.df['buffer_geometry'] = srcdf.geometry
 
@@ -283,7 +285,7 @@ class WaterData:
 
     def get_station_data(self, station=None):
         '''
-        gets all the station data if station is None
+        gets all the station data if station is None.
         '''
         if any(self.df['site_no'] == str(station)):
             geometry =  self.df[self.df['site_no'] == str(station)].buffer_geometry.iloc[0]
@@ -292,7 +294,7 @@ class WaterData:
                     aoi,\
                     self.container,\
                     self.storage_options,\
-                    self.connection_string)
+                    self.data_source)
             self.station[str(station)] = ws
         elif station is None:
             for s in self.df['site_no']:
@@ -310,12 +312,12 @@ class WaterStation:
     ''' 
     Generalized water station data. May make child class for USGS, ANA, and ITV
     '''
-    def __init__(self, site_no, area_of_interest, container, storage_options, connection_string):
+    def __init__(self, site_no, area_of_interest, container, storage_options, data_source):
         self.site_no = site_no
         self.area_of_interest = area_of_interest
         self.container = container
         self.storage_options = storage_options
-        self.connection_string = connection_string
+        self.data_source = data_source
         self.src_url = f'az://{container}/stations/{str(site_no).zfill(8)}.csv'
         self.df = pd.read_csv(self.src_url, storage_options=self.storage_options).dropna()
         self.get_time_bounds()
@@ -334,6 +336,27 @@ class WaterStation:
         start = self.df['Date-Time'].iloc[0].strftime('%Y-%m-%d')
         end = self.df['Date-Time'].iloc[-1].strftime('%Y-%m-%d')
         self.time_of_interest = f'{start}/{end}'
+
+    def drop_bad_usgs_obs(self):
+        """
+        Some stations from USGS have two measurements of instantaneous computed
+        discharge. This method drops observations for which the two measurements
+        are not equal. Note that the method only applies to "usgs" stations. If 
+        WaterStation.data_source is not equal to "usgs", the method does nothing,
+        so it can be safely applied to WaterStations from any data source with
+        minimal performance impact.
+        """
+        if self.data_source == "usgs":
+            df_cols = set(list(self.df.columns))
+            if set(BAD_USGS_COLS).issubset(df_cols):
+                bad_rows = self.df[BAD_USGS_COLS[0]] != self.df[BAD_USGS_COLS[1]]
+                bad_idx = bad_rows[bad_rows].index
+                self.df.drop(index=bad_idx, inplace=True)
+                self.df.drop(BAD_USGS_COLS[1], axis=1, inplace=True)
+                self.df.rename(
+                    columns={BAD_USGS_COLS[0]: "Instantaneous computed discharge (cfs)"},
+                    inplace=True
+                )
 
     def build_catalog(self, collection='sentinel-2-l2a'):
         ''' 

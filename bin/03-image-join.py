@@ -91,16 +91,17 @@ if __name__ == "__main__":
     cloud_threshold = [cloud_thr] * len(stations)
     day_tol = [day_tolerance] * len(stations)
 
-    with futures.ThreadPoolExecutor(max_workers=os.cpu_count()-1) as pool:
+    with futures.ThreadPoolExecutor(max_workers=3) as pool:
         pool.map(get_station_feature_df, stations, cloud_threshold, day_tol)
     
     ## Merge dataframes w/ feature data for all stations, write to blob storage
     print("Merging station feature dataframes and saving to blob storage.")
     df = pd.DataFrame()
-    for station in stations[0:]:
-        if ds.station[station].catalog is None:
+    for station in stations:
+        if hasattr(ds.station[station], "merged_df"):
+            feature_df = pd.concat([df, ds.station[station].merged_df.reset_index()], axis=0)
+        else:
             continue
-        feature_df = pd.concat([df, ds.station[station].merged_df.reset_index()], axis=0)
 
     outfileprefix = f"az://modeling-data/{ds.container}/merged_station_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{int(cloud_thr*100)}percent"
 

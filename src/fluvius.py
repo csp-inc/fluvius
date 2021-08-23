@@ -503,7 +503,7 @@ class WaterStation:
 
         return meta_attributes
 
-    def perform_chip_cloud_analysis(self):
+    def perform_chip_cloud_analysis(self, quiet=True):
         #probably can perform this in parallel
         '''
         #with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -516,8 +516,9 @@ class WaterStation:
                 chip_clouds_list.append(chip_clouds)
             except:
                 chip_clouds_list.append(np.nan)
-                print(f"{sc['scl-href']} cloud chip error!")
-        self.merged_df['Chip Cloud Pct'] = chip_clouds_list
+                if not quiet:
+                    print(f"{sc['scl-href']} cloud chip error!")
+            self.merged_df['Chip Cloud Pct'] = chip_clouds_list
         
     def chip_cloud_analysis(self,scl):
         scl = np.array(scl)

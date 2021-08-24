@@ -98,8 +98,11 @@ if __name__ == "__main__":
     print("Merging station feature dataframes and saving to blob storage.")
     df = pd.DataFrame()
     for station in stations:
-        if hasattr(ds.station[station], "merged_df"):
-            feature_df = pd.concat([df, ds.station[station].merged_df.reset_index()], axis=0)
+        if station in ds.station:
+            try:
+                feature_df = pd.concat([df, ds.station[station].merged_df.reset_index()], axis=0)
+            except:
+                print(f"no attribute merged_df for station {station}")
         else:
             continue
 

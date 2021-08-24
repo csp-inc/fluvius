@@ -14,7 +14,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.lines as mlines
 
 # %%  Get Azure blob strorage info for pandas storage settings
-with open("/fluvius/.env") as f:
+with open("/content/credentials") as f:
     env_vars = f.read().split("\n")
 
 for var in env_vars:
@@ -25,7 +25,7 @@ storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
                    "account_key":os.environ["BLOB_KEY"]}
 
 # %% Read in data, prep inputs
-data = pd.read_json("az://modeling-data/fluvius_data_partitioned.json",
+data = pd.read_json("az://modeling-data/content_data_partitioned.json",
                     storage_options=storage_options)
 # data = data[(data['region'] == "itv")]
 index_names = data[ data['SSC (mg/L)'] == 0 ].index
@@ -198,7 +198,7 @@ plt.xlabel("Epoch")
 plt.ylabel("Loss")
 
 plt.legend()
-plt.savefig("/fluvius/figs/MLP_prelim_results/loss_curves.png", bbox_inches="tight", facecolor="#FFFFFF", dpi=150)
+plt.savefig("/content/figs/MLP_prelim_results/loss_curves.png", bbox_inches="tight", facecolor="#FFFFFF", dpi=150)
 
 # %% test the model
 y_pred_list = []
@@ -223,6 +223,6 @@ plt.xlabel("ln(SSC) Observed")
 plt.ylabel("ln(SSC) Predicted")
 plt.title("Observed Vs. Predicted SSC for Training Data")
 plt.legend()
-plt.savefig("/fluvius/figs/MLP_prelim_results/obs_predict_test.png", bbox_inches="tight", facecolor="#FFFFFF", dpi=150)
+plt.savefig("/content/figs/MLP_prelim_results/obs_predict_test.png", bbox_inches="tight", facecolor="#FFFFFF", dpi=150)
 
 # %%

@@ -1,5 +1,6 @@
 #web scrapping libraries
 from bs4 import BeautifulSoup as bs
+from pandas.core.dtypes.missing import na_value_for_dtype
 import requests
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
@@ -18,6 +19,7 @@ import rasterio as rio
 from rasterio import features
 from rasterio import warp
 from rasterio import windows
+from rasterio.enums import Resampling
 import concurrent.futures
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -27,6 +29,19 @@ import planetary_computer as pc
 from pystac.extensions.eo import EOExtension as eo
 from azure.storage.blob import BlobClient
 
+BANDS_10M = ['AOT', 'B02', 'B03', 'B04', 'B08', 'WVP']
+BANDS_20M = ['B05', 'B06', 'B07', 'B8A', 'B11']
+
+EMPTY_METADATA_DICT = {
+    "mean_viewing_azimuth": np.nan,
+    "mean_viewing_zenith": np.nan,
+    "mean_solar_azimuth": np.nan,
+    "mean_solar_zenith": np.nan,
+    "sensing_time": pd.NaT
+}
+
+BAD_USGS_COLS = ["Instantaneous computed discharge (cfs)_x", 
+                 "Instantaneous computed discharge (cfs)_y"]
 
 class USGS_Water_DB:
     def __init__(self, verbose=False):
@@ -188,7 +203,6 @@ class WaterData:
         self.data_source = data_source
         self.storage_options = {'account_name':storage_options['account_name'],\
                                 'account_key':storage_options['account_key']}
-        self.connection_string = storage_options['connection_string']
         self.filesystem = 'az'
         self.station_path = f'{self.container}/stations'
         self.station = {}
@@ -228,8 +242,8 @@ class WaterData:
         srcdf = self.df.copy()
         srcdf = srcdf.to_crs('EPSG:3857')
         srcdf = srcdf.geometry.buffer(buffer_distance,\
-                                               cap_style=buffer_style[buffer_type],\
-                                               resolution=resolution)
+                                      cap_style=buffer_style[buffer_type],\
+                                      resolution=resolution)
         srcdf = srcdf.to_crs('EPSG:4326')
         self.df['buffer_geometry'] = srcdf.geometry
 
@@ -271,7 +285,7 @@ class WaterData:
 
     def get_station_data(self, station=None):
         '''
-        gets all the station data if station is None
+        gets all the station data if station is None.
         '''
         if any(self.df['site_no'] == str(station)):
             geometry =  self.df[self.df['site_no'] == str(station)].buffer_geometry.iloc[0]
@@ -280,7 +294,7 @@ class WaterData:
                     aoi,\
                     self.container,\
                     self.storage_options,\
-                    self.connection_string)
+                    self.data_source)
             self.station[str(station)] = ws
         elif station is None:
             for s in self.df['site_no']:
@@ -298,12 +312,12 @@ class WaterStation:
     ''' 
     Generalized water station data. May make child class for USGS, ANA, and ITV
     '''
-    def __init__(self, site_no, area_of_interest, container, storage_options, connection_string):
+    def __init__(self, site_no, area_of_interest, container, storage_options, data_source):
         self.site_no = site_no
         self.area_of_interest = area_of_interest
         self.container = container
         self.storage_options = storage_options
-        self.connection_string = connection_string
+        self.data_source = data_source
         self.src_url = f'az://{container}/stations/{str(site_no).zfill(8)}.csv'
         self.df = pd.read_csv(self.src_url, storage_options=self.storage_options).dropna()
         self.get_time_bounds()
@@ -322,6 +336,27 @@ class WaterStation:
         start = self.df['Date-Time'].iloc[0].strftime('%Y-%m-%d')
         end = self.df['Date-Time'].iloc[-1].strftime('%Y-%m-%d')
         self.time_of_interest = f'{start}/{end}'
+
+    def drop_bad_usgs_obs(self):
+        """
+        Some stations from USGS have two measurements of instantaneous computed
+        discharge. This method drops observations for which the two measurements
+        are not equal. Note that the method only applies to "usgs" stations. If 
+        WaterStation.data_source is not equal to "usgs", the method does nothing,
+        so it can be safely applied to WaterStations from any data source with
+        minimal performance impact.
+        """
+        if self.data_source == "usgs":
+            df_cols = set(list(self.df.columns))
+            if set(BAD_USGS_COLS).issubset(df_cols):
+                bad_rows = self.df[BAD_USGS_COLS[0]] != self.df[BAD_USGS_COLS[1]]
+                bad_idx = bad_rows[bad_rows].index
+                self.df.drop(index=bad_idx, inplace=True)
+                self.df.drop(BAD_USGS_COLS[1], axis=1, inplace=True)
+                self.df.rename(
+                    columns={BAD_USGS_COLS[0]: "Instantaneous computed discharge (cfs)"},
+                    inplace=True
+                )
 
     def build_catalog(self, collection='sentinel-2-l2a'):
         ''' 
@@ -348,8 +383,21 @@ class WaterStation:
         scene_list = sorted(self.catalog.get_items(), key=lambda item: eo.ext(item).cloud_cover)
         cloud_list = pd.DataFrame([{'Date-Time':s.datetime.strftime('%Y-%m-%d'),\
                 'Tile Cloud Cover':eo.ext(s).cloud_cover,\
-                'visual-href':s.assets['visual'].href,\
-                'scl-href':s.assets['SCL'].href} \
+                'AOT-href':s.assets['AOT'].href,
+                'B02-href':s.assets['B02'].href,
+                'B03-href':s.assets['B03'].href,
+                'B04-href':s.assets['B04'].href,
+                'B05-href':s.assets['B05'].href,
+                'B06-href':s.assets['B06'].href,
+                'B07-href':s.assets['B07'].href,
+                'B08-href':s.assets['B08'].href,
+                'B11-href':s.assets['B11'].href,
+                'B07-href':s.assets['B12'].href,
+                'B8A-href':s.assets['B8A'].href,
+                'WVP-href':s.assets['WVP'].href,
+                'visual-href':s.assets['visual'].href,
+                'scl-href':s.assets['SCL'].href,
+                'meta-href': s.assets['granule-metadata'].href} \
                 for s in scene_list if eo.ext(s).cloud_cover<cloud_thr])
         cloud_list['Date-Time'] = pd.to_datetime(cloud_list['Date-Time'])
         cloud_list['Date-Time'] = cloud_list['Date-Time'].dt.date
@@ -373,9 +421,10 @@ class WaterStation:
             aoi_bounds = features.bounds(self.area_of_interest)
             warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
             aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
-            band_data = ds.read(window=aoi_window)
-            scl = band_data[0].repeat(2, axis=0).repeat(2, axis=1)
-            scl = Image.fromarray(scl)
+            band_data = ds.read(window=aoi_window,
+                                out_shape=self.chip_shape_10m,
+                                resampling = Resampling.nearest)
+            scl = np.array(band_data[0])
             if return_meta_transform:
                 out_meta = ds.meta
                 out_transform = ds.window_transform(aoi_window)
@@ -388,6 +437,7 @@ class WaterStation:
             warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
             aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
             band_data = ds.read(window=aoi_window)
+            self.chip_shape_10m = tuple([1] + list(band_data.shape[1:3])) # need 1st dim to be one since other chips are one band
             img = Image.fromarray(np.transpose(band_data, axes=[1, 2, 0]))
             if return_meta_transform:
                 out_meta = ds.meta
@@ -395,7 +445,65 @@ class WaterStation:
                 return img, out_meta, out_transform
             return img
 
-    def perform_chip_cloud_analysis(self):
+    def get_spectral_chip(self, hrefs_10m, hrefs_20m):
+        """
+        Returns an image with one or more bands along the 3rd dimension from a signed url (one for each band)
+        Args:
+            hrefs_10m (list): hrefs for the 10 meter Sentinel bands
+            hrefs_20m (list): hrefs for the 20 meter Sentinel bands
+        """
+        band_data_10m = list()
+        for href in hrefs_10m:
+            signed_href = pc.sign(href)
+            with rio.open(signed_href) as ds:
+                aoi_bounds = features.bounds(self.area_of_interest)
+                warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
+                aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
+                band_data_10m.append(ds.read(window=aoi_window))
+        
+        self.chip_shape_10m = band_data_10m[0].shape
+
+        band_data_20m = list()
+        for href in hrefs_20m:
+            signed_href = pc.sign(href)
+            with rio.open(signed_href) as ds:
+                aoi_bounds = features.bounds(self.area_of_interest)
+                warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
+                aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
+                band_data_20m.append(ds.read(out_shape=self.chip_shape_10m,
+                                             window=aoi_window,
+                                             resampling=Resampling.nearest))
+
+        bands_array = np.transpose(np.concatenate(band_data_10m + band_data_20m, axis=0), axes=[1, 2, 0])
+
+        return bands_array
+
+    def get_chip_metadata(self, signed_url):
+        req = requests.get(signed_url)
+        soup = bs(req.text, "xml")
+        mean_viewing_angles = soup.find_all("Mean_Viewing_Incidence_Angle")
+        mean_viewing_azimuth = np.mean([float(angles.find("AZIMUTH_ANGLE").get_text()) 
+                                        for angles in mean_viewing_angles])
+        mean_viewing_zenith = np.mean([float(angles.find("ZENITH_ANGLE").get_text()) 
+                                    for angles in mean_viewing_angles])
+
+        mean_sun_angles = soup.find("Mean_Sun_Angle")
+        mean_solar_zenith = float(mean_sun_angles.find("ZENITH_ANGLE").get_text())
+        mean_solar_azimuth = float(mean_sun_angles.find("AZIMUTH_ANGLE").get_text())
+
+        sensing_time = pd.to_datetime(soup.find("SENSING_TIME").get_text())
+
+        meta_attributes = {
+            "mean_viewing_azimuth": mean_viewing_azimuth,
+            "mean_viewing_zenith": mean_viewing_zenith,
+            "mean_solar_azimuth": mean_solar_azimuth,
+            "mean_solar_zenith": mean_solar_zenith,
+            "sensing_time": sensing_time
+        }
+
+        return meta_attributes
+
+    def perform_chip_cloud_analysis(self, quiet=True):
         #probably can perform this in parallel
         '''
         #with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -408,8 +516,9 @@ class WaterStation:
                 chip_clouds_list.append(chip_clouds)
             except:
                 chip_clouds_list.append(np.nan)
-                print(f"{sc['scl-href']} cloud chip error!")
-        self.merged_df['Chip Cloud Pct'] = chip_clouds_list
+                if not quiet:
+                    print(f"{sc['scl-href']} cloud chip error!")
+            self.merged_df['Chip Cloud Pct'] = chip_clouds_list
         
     def chip_cloud_analysis(self,scl):
         scl = np.array(scl)
@@ -434,35 +543,48 @@ class WaterStation:
                 except:
                     print(f'{visual_href} returned {522}', file=f)
 
-    def get_reflectances(self):
-        reflectances=[]
+    def get_chip_features(self):
+        reflectances = []
+        n_water_pixels = []
+        metadata = []
         for i,scene_query in self.merged_df.iterrows():
-            visual_href = pc.sign(scene_query['visual-href'])
+            hrefs_10m = scene_query[[band + "-href" for band in BANDS_10M]]
+            hrefs_20m = scene_query[[band + "-href" for band in BANDS_20M]]
             scl_href = pc.sign(scene_query['scl-href'])
+            meta_href = pc.sign(scene_query['meta-href'])
+            n_bands = len(hrefs_10m + hrefs_20m)
             try:
+                img = self.get_spectral_chip(hrefs_10m, hrefs_20m)
                 scl = self.get_scl_chip(scl_href)
-                img = self.get_visual_chip(visual_href)
-                #resize the scl image to match the imagery
-                scl = np.array(scl.resize(img.size,Image.NEAREST))
+                granule_metadata = self.get_chip_metadata(meta_href)
                 water_mask = ((scl==6) | (scl==2))
                 #gets rid of the divide by zero error due to cloudy images
                 if np.any(water_mask):
-                    masked_array = np.array(img)[water_mask]
+                    masked_array = img[water_mask, :]
                     mean_ref = np.nanmean(masked_array, axis=0)
                     reflectances.append(mean_ref)
+                    n_water_pixels.append(np.sum(water_mask))
                 else: #no water pixels detected
-                    reflectances.append([np.nan, np.nan, np.nan])
+                    reflectances.append([np.nan] * n_bands)
+                    n_water_pixels.append(0)
+                metadata.append(granule_metadata)
             except:
                 #print(f"{scene_query['visual-href']} returned response!")
-                reflectances.append([np.nan, np.nan, np.nan])
+                reflectances.append([np.nan] * n_bands)
+                n_water_pixels.append(np.nan)
+                metadata.append(EMPTY_METADATA_DICT)
             
         reflectances = np.array(reflectances)
-
+        n_water_pixels = np.array(n_water_pixels)
+        metadata = pd.DataFrame(metadata)
+        
         collection = 'sentinel-2-l2a'
-        bands = ['R', 'G', 'B']
+        bands = BANDS_10M + BANDS_20M
         for i,band in enumerate(bands):
             self.merged_df[f'{collection}_{band}'] = reflectances[:,i]
 
+        self.merged_df['n_water_pixels'] = n_water_pixels
+        self.merged_df = pd.concat([self.merged_df.reset_index(), metadata], axis = 1).set_index('index')
 
     def upload_local_to_blob(self,localfile,blobname):
         #blobclient = BlobClient.from_connection_string(conn_str=self.connection_string,\
@@ -522,15 +644,12 @@ class WaterStation:
         scene_query = self.merged_df[self.merged_df['sample_id'] == sample_id]
         visual_href = pc.sign(scene_query['visual-href'].values[0])
         scl_href = pc.sign(scene_query['scl-href'].values[0])
-        scl = self.get_scl_chip(scl_href)
         img = self.get_visual_chip(visual_href)
-        scl = np.array(scl.resize(img.size,Image.NEAREST))
+        scl = self.get_scl_chip(scl_href)
         water_mask = ((scl==6) | (scl==2))
-        masked_array = np.array(img)[water_mask]
-    
+        # masked_array = np.array(img)[water_mask, :]
         f, ax = plt.subplots(1,4, figsize=(20,20))
         cloud_mask = scl>7
-        water_mask = ((scl==6) | (scl==2))
         #extent = [self.bounds[0], self.bounds[2], self.bounds[1], self.bounds[3]]
         ax[0].imshow(img)
         ax[0].set_title('RGB Image')

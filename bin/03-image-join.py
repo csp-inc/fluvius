@@ -26,8 +26,8 @@ if __name__ == "__main__":
         type=int,\
         help="days of search around sample date")
     parser.add_argument('--cloud_thr',\
-        default=0.8,\
-        type=float,\
+        default=80,\
+        type=int,\
         help="percent of cloud cover acceptable")
     parser.add_argument('--buffer_distance',\
         default=500,\
@@ -79,7 +79,7 @@ if __name__ == "__main__":
             ds.station[station].get_chip_features()
         if args.write_to_csv:
             sstation = str(station).zfill(8)
-            outfilename = f'az://{ds.container}/stations/{sstation}/{sstation}_processed_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{int(cloud_thr*100)}percent.csv'
+            outfilename = f'az://{ds.container}/stations/{sstation}/{sstation}_processed_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.csv'
             ds.station[station].merged_df.to_csv(
                 outfilename,index=False,
                 storage_options=ds.storage_options)
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     cloud_threshold = [cloud_thr] * len(stations)
     day_tol = [day_tolerance] * len(stations)
 
-    with futures.ThreadPoolExecutor(max_workers=3) as pool:
+    with futures.ThreadPoolExecutor(max_workers=os.cpu_count()/2-1) as pool:
         pool.map(get_station_feature_df, stations, cloud_threshold, day_tol)
     
     ## Merge dataframes w/ feature data for all stations, write to blob storage
@@ -100,15 +100,14 @@ if __name__ == "__main__":
     for station in stations:
         if station in ds.station:
             try:
-                feature_df = pd.concat([df, ds.station[station].merged_df.reset_index()], axis=0)
+                df = pd.concat([df, ds.station[station].merged_df.reset_index()], axis=0)
             except:
                 print(f"no attribute merged_df for station {station}")
         else:
             continue
 
-    outfileprefix = f"az://modeling-data/{ds.container}/merged_station_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{int(cloud_thr*100)}percent"
+    outfileprefix = f"az://modeling-data/{ds.container}/merged_station_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent"
 
     df.to_csv(f"{outfileprefix}.csv", storage_options=storage_options)
-    df.to_json(f"{outfileprefix}.json", storage_options=storage_options)
 
     print("Done!")

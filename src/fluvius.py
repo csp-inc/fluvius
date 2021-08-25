@@ -415,19 +415,17 @@ class WaterStation:
         self.merged_df['InSitu_Satellite_Diff'] = \
                 self.merged_df['Date-Time']-self.merged_df['Date-Time_Remote']
         self.total_matched_images = len(self.merged_df)
-                          
+                   
     def get_scl_chip(self, signed_url, return_meta_transform=False):
         with rio.open(signed_url) as ds:    
             aoi_bounds = features.bounds(self.area_of_interest)
             warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
-            aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
-            band_data = ds.read(window=aoi_window,
-                                out_shape=self.chip_shape_10m,
-                                resampling = Resampling.nearest)
-            scl = np.array(band_data[0])
+            self.scl_window  = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds).round_lengths()
+            band_data = ds.read(window=self.scl_window)
+            scl = band_data[0]
             if return_meta_transform:
                 out_meta = ds.meta
-                out_transform = ds.window_transform(aoi_window)
+                out_transform = ds.window_transform(self.scl_window)
                 return scl, out_meta, out_transform
             return scl
 
@@ -456,9 +454,12 @@ class WaterStation:
         for href in hrefs_10m:
             signed_href = pc.sign(href)
             with rio.open(signed_href) as ds:
-                aoi_bounds = features.bounds(self.area_of_interest)
-                warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
-                aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
+                aoi_window = windows.Window(
+                    self.scl_window.col_off,
+                    self.scl_window.row_off,
+                    self.scl_window.width * 2,
+                    self.scl_window.height * 2
+                )
                 band_data_10m.append(ds.read(window=aoi_window))
         
         self.chip_shape_10m = band_data_10m[0].shape
@@ -467,11 +468,8 @@ class WaterStation:
         for href in hrefs_20m:
             signed_href = pc.sign(href)
             with rio.open(signed_href) as ds:
-                aoi_bounds = features.bounds(self.area_of_interest)
-                warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
-                aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
                 band_data_20m.append(ds.read(out_shape=self.chip_shape_10m,
-                                             window=aoi_window,
+                                             window=self.scl_window,
                                              resampling=Resampling.nearest))
 
         bands_array = np.transpose(np.concatenate(band_data_10m + band_data_20m, axis=0), axes=[1, 2, 0])
@@ -503,7 +501,7 @@ class WaterStation:
 
         return meta_attributes
 
-    def perform_chip_cloud_analysis(self, quiet=True):
+    def perform_chip_cloud_analysis(self, quiet=False):
         #probably can perform this in parallel
         '''
         #with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -512,15 +510,16 @@ class WaterStation:
         chip_clouds_list = []
         for i, sc in self.merged_df.iterrows():
             try:
+                print(f"Performing chip cloud analysis for sample {sc['sample_id']}")
                 chip_clouds = self.chip_cloud_analysis(self.get_scl_chip(pc.sign(sc['scl-href'])))
                 chip_clouds_list.append(chip_clouds)
             except:
                 chip_clouds_list.append(np.nan)
                 if not quiet:
                     print(f"{sc['scl-href']} cloud chip error!")
-            self.merged_df['Chip Cloud Pct'] = chip_clouds_list
+        self.merged_df['Chip Cloud Pct'] = chip_clouds_list
         
-    def chip_cloud_analysis(self,scl):
+    def chip_cloud_analysis(self, scl):
         scl = np.array(scl)
         n_total_pxls = np.multiply(scl.shape[0], scl.shape[1])
         n_cloud_pxls = np.sum((scl>=7) & (scl<=10))
@@ -548,26 +547,30 @@ class WaterStation:
         n_water_pixels = []
         metadata = []
         for i,scene_query in self.merged_df.iterrows():
+            print(f"Extracting features for sample {scene_query['sample_id']}")
             hrefs_10m = scene_query[[band + "-href" for band in BANDS_10M]]
             hrefs_20m = scene_query[[band + "-href" for band in BANDS_20M]]
             scl_href = pc.sign(scene_query['scl-href'])
             meta_href = pc.sign(scene_query['meta-href'])
             n_bands = len(hrefs_10m + hrefs_20m)
             try:
-                img = self.get_spectral_chip(hrefs_10m, hrefs_20m)
-                scl = self.get_scl_chip(scl_href)
-                granule_metadata = self.get_chip_metadata(meta_href)
+                scl = Image.fromarray(self.get_scl_chip(scl_href))
+                # Resize scl (double its size to match img)
+                scl = np.array(scl.resize(tuple([x*2 for x in scl.size]), Image.NEAREST))
                 water_mask = ((scl==6) | (scl==2))
                 #gets rid of the divide by zero error due to cloudy images
                 if np.any(water_mask):
+                    img = self.get_spectral_chip(hrefs_10m, hrefs_20m)
+                    granule_metadata = self.get_chip_metadata(meta_href)
                     masked_array = img[water_mask, :]
                     mean_ref = np.nanmean(masked_array, axis=0)
                     reflectances.append(mean_ref)
                     n_water_pixels.append(np.sum(water_mask))
+                    metadata.append(granule_metadata)
                 else: #no water pixels detected
                     reflectances.append([np.nan] * n_bands)
                     n_water_pixels.append(0)
-                metadata.append(granule_metadata)
+                    metadata.append(EMPTY_METADATA_DICT)
             except:
                 #print(f"{scene_query['visual-href']} returned response!")
                 reflectances.append([np.nan] * n_bands)

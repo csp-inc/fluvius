@@ -93,9 +93,22 @@ if __name__ == "__main__":
     
     merged_df = pd.concat([itv_data, ana_data, usgsi_data, usgs_data])
 
+    # Drop "problem" observations
+    bad_ssc = (merged_df["SSC (mg/L)"] == "--") |\
+              (merged_df["SSC (mg/L)"] == 0) |\
+              (merged_df["SSC (mg/L)"] == "0.0")
+
+    merged_df.drop(bad_ssc[bad_ssc].index, inplace=True)
+
+    bad_rgb = (merged_df["sentinel-2-l2a_B02"] == 0) &\
+              (merged_df["sentinel-2-l2a_B03"] == 0) &\
+              (merged_df["sentinel-2-l2a_B04"] == 0)
+    merged_df.drop(bad_rgb[bad_rgb].index, inplace=True)       
     # write output
-    out_filepath = f"az://modeling-data/merged_training_dat_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
+    out_filepath = f"az://modeling-data/merged_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
     if out_filetype == "csv":
         merged_df.to_csv(out_filepath, storage_options=storage_options)
     elif out_filetype == "json":
         merged_df.to_json(out_filepath, storage_options=storage_options)
+    
+    print(f"Done. Outputs written to {out_filepath}")

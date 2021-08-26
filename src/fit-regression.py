@@ -18,20 +18,18 @@ with open("/content/credentials") as f:
     env_vars = f.read().split("\n")
 
 for var in env_vars:
-    key, value = var.split(' = ')
+    key, value = var.split(" = ")
     os.environ[key] = value
 
 storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
                    "account_key":os.environ["BLOB_KEY"]}
 
 # %% Read in data, prep inputs
-data = pd.read_json("az://modeling-data/content_data_partitioned.json",
+data = pd.read_csv("az://modeling-data/partitioned_training_data_buffer500m_daytol8_cloudthr80percent.csv",
                     storage_options=storage_options)
-# data = data[(data['region'] == "itv")]
-index_names = data[ data['SSC (mg/L)'] == 0 ].index
-data.drop(index_names, inplace=True)
+
 data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
-data["intercept"] = 1
+data["Intercept"] = 1
 
 train = data[data["partition"] == "train"]
 test = data[data["partition"] == "test"]
@@ -40,12 +38,19 @@ validate = data[data["partition"] == "validate"]
 response = "Log SSC (mg/L)"
 
 plt.hist(data[response], bins=100)
+
+features = ["Intercept", "sentinel-2-l2a_AOT", "sentinel-2-l2a_B02",
+            "sentinel-2-l2a_B03", "sentinel-2-l2a_B04", "sentinel-2-l2a_B08",
+            "sentinel-2-l2a_WVP", "sentinel-2-l2a_B05", "sentinel-2-l2a_B06",
+            "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A", "sentinel-2-l2a_B11",
+            "n_water_pixels", "mean_viewing_azimuth", "mean_viewing_zenith",
+            "mean_solar_azimuth", "mean_solar_zenith"]
 y_train = train[response]
-X_train = train[["intercept", "sentinel-2-l2a_R", "sentinel-2-l2a_G", "sentinel-2-l2a_B"]]
+X_train = train[features]
 y_test = test[response]
-X_test = test[["intercept", "sentinel-2-l2a_R", "sentinel-2-l2a_G", "sentinel-2-l2a_B"]]
+X_test = test[features]
 y_val = validate[response]
-X_val = validate[["intercept", "sentinel-2-l2a_R", "sentinel-2-l2a_G", "sentinel-2-l2a_B"]]
+X_val = validate[features]
 
 #plt.scatter(X_train["sentinel-2-l2a_G"], X_train["sentinel-2-l2a_R"], c=y_train)
 
@@ -114,7 +119,7 @@ optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=300, gamma=0.1)
 
 loss_stats = {
-    'train': [],
+    "train": [],
     "val": []
 }
 
@@ -178,21 +183,21 @@ for e in range(1, EPOCHS+1):
             val_loss = criterion(y_val_pred, y_val_batch.unsqueeze(1))
             
             val_epoch_loss += val_loss.item()
-    loss_stats['train'].append(train_epoch_loss/len(train_loader))
-    loss_stats['val'].append(val_epoch_loss/len(val_loader))                              
+    loss_stats["train"].append(train_epoch_loss/len(train_loader))
+    loss_stats["val"].append(val_epoch_loss/len(val_loader))                              
 
     scheduler.step()
 
     if (e % 5 == 0):
-        print(f'Epoch {e}/{EPOCHS} | Train Loss: {train_epoch_loss/len(train_loader):.5f} | Val Loss: {val_epoch_loss/len(val_loader):.5f}')
+        print(f"Epoch {e}/{EPOCHS} | Train Loss: {train_epoch_loss/len(train_loader):.5f} | Val Loss: {val_epoch_loss/len(val_loader):.5f}")
 
 # %%
-train_val_loss_df = pd.DataFrame.from_dict(loss_stats).reset_index().melt(id_vars=['index']).rename(columns={"index":"epochs"})
+train_val_loss_df = pd.DataFrame.from_dict(loss_stats).reset_index().melt(id_vars=["index"]).rename(columns={"index":"epochs"})
 plt.figure(figsize=(8,6))
 plt.plot(loss_stats["train"], color="teal", label="training")
 plt.plot(loss_stats["val"], color="orange", label="validation")
-teal_line = mlines.Line2D([], [], color='teal', label='Training')
-orange_line = mlines.Line2D([], [], color='orange', label='Validation')
+teal_line = mlines.Line2D([], [], color="teal", label="Training")
+orange_line = mlines.Line2D([], [], color="orange", label="Validation")
 plt.title("Loss Curves for Training and Validation Data")
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
@@ -202,7 +207,7 @@ plt.savefig("/content/figs/MLP_prelim_results/loss_curves.png", bbox_inches="tig
 
 # %% test the model
 y_pred_list = []
-comapre_to = y_test
+compare_to = y_test
 with torch.no_grad():
     model.eval()
     for X_batch, _ in test_loader:
@@ -210,18 +215,18 @@ with torch.no_grad():
         y_pred = model(X_batch)
         y_pred_list.append(y_pred.cpu().numpy())
 y_pred_list = [a.squeeze().tolist() for a in y_pred_list]
-mse = mean_squared_error(comapre_to, y_pred_list)
-r_square = r2_score(comapre_to, y_pred_list)
-print("Mean Squared Error :",mse)
-print("R^2 :",r_square)
+mse = mean_squared_error(compare_to, y_pred_list)
+r_square = r2_score(compare_to, y_pred_list)
+print("Mean Squared Error :", mse)
+print("R^2 :", r_square)
 
 plt.figure(figsize=(8,8))
 plt.plot(list(range(1,8)),list(range(1,8)), color="black", label="One-to-one 1 line")
 
-plt.scatter(comapre_to, y_pred_list)
+plt.scatter(compare_to, y_pred_list)
 plt.xlabel("ln(SSC) Observed")
 plt.ylabel("ln(SSC) Predicted")
-plt.title("Observed Vs. Predicted SSC for Training Data")
+plt.title("Observed Vs. Predicted SSC for Test Data")
 plt.legend()
 plt.savefig("/content/figs/MLP_prelim_results/obs_predict_test.png", bbox_inches="tight", facecolor="#FFFFFF", dpi=150)
 

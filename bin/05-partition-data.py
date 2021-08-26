@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import os, sys
-sys.path.append('/content')
+sys.path.append("/content")
 from src.utils import train_test_validate_split
 import datetime as dt
 import argparse

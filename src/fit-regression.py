@@ -28,22 +28,29 @@ storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
 data = pd.read_csv("az://modeling-data/partitioned_training_data_buffer500m_daytol8_cloudthr80percent.csv",
                     storage_options=storage_options)
 
+data = data[(data["data_src"] == "itv") | (data["data_src"] == "ana")]
+water_lt5 = data["n_water_pixels"] <= 10
+data.drop(water_lt5[water_lt5].index, inplace=True)
 data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
+
+lnssc_0 = data["Log SSC (mg/L)"] == 0
+data.drop(lnssc_0[lnssc_0].index, inplace=True)
+
 data["Intercept"] = 1
 
 train = data[data["partition"] == "train"]
 test = data[data["partition"] == "test"]
 validate = data[data["partition"] == "validate"]
-
+itv = data[data["data_src"] == "itv"]
 response = "Log SSC (mg/L)"
 
 plt.hist(data[response], bins=100)
-
+print(data)
 features = ["Intercept", "sentinel-2-l2a_AOT", "sentinel-2-l2a_B02",
             "sentinel-2-l2a_B03", "sentinel-2-l2a_B04", "sentinel-2-l2a_B08",
             "sentinel-2-l2a_WVP", "sentinel-2-l2a_B05", "sentinel-2-l2a_B06",
             "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A", "sentinel-2-l2a_B11",
-            "n_water_pixels", "mean_viewing_azimuth", "mean_viewing_zenith",
+            "mean_viewing_azimuth", "mean_viewing_zenith",
             "mean_solar_azimuth", "mean_solar_zenith"]
 y_train = train[response]
 X_train = train[features]
@@ -51,6 +58,8 @@ y_test = test[response]
 X_test = test[features]
 y_val = validate[response]
 X_val = validate[features]
+y_itv = itv[response]
+X_itv = itv[features]
 
 #plt.scatter(X_train["sentinel-2-l2a_G"], X_train["sentinel-2-l2a_R"], c=y_train)
 
@@ -60,9 +69,11 @@ scaler = MinMaxScaler()
 X_train = scaler.fit_transform(X_train)
 X_val = scaler.transform(X_val)
 X_test = scaler.transform(X_test)
+X_itv = scaler.transform(X_itv)
 X_train, y_train = np.array(X_train), np.array(y_train)
 X_val, y_val = np.array(X_val), np.array(y_val)
 X_test, y_test = np.array(X_test), np.array(y_test)
+X_itv, y_itv = np.array(X_itv), np.array(y_itv)
 
 class RegressionDataset(Dataset):
     
@@ -79,7 +90,7 @@ class RegressionDataset(Dataset):
 train_dataset = RegressionDataset(torch.from_numpy(X_train).float(), torch.from_numpy(y_train).float())
 val_dataset = RegressionDataset(torch.from_numpy(X_val).float(), torch.from_numpy(y_val).float())
 test_dataset = RegressionDataset(torch.from_numpy(X_test).float(), torch.from_numpy(y_test).float())
-
+itv_dataset = RegressionDataset(torch.from_numpy(X_itv).float(), torch.from_numpy(y_itv).float())
 EPOCHS = 1000
 BATCH_SIZE = 32
 LEARNING_RATE = 0.005
@@ -89,7 +100,7 @@ train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=
 train_loader_all = DataLoader(dataset=train_dataset, batch_size=1)
 val_loader = DataLoader(dataset=val_dataset, batch_size=1)
 test_loader = DataLoader(dataset=test_dataset, batch_size=1)
-
+itv_loader = DataLoader(dataset=itv_dataset, batch_size=1)
 class MultipleRegression(nn.Module):
     def __init__(self, num_features):
         super(MultipleRegression, self).__init__()
@@ -97,6 +108,7 @@ class MultipleRegression(nn.Module):
         self.layer_1 = nn.Linear(num_features, 24)
         self.layer_2 = nn.Linear(24, 48)
         self.layer_3 = nn.Linear(48, 12)
+        #self.layer_4 = nn.Linear(24, 12)
         self.layer_out = nn.Linear(12, 1)
         
         self.relu = nn.ReLU()
@@ -105,6 +117,7 @@ class MultipleRegression(nn.Module):
         x = self.relu(self.layer_1(inputs))
         x = self.relu(self.layer_2(x))
         x = self.relu(self.layer_3(x))
+        #x = self.relu(self.layer_4(x))
         x = self.layer_out(x)
         return (x)
 
@@ -207,10 +220,10 @@ plt.savefig("/content/figs/MLP_prelim_results/loss_curves.png", bbox_inches="tig
 
 # %% test the model
 y_pred_list = []
-compare_to = y_test
+compare_to = y_itv
 with torch.no_grad():
     model.eval()
-    for X_batch, _ in test_loader:
+    for X_batch, _ in itv_loader:
         X_batch = X_batch.to(device)
         y_pred = model(X_batch)
         y_pred_list.append(y_pred.cpu().numpy())
@@ -226,8 +239,8 @@ plt.plot(list(range(1,8)),list(range(1,8)), color="black", label="One-to-one 1 l
 plt.scatter(compare_to, y_pred_list)
 plt.xlabel("ln(SSC) Observed")
 plt.ylabel("ln(SSC) Predicted")
-plt.title("Observed Vs. Predicted SSC for Test Data")
+plt.title("Observed Vs. Predicted SSC for ITV Data")
 plt.legend()
-plt.savefig("/content/figs/MLP_prelim_results/obs_predict_test.png", bbox_inches="tight", facecolor="#FFFFFF", dpi=150)
+plt.savefig("/content/figs/MLP_prelim_results/obs_predict_train.png", bbox_inches="tight", facecolor="#FFFFFF", dpi=150)
 
 # %%

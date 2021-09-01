@@ -100,9 +100,13 @@ if __name__ == "__main__":
 
     merged_df.drop(bad_ssc[bad_ssc].index, inplace=True)
 
-    bad_rgb = (merged_df["sentinel-2-l2a_B02"] == 0) &\
+    bad_rgb = ((merged_df["sentinel-2-l2a_B02"] == 0) &\
               (merged_df["sentinel-2-l2a_B03"] == 0) &\
-              (merged_df["sentinel-2-l2a_B04"] == 0)
+              (merged_df["sentinel-2-l2a_B04"] == 0)) |\
+                  ((merged_df["sentinel-2-l2a_B02"] > 245) &\
+                   (merged_df["sentinel-2-l2a_B03"] > 245) &\
+                   (merged_df["sentinel-2-l2a_B04"] > 245))
+
     merged_df.drop(bad_rgb[bad_rgb].index, inplace=True)       
     # write output
     out_filepath = f"az://modeling-data/merged_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"

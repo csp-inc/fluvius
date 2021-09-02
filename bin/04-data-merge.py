@@ -4,13 +4,13 @@ import pandas as pd
 import argparse
 
 COLUMNS = ["data_src", "sample_id", "Date-Time", "Date", "Date-Time_Remote", "SSC (mg/L)", 
-        "InSitu_Satellite_Diff", "Chip Cloud Pct", "sentinel-2-l2a_AOT",
-        "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
-        "sentinel-2-l2a_B08", "sentinel-2-l2a_WVP", "sentinel-2-l2a_B05",
-        "sentinel-2-l2a_B06", "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
-        "sentinel-2-l2a_B11", "n_water_pixels", "mean_viewing_azimuth",
-        "mean_viewing_zenith", "mean_solar_azimuth", "mean_solar_zenith",
-        "sensing_time"]
+           "InSitu_Satellite_Diff", "Chip Cloud Pct", "sentinel-2-l2a_AOT",
+           "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
+           "sentinel-2-l2a_B08", "sentinel-2-l2a_WVP", "sentinel-2-l2a_B05",
+           "sentinel-2-l2a_B06", "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
+           "sentinel-2-l2a_B11", "n_water_pixels", "mean_viewing_azimuth",
+           "mean_viewing_zenith", "mean_solar_azimuth", "mean_solar_zenith",
+           "sensing_time"]
 
 if __name__ == "__main__":
     ############### Parse commnd line args ###################
@@ -100,12 +100,13 @@ if __name__ == "__main__":
 
     merged_df.drop(bad_ssc[bad_ssc].index, inplace=True)
 
+    # NOTE this is very hacky right now -- should revise/improve
     bad_rgb = ((merged_df["sentinel-2-l2a_B02"] == 0) &\
               (merged_df["sentinel-2-l2a_B03"] == 0) &\
               (merged_df["sentinel-2-l2a_B04"] == 0)) |\
-                  ((merged_df["sentinel-2-l2a_B02"] > 245) &\
-                   (merged_df["sentinel-2-l2a_B03"] > 245) &\
-                   (merged_df["sentinel-2-l2a_B04"] > 245))
+                  ((merged_df["sentinel-2-l2a_B02"] > 15000) &\
+                   (merged_df["sentinel-2-l2a_B03"] > 15000) &\
+                   (merged_df["sentinel-2-l2a_B04"] > 15000))
 
     merged_df.drop(bad_rgb[bad_rgb].index, inplace=True)       
     # write output

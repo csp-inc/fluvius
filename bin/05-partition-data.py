@@ -48,6 +48,7 @@ if __name__ == "__main__":
 
     try:
         filepath = f"az://modeling-data/merged_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
+        filepath = f"az://modeling-data/merged_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
         data = pd.read_csv(filepath, storage_options=storage_options)
     except:
         print(f"Error: no file at {filepath}")

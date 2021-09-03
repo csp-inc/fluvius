@@ -6,6 +6,7 @@ import fsspec
 import pandas as pd
 import argparse
 from concurrent import futures
+import matplotlib as plt
 
 # Set the environment variable PC_SDK_SUBSCRIPTION_KEY, or set it here.
 # The Hub sets PC_SDK_SUBSCRIPTION_KEY automatically.

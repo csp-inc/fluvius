@@ -45,7 +45,6 @@ if __name__ == "__main__":
     storage_options = {'account_name':os.environ['ACCOUNT_NAME'],
                     'account_key':os.environ['BLOB_KEY']}
 
-
     try:
         filepath = f"az://modeling-data/merged_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
         filepath = f"az://modeling-data/merged_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
@@ -70,6 +69,9 @@ if __name__ == "__main__":
     data["SSC Quantile"] = ssc_quantile_bin
     data["Year"] = year
     data["Season"] = np.digitize(np.array(data["julian"]), 366/2 * np.array([0, 1]))
+    data["sine_julian"] = np.sin(2*np.pi*data["julian"]/365)
+    data["is_brazil"] = 0
+    data["is_brazil"][(data["data_src"] == "itv") | (data["data_src"] == "ana")] = 1
 
     ## Partition the data into train, test, validate
     # First split data into groups to ensure stratified

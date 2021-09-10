@@ -601,47 +601,48 @@ class WaterStation:
         with open(f"{localfile}", "rb") as out_blob:
             blob_data = blobclient.upload_blob(out_blob, overwrite=True) 
 
-    def write_tiles_to_blob(self, working_dirc):
-        for i, scene_query in self.merged_df.iterrows():
-            visual_href = pc.sign(scene_query['visual-href'])
-            scl_href = pc.sign(scene_query['scl-href'])
-            try:
-                scl, scl_meta, scl_transform = self.get_scl_chip(scl_href, return_meta_transform=True)
-                img, img_meta, img_transform = self.get_visual_chip(visual_href, return_meta_transform=True)
-                #resize the scl image to match the imagery
-                scl = np.expand_dims(np.array(scl.resize(img.size,Image.NEAREST)),0)
-                rgb = np.moveaxis(np.array(img),-1,0)
-                #write the ID_Date-Time_rgb
-                sample_id = f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
-                h = rgb.shape[1]
-                w = rgb.shape[2]
-                img_meta.update({'driver':'GTiff',\
-                            'height':h,\
-                            'width':w,\
-                            'transform': img_transform})
-                if not os.path.exists(f'{working_dirc}/{self.site_no}'):
-                    os.makedirs(f'{working_dirc}/{self.site_no}')
-                out_name = f'{working_dirc}/{self.site_no}/{sample_id}_rgb.tif'
-                blob_name = f'stations/{str(self.site_no).zfill(8)}/{sample_id}_rgb.tif'
-                with rio.open(out_name, 'w', **img_meta) as dest:
-                    dest.write(rgb)
-                self.upload_local_to_blob(out_name, blob_name)
-                #write scl
-                #uses the same transform and width and height as the image
-                scl_meta.update({'driver':'GTiff',\
-                            'height':h,\
-                            'width':w,\
-                            'transform': img_transform})   
-                out_name = f'{working_dirc}/{self.site_no}/{sample_id}_scl.tif'
-                blob_name = f'stations/{str(self.site_no).zfill(8)}/{sample_id}_scl.tif'
-                with rio.open(out_name, 'w', **scl_meta) as dest:
-                    dest.write(scl)
-                self.upload_local_to_blob(out_name, blob_name)
-                #return sample_id, scl, rgb, scl_meta, img_meta, scl_transform, img_transform
-            except:
-                with open('/content/log/error.log', 'w') as f:
-                    print(f"{scene_query['visual-href']} returned 404 response!", file=f)
-                    print(f"{scene_query['scl-href']} returned 404 response!", file=f)
+    def write_chip_to_blob(
+            self,
+            array,
+            img_meta,
+            img_transform,
+            root_dir,
+            site_no,
+            sample_id # sample_id = f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
+        ):
+        # scl, scl_meta, scl_transform = self.get_scl_chip(scl_href, return_meta_transform=True)
+        # img, img_meta, img_transform = self.get_visual_chip(visual_href, return_meta_transform=True)
+        #resize the scl image to match the imagery
+        # scl = np.expand_dims(np.array(scl.resize(img.size,Image.NEAREST)),0)
+        img = np.moveaxis(array,-1,0)
+
+        h = img.shape[1]
+        w = img.shape[2]
+        img_meta.update({'driver':'GTiff',\
+                         'height':h,\
+                         'width':w,\
+                         'transform': img_transform})
+        if not os.path.exists(f'{root_dir}/{site_no}'):
+            os.makedirs(f'{root_dir}/{site_no}')
+        out_name = f'{root_dir}/{site_no}/{sample_id}_chip.tif'
+        blob_name = f'stations/{str(site_no).zfill(8)}/{sample_id}_chip.tif'
+        with rio.open(out_name, 'w', **img_meta) as dest:
+            dest.write(img)
+        self.upload_local_to_blob(out_name, blob_name)
+
+        #write scl
+        #uses the same transform and width and height as the image
+        # scl_meta.update({'driver':'GTiff',\
+        #             'height':h,\
+        #             'width':w,\
+        #             'transform': img_transform})   
+        # out_name = f'{root_dir}/{self.site_no}/{sample_id}_scl.tif'
+        # blob_name = f'stations/{str(self.site_no).zfill(8)}/{sample_id}_scl.tif'
+        # with rio.open(out_name, 'w', **scl_meta) as dest:
+        #     dest.write(scl)
+        # self.upload_local_to_blob(out_name, blob_name)
+        #return sample_id, scl, rgb, scl_meta, img_meta, scl_transform, img_transform
+
 
     def visualize_chip(self, sample_id):
         scene_query = self.merged_df[self.merged_df['sample_id'] == sample_id]

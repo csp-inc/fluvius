@@ -34,26 +34,30 @@ if __name__ == "__main__":
         default=500,\
         type=int,\
         help="search radius to use for reflectance data aggregation")
-    parser.add_argument('--write-to-csv',\
+    parser.add_argument('--write_to_csv',\
         default=False,\
         type=bool,\
-        help="Write out csvs to ./data")
+        help="Write out csvs to ./data?")
+    parser.add_argument('--write_chips',\
+        default=False,\
+        type=bool,\
+        help="Write chips to blob storage?")
     args = parser.parse_args()
-
 
     #################  set up ####################
     data_source = args.data_src
     container = f'{data_source}-data'
 
-    ############## initial parameters ##############
+    ############# initial parameters #############
     if data_source == 'usgs':
         day_tolerance = 0 #reduce this for usgs-data
     else:
         day_tolerance = args.day_tolerance 
     
     cloud_thr = args.cloud_thr
-    buffer_distance = args.buffer_distance # change this to increase chip size in meter 
-    ################################################
+    buffer_distance = args.buffer_distance
+    blob_dir = f"{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}"
+    ################### Begin ####################
 
     storage_options={'account_name':os.environ['ACCOUNT_NAME'],\
                     'account_key':os.environ['BLOB_KEY']}
@@ -77,14 +81,14 @@ if __name__ == "__main__":
             ds.station[station].get_cloud_filtered_image_df(cloud_thr)
             ds.station[station].merge_image_df_with_samples(day_tol)
             ds.station[station].perform_chip_cloud_analysis()
-            ds.station[station].get_chip_features()
+            ds.station[station].get_chip_features(args.write_chips, blob_dir)
         if args.write_to_csv:
             sstation = str(station).zfill(8)
             outfilename = f'az://{ds.container}/stations/{sstation}/{sstation}_processed_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.csv'
             ds.station[station].merged_df.to_csv(
                 outfilename,index=False,
                 storage_options=ds.storage_options)
-            print(f'wrote csv {outfilename}')
+            print(f'wrote csv to {outfilename}')
             # print('writing chips!')
             # ds.station[station].write_tiles_to_blob(working_dirc='/tmp')
 
@@ -92,7 +96,7 @@ if __name__ == "__main__":
     cloud_threshold = [cloud_thr] * len(stations)
     day_tol = [day_tolerance] * len(stations)
 
-    with futures.ThreadPoolExecutor(max_workers=os.cpu_count()/2-1) as pool:
+    with futures.ThreadPoolExecutor(max_workers=1) as pool:
         pool.map(get_station_feature_df, stations, cloud_threshold, day_tol)
     
     ## Merge dataframes w/ feature data for all stations, write to blob storage
@@ -109,6 +113,6 @@ if __name__ == "__main__":
 
     outfileprefix = f"az://modeling-data/{ds.container}/merged_station_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent"
 
-    df.to_csv(f"{outfileprefix}.csv", storage_options=storage_options)
+    # df.to_csv(f"{outfileprefix}.csv", storage_options=storage_options)
 
     print("Done!")

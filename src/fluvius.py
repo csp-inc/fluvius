@@ -28,6 +28,7 @@ from pystac_client import Client
 import planetary_computer as pc
 from pystac.extensions.eo import EOExtension as eo
 from azure.storage.blob import BlobClient
+import traceback
 
 BANDS_10M = ['AOT', 'B02', 'B03', 'B04', 'B08', 'WVP']
 BANDS_20M = ['B05', 'B06', 'B07', 'B8A', 'B11']
@@ -420,7 +421,14 @@ class WaterStation:
         with rio.open(signed_url) as ds:    
             aoi_bounds = features.bounds(self.area_of_interest)
             warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
-            self.scl_window  = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds).round_lengths()
+            self.scl_window = windows.from_bounds(
+                transform=ds.transform,
+                *warped_aoi_bounds
+            ).round_lengths()
+            self.scl_bounds = windows.bounds(
+                self.scl_window,
+                transform=ds.transform
+            )
             band_data = ds.read(window=self.scl_window)
             scl = band_data[0]
             if return_meta_transform:
@@ -443,7 +451,7 @@ class WaterStation:
                 return img, out_meta, out_transform
             return img
 
-    def get_spectral_chip(self, hrefs_10m, hrefs_20m):
+    def get_spectral_chip(self, hrefs_10m, hrefs_20m, return_meta_transform=False):
         """
         Returns an image with one or more bands along the 3rd dimension from a signed url (one for each band)
         Args:
@@ -454,13 +462,14 @@ class WaterStation:
         for href in hrefs_10m:
             signed_href = pc.sign(href)
             with rio.open(signed_href) as ds:
-                aoi_window = windows.Window(
-                    self.scl_window.col_off,
-                    self.scl_window.row_off,
-                    self.scl_window.width * 2,
-                    self.scl_window.height * 2
+                aoi_window = windows.from_bounds(
+                    transform=ds.transform,
+                    *self.scl_bounds
                 )
                 band_data_10m.append(ds.read(window=aoi_window))
+                if href == hrefs_10m[-1] and return_meta_transform:
+                    out_meta = ds.meta
+                    out_transform = ds.window_transform(aoi_window)
         
         self.chip_shape_10m = band_data_10m[0].shape
 
@@ -474,7 +483,10 @@ class WaterStation:
 
         bands_array = np.transpose(np.concatenate(band_data_10m + band_data_20m, axis=0), axes=[1, 2, 0])
 
-        return bands_array
+        if return_meta_transform:
+            return bands_array, out_meta, out_transform
+        else:
+            return bands_array
 
     def get_chip_metadata(self, signed_url):
         req = requests.get(signed_url)
@@ -527,7 +539,7 @@ class WaterStation:
         return chip_cloud_pct
 
     def check_response(self,logfile='/content/log/response.log'):
-        for i,scene_query in self.merged_df.iterrows():
+        for i, scene_query in self.merged_df.iterrows():
             visual_href = pc.sign(scene_query['visual-href'])
             scl_href = pc.sign(scene_query['scl-href'])
             with open(logfile, 'a') as f:
@@ -542,7 +554,7 @@ class WaterStation:
                 except:
                     print(f'{visual_href} returned {522}', file=f)
 
-    def get_chip_features(self):
+    def get_chip_features(self, write_chips_to_blob=False, blob_root_dir=""):
         reflectances = []
         n_water_pixels = []
         metadata = []
@@ -554,24 +566,47 @@ class WaterStation:
             meta_href = pc.sign(scene_query['meta-href'])
             n_bands = len(hrefs_10m + hrefs_20m)
             try:
-                scl = Image.fromarray(self.get_scl_chip(scl_href))
+                scl, scl_meta, scl_trans  = self.get_scl_chip(scl_href, True)
+                scl = Image.fromarray(scl)
                 # Resize scl (double its size to match img)
                 scl = np.array(scl.resize(tuple([x*2 for x in scl.size]), Image.NEAREST))
                 water_mask = ((scl==6) | (scl==2))
-                #gets rid of the divide by zero error due to cloudy images
+                # Excludes images with no water pixels
                 if np.any(water_mask):
-                    img = self.get_spectral_chip(hrefs_10m, hrefs_20m)
+                    img, img_meta, img_trans = self.get_spectral_chip(hrefs_10m, hrefs_20m, True)
                     granule_metadata = self.get_chip_metadata(meta_href)
                     masked_array = img[water_mask, :]
                     mean_ref = np.nanmean(masked_array, axis=0)
                     reflectances.append(mean_ref)
                     n_water_pixels.append(np.sum(water_mask))
                     metadata.append(granule_metadata)
+
+                    if write_chips_to_blob:
+                        print()
+                        self.write_chip_to_blob(
+                            np.expand_dims(water_mask.astype(float),2),
+                            scl_meta,
+                            img_trans, # since it was resampled, proj is equal
+                            "local/chips",
+                            blob_root_dir,
+                            self.site_no,
+                            f"{scene_query['sample_id']}_{scene_query['Date-Time']}_water"
+                        )
+                        self.write_chip_to_blob(
+                            img,
+                            img_meta,
+                            img_trans,
+                            "local/chips",
+                            blob_root_dir,
+                            self.site_no,
+                            f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
+                        )
                 else: #no water pixels detected
                     reflectances.append([np.nan] * n_bands)
                     n_water_pixels.append(0)
                     metadata.append(EMPTY_METADATA_DICT)
             except:
+                traceback.print_exc()
                 #print(f"{scene_query['visual-href']} returned response!")
                 reflectances.append([np.nan] * n_bands)
                 n_water_pixels.append(np.nan)
@@ -589,59 +624,46 @@ class WaterStation:
         self.merged_df['n_water_pixels'] = n_water_pixels
         self.merged_df = pd.concat([self.merged_df.reset_index(), metadata], axis = 1).set_index('index')
 
-    def upload_local_to_blob(self,localfile,blobname):
+    def upload_local_to_blob(self, localfile, blobname):
         #blobclient = BlobClient.from_connection_string(conn_str=self.connection_string,\
         #                                            container_name=self.container,\
         #                                            blob_name=blobname)
         account_url = f"https://{self.storage_options['account_name']}.blob.core.windows.net"
         blobclient = BlobClient(account_url=account_url,\
-                container_name=self.container,\
+                container_name="modeling-data",\
                 blob_name=blobname,\
                 credential=self.storage_options['account_key'])
         with open(f"{localfile}", "rb") as out_blob:
-            blob_data = blobclient.upload_blob(out_blob, overwrite=True) 
+            blobclient.upload_blob(out_blob, overwrite=True) 
 
     def write_chip_to_blob(
             self,
             array,
             img_meta,
             img_transform,
-            root_dir,
+            local_root_dir,
+            blob_root_dir,
             site_no,
-            sample_id # sample_id = f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
+            sample_id, # sample_id = f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
         ):
-        # scl, scl_meta, scl_transform = self.get_scl_chip(scl_href, return_meta_transform=True)
-        # img, img_meta, img_transform = self.get_visual_chip(visual_href, return_meta_transform=True)
-        #resize the scl image to match the imagery
-        # scl = np.expand_dims(np.array(scl.resize(img.size,Image.NEAREST)),0)
-        img = np.moveaxis(array,-1,0)
-
+        img = np.moveaxis(array, -1, 0)
         h = img.shape[1]
         w = img.shape[2]
-        img_meta.update({'driver':'GTiff',\
-                         'height':h,\
-                         'width':w,\
-                         'transform': img_transform})
-        if not os.path.exists(f'{root_dir}/{site_no}'):
-            os.makedirs(f'{root_dir}/{site_no}')
-        out_name = f'{root_dir}/{site_no}/{sample_id}_chip.tif'
-        blob_name = f'stations/{str(site_no).zfill(8)}/{sample_id}_chip.tif'
+        c = img.shape[0]
+        img_meta = {"driver": "GTiff",
+                    "height": h,
+                    "width": w,
+                    "count": c,
+                    "crs": img_meta["crs"],
+                    "dtype": "uint16",
+                    'transform': img_transform}
+        if not os.path.exists(f'{local_root_dir}/{site_no}'):
+            os.makedirs(f'{local_root_dir}/{site_no}')
+        out_name = f'{local_root_dir}/{site_no}/{sample_id}.tif'
+        blob_name = f'{blob_root_dir}/{self.data_source}/{sample_id}.tif'
         with rio.open(out_name, 'w', **img_meta) as dest:
             dest.write(img)
         self.upload_local_to_blob(out_name, blob_name)
-
-        #write scl
-        #uses the same transform and width and height as the image
-        # scl_meta.update({'driver':'GTiff',\
-        #             'height':h,\
-        #             'width':w,\
-        #             'transform': img_transform})   
-        # out_name = f'{root_dir}/{self.site_no}/{sample_id}_scl.tif'
-        # blob_name = f'stations/{str(self.site_no).zfill(8)}/{sample_id}_scl.tif'
-        # with rio.open(out_name, 'w', **scl_meta) as dest:
-        #     dest.write(scl)
-        # self.upload_local_to_blob(out_name, blob_name)
-        #return sample_id, scl, rgb, scl_meta, img_meta, scl_transform, img_transform
 
 
     def visualize_chip(self, sample_id):

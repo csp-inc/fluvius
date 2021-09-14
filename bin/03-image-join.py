@@ -56,7 +56,7 @@ if __name__ == "__main__":
     
     cloud_thr = args.cloud_thr
     buffer_distance = args.buffer_distance
-    blob_dir = f"{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}"
+    blob_dir = f"chips/{buffer_distance}m_cloudthr{cloud_thr}"
     ################### Begin ####################
 
     storage_options={'account_name':os.environ['ACCOUNT_NAME'],\

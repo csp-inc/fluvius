@@ -113,6 +113,6 @@ if __name__ == "__main__":
 
     outfileprefix = f"az://modeling-data/{ds.container}/merged_station_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent"
 
-    # df.to_csv(f"{outfileprefix}.csv", storage_options=storage_options)
+    df.to_csv(f"{outfileprefix}.csv", storage_options=storage_options)
 
     print("Done!")

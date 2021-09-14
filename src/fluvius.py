@@ -425,10 +425,6 @@ class WaterStation:
                 transform=ds.transform,
                 *warped_aoi_bounds
             ).round_lengths()
-            self.scl_bounds = windows.bounds(
-                self.scl_window,
-                transform=ds.transform
-            )
             band_data = ds.read(window=self.scl_window)
             scl = band_data[0]
             if return_meta_transform:
@@ -608,7 +604,6 @@ class WaterStation:
                     n_water_pixels.append(0)
                     metadata.append(EMPTY_METADATA_DICT)
             except:
-                traceback.print_exc()
                 #print(f"{scene_query['visual-href']} returned response!")
                 reflectances.append([np.nan] * n_bands)
                 n_water_pixels.append(np.nan)

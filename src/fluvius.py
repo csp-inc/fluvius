@@ -587,7 +587,7 @@ class WaterStation:
                             np.expand_dims(water_mask.astype(float),2),
                             scl_meta,
                             img_trans, # since it was resampled, proj is equal
-                            "local/chips",
+                            "data/chips",
                             blob_root_dir,
                             self.site_no,
                             f"{scene_query['sample_id']}_{scene_query['Date-Time']}_water"
@@ -596,7 +596,7 @@ class WaterStation:
                             img,
                             img_meta,
                             img_trans,
-                            "local/chips",
+                            "data/chips",
                             blob_root_dir,
                             self.site_no,
                             f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
@@ -657,9 +657,9 @@ class WaterStation:
                     "crs": img_meta["crs"],
                     "dtype": "uint16",
                     'transform': img_transform}
-        if not os.path.exists(f'{local_root_dir}/{site_no}'):
-            os.makedirs(f'{local_root_dir}/{site_no}')
-        out_name = f'{local_root_dir}/{site_no}/{sample_id}.tif'
+        if not os.path.exists(f'{local_root_dir}/{self.data_source}'):
+            os.makedirs(f'{local_root_dir}/{self.data_source}')
+        out_name = f'{local_root_dir}/{self.data_source}/{sample_id}.tif'
         blob_name = f'{blob_root_dir}/{self.data_source}/{sample_id}.tif'
         with rio.open(out_name, 'w', **img_meta) as dest:
             dest.write(img)

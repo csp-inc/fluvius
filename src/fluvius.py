@@ -462,9 +462,11 @@ class WaterStation:
         for href in hrefs_10m:
             signed_href = pc.sign(href)
             with rio.open(signed_href) as ds:
-                aoi_window = windows.from_bounds(
-                    transform=ds.transform,
-                    *self.scl_bounds
+                aoi_window = windows.Window(
+                    self.scl_window.col_off * 2,
+                    self.scl_window.row_off * 2,
+                    self.scl_window.width * 2,
+                    self.scl_window.height * 2
                 )
                 band_data_10m.append(ds.read(window=aoi_window))
                 if href == hrefs_10m[-1] and return_meta_transform:

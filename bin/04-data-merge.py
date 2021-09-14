@@ -4,13 +4,13 @@ import pandas as pd
 import argparse
 
 COLUMNS = ["data_src", "sample_id", "Date-Time", "Date", "Date-Time_Remote", "SSC (mg/L)", 
-        "InSitu_Satellite_Diff", "Chip Cloud Pct", "sentinel-2-l2a_AOT",
-        "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
-        "sentinel-2-l2a_B08", "sentinel-2-l2a_WVP", "sentinel-2-l2a_B05",
-        "sentinel-2-l2a_B06", "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
-        "sentinel-2-l2a_B11", "n_water_pixels", "mean_viewing_azimuth",
-        "mean_viewing_zenith", "mean_solar_azimuth", "mean_solar_zenith",
-        "sensing_time"]
+           "InSitu_Satellite_Diff", "Chip Cloud Pct", "sentinel-2-l2a_AOT",
+           "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
+           "sentinel-2-l2a_B08", "sentinel-2-l2a_WVP", "sentinel-2-l2a_B05",
+           "sentinel-2-l2a_B06", "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
+           "sentinel-2-l2a_B11", "n_water_pixels", "mean_viewing_azimuth",
+           "mean_viewing_zenith", "mean_solar_azimuth", "mean_solar_zenith",
+           "sensing_time"]
 
 if __name__ == "__main__":
     ############### Parse commnd line args ###################
@@ -93,9 +93,27 @@ if __name__ == "__main__":
     
     merged_df = pd.concat([itv_data, ana_data, usgsi_data, usgs_data])
 
+    # Drop "problem" observations
+    bad_ssc = (merged_df["SSC (mg/L)"] == "--") |\
+              (merged_df["SSC (mg/L)"] == 0) |\
+              (merged_df["SSC (mg/L)"] == "0.0")
+
+    merged_df.drop(bad_ssc[bad_ssc].index, inplace=True)
+
+    # NOTE this is very hacky right now -- should revise/improve
+    bad_rgb = ((merged_df["sentinel-2-l2a_B02"] == 0) &\
+              (merged_df["sentinel-2-l2a_B03"] == 0) &\
+              (merged_df["sentinel-2-l2a_B04"] == 0)) |\
+                  ((merged_df["sentinel-2-l2a_B02"] > 15000) &\
+                   (merged_df["sentinel-2-l2a_B03"] > 15000) &\
+                   (merged_df["sentinel-2-l2a_B04"] > 15000))
+
+    merged_df.drop(bad_rgb[bad_rgb].index, inplace=True)       
     # write output
-    out_filepath = f"az://modeling-data/merged_training_dat_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
+    out_filepath = f"az://modeling-data/merged_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
     if out_filetype == "csv":
         merged_df.to_csv(out_filepath, storage_options=storage_options)
     elif out_filetype == "json":
         merged_df.to_json(out_filepath, storage_options=storage_options)
+    
+    print(f"Done. Outputs written to {out_filepath}")

@@ -587,7 +587,6 @@ class WaterStation:
                             img_trans, # since it was resampled, proj is equal
                             "data/chips",
                             blob_root_dir,
-                            self.site_no,
                             f"{scene_query['sample_id']}_{scene_query['Date-Time']}_water"
                         )
                         self.write_chip_to_blob(
@@ -596,7 +595,6 @@ class WaterStation:
                             img_trans,
                             "data/chips",
                             blob_root_dir,
-                            self.site_no,
                             f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
                         )
                 else: #no water pixels detected
@@ -640,8 +638,7 @@ class WaterStation:
             img_transform,
             local_root_dir,
             blob_root_dir,
-            site_no,
-            sample_id, # sample_id = f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
+            sample_id
         ):
         img = np.moveaxis(array, -1, 0)
         h = img.shape[1]

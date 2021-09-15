@@ -3,7 +3,8 @@ import os
 import pandas as pd
 import argparse
 
-COLUMNS = ["data_src", "sample_id", "Date-Time", "Date", "Date-Time_Remote", "SSC (mg/L)", 
+COLUMNS = ["data_src", "sample_id", "Date-Time", "Date", 
+           "Date-Time_Remote", "SSC (mg/L)", "Q (m3/s)",
            "InSitu_Satellite_Diff", "Chip Cloud Pct", "sentinel-2-l2a_AOT",
            "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
            "sentinel-2-l2a_B08", "sentinel-2-l2a_WVP", "sentinel-2-l2a_B05",
@@ -53,8 +54,9 @@ if __name__ == "__main__":
     try:
         itv_path = f"az://modeling-data/itv-data/merged_station_data_buffer{args.buffer_distance}m_daytol{args.day_tolerance}_cloudthr{args.cloud_thr}percent.csv"
         itv_data = pd.read_csv(itv_path, storage_options=storage_options)\
-            .rename(columns={"SSC (mg/l)": "SSC (mg/L)"})\
-            .assign(data_src = "itv")[COLUMNS].dropna()
+            .rename(columns={"SSC (mg/l)": "SSC (mg/L)",
+                             "Q (m³/s)": "Q (m3/s)"})\
+            .assign(data_src="itv")[COLUMNS].dropna()
     except:
         print(f"Error: Bad filepath: {itv_path}")
         print(f"No ITV dataset with buffer {args.buffer_distance}m, day tolerance {args.day_tolerance}, and cloud threshold {args.cloud_thr}")
@@ -62,8 +64,10 @@ if __name__ == "__main__":
     try:
         ana_path = f"az://modeling-data/ana-data/merged_station_data_buffer{args.buffer_distance}m_daytol{args.day_tolerance}_cloudthr{args.cloud_thr}percent.csv"
         ana_data = pd.read_csv(ana_path, storage_options=storage_options)\
-            .rename(columns={"Suspended Sediment Concentration (mg/L)": "SSC (mg/L)"})\
-            .assign(data_src = "ana")[COLUMNS].dropna()
+            .rename(columns={
+                "Suspended Sediment Concentration (mg/L)": "SSC (mg/L)",
+                "Discharge": "Q (m3/s)"})\
+            .assign(data_src="ana")[COLUMNS].dropna()
     except:
         print(f"Error: Bad filepath: {ana_path}")
         print(f"No ANA dataset with buffer {args.buffer_distance}m, day tolerance {args.day_tolerance}, and cloud threshold {args.cloud_thr}")
@@ -71,9 +75,14 @@ if __name__ == "__main__":
     try:
         usgsi_path = f"az://modeling-data/usgsi-data/merged_station_data_buffer{args.buffer_distance}m_daytol{args.day_tolerance}_cloudthr{args.cloud_thr}percent.csv"
         usgsi_data = pd.read_csv(usgsi_path, storage_options=storage_options)\
+            .assign(cms=lambda x: x["Instantaneous computed discharge (cfs)_x"] / 35.314666721488588)\
             .rename(
-                columns={"Instantaneous suspended sediment (mg/L)": "SSC (mg/L)"}
-            ).assign(data_src = "usgsi")[COLUMNS].dropna()
+                columns={
+                    "Instantaneous suspended sediment (mg/L)": "SSC (mg/L)",
+                    "cms": "Q (m3/s)"
+                }
+            )\
+            .assign(data_src="usgsi")[COLUMNS].dropna()
     except:
         print(f"Error: Bad filepath: {usgsi_path}")
         print(f"No USGSI dataset with buffer {args.buffer_distance}m, day tolerance {args.day_tolerance}, and cloud threshold {args.cloud_thr}")
@@ -81,11 +90,13 @@ if __name__ == "__main__":
     try:
         usgs_path = f"az://modeling-data/usgs-data/merged_station_data_buffer{args.buffer_distance}m_daytol0_cloudthr{args.cloud_thr}percent.csv"
         usgs_data = pd.read_csv(usgs_path, storage_options=storage_options)\
+            .assign(cms=lambda x: x["Instantaneous computed discharge (cfs)"] / 35.314666721488588)\
             .rename(
                 columns={
-                    "Computed instantaneous suspended sediment (mg/L)": "SSC (mg/L)"
+                    "Computed instantaneous suspended sediment (mg/L)": "SSC (mg/L)",
+                    "cms": "Q (m3/s)"
                 }
-            ).assign(data_src = "usgs")[COLUMNS].dropna()
+            ).assign(data_src="usgs")[COLUMNS].dropna()
     except:
         print(f"Error: Bad filepath: {usgs_path}")
         print(f"No USGS dataset with buffer {args.buffer_distance}m and cloud threshold {args.cloud_thr}")

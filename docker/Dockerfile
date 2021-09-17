@@ -119,6 +119,11 @@ RUN pip3 install \
     lxml==4.6.3 \
     stackstac==0.2.1
 
+# Install azcopy
+RUN curl -L https://azcopyvnext.azureedge.net/release20210901/azcopy_linux_amd64_10.12.1.tar.gz > /tmp/azcopy.tar.gz
+RUN tar -xzvf azcopy.tar.gz && rm azcopy.tar.gz
+RUN ln -s /root/azcopy_linux_amd64_10.12.1/azcopy /usr/bin/azcopy
+
 #add vim bindings
 RUN mkdir -p $(jupyter --data-dir)/nbextensions &&\
      cd $(jupyter --data-dir)/nbextensions &&\

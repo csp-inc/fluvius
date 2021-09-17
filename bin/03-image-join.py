@@ -97,11 +97,10 @@ if __name__ == "__main__":
             # ds.station[station].write_tiles_to_blob(working_dirc='/tmp')
 
     stations = ds.df["site_no"]
-    cloud_threshold = [cloud_thr] * len(stations)
-    day_tol = [day_tolerance] * len(stations)
-
-    with futures.ThreadPoolExecutor(max_workers=1) as pool:
-        pool.map(get_station_feature_df, stations, cloud_threshold, day_tol)
+    cloud_threshold = cloud_thr
+    day_tol = day_tolerance
+    for station in stations:
+        get_station_feature_df(station, cloud_threshold, day_tol)
     
     ## Merge dataframes w/ feature data for all stations, write to blob storage
     print("Merging station feature dataframes and saving to blob storage.")

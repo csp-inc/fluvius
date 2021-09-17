@@ -25,6 +25,10 @@ if __name__ == "__main__":
         default="csv",\
         type=str,\
         help="filetype for saved merged dataframe (csv or json)")
+    parser.add_argument('--mask_method',\
+        default="lulc",\
+        type=str,\
+        help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
     args = parser.parse_args()
 
     ############### Setup ####################
@@ -46,8 +50,7 @@ if __name__ == "__main__":
                     'account_key':os.environ['BLOB_KEY']}
 
     try:
-        filepath = f"az://modeling-data/merged_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
-        filepath = f"az://modeling-data/merged_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
+        filepath = f"az://modeling-data/merged_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{args.mask_method}_masking.{out_filetype}"
         data = pd.read_csv(filepath, storage_options=storage_options)
     except:
         print(f"Error: no file at {filepath}")
@@ -79,7 +82,7 @@ if __name__ == "__main__":
     # now apply the train_test_validate_split function to each group
     partitioned = grouped.apply(lambda x: train_test_validate_split(x, [0.7, 0.15, 0.15]))
 
-    out_filepath = f"az://modeling-data/partitioned_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
+    out_filepath = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{args.mask_method}_masking.{out_filetype}"
 
     if out_filetype == "csv":
         partitioned.to_csv(out_filepath, storage_options=storage_options)

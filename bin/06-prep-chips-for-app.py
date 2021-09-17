@@ -18,7 +18,8 @@ storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
 
 chip_size = 500
 cloud_thr = 80
-write_chips = False
+write_chips = True
+mask_method = "lulc"
 rgb_min = 100
 rgb_max = 4000
 gamma = 0.7
@@ -31,7 +32,7 @@ with rio.Env(
     ):
     for data_src in ["itv", "ana", "usgsi", "usgs"]:
         fs = fsspec.filesystem("az", **storage_options)
-        chip_paths = fs.ls(f"modeling-data/chips/{chip_size}m_cloudthr{cloud_thr}/{data_src}")
+        chip_paths = fs.ls(f"modeling-data/chips/{chip_size}m_cloudthr{cloud_thr}_{mask_method}_masking/{data_src}")
         chip_obs = [x for x in chip_paths if "water" not in x]
         n_chip += len(chip_obs)
         for path in chip_obs:
@@ -50,7 +51,7 @@ with rio.Env(
                 qa_array = np.concatenate([rgb, water_rgb], axis = (1))^2
                 qa_img = Image.fromarray(qa_array, "RGB")
 
-            out_name = f"app/img/rgb_and_sclwater/{data_src}_{os.path.basename(path[:-4])}.png"
+            out_name = f"app/img/rgb_and_{mask_method}water/{data_src}_{os.path.basename(path[:-4])}.png"
 
             if write_chips:
                 with fs.open(out_name, "wb") as fn:

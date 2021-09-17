@@ -116,7 +116,8 @@ RUN pip3 install \
     pystac-client==0.2.0-beta.2 \
     scikit-learn==0.24.2 \
     imageio==2.9.0 \
-    lxml==4.6.3
+    lxml==4.6.3 \
+    stackstac==0.2.1
 
 #add vim bindings
 RUN mkdir -p $(jupyter --data-dir)/nbextensions &&\

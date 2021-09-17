@@ -42,6 +42,10 @@ if __name__ == "__main__":
         default=False,\
         type=bool,\
         help="Write chips to blob storage?")
+    parser.add_argument('--mask_method',\
+        default="lulc",\
+        type=str,\
+        help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
     args = parser.parse_args()
 
     #################  set up ####################
@@ -56,11 +60,11 @@ if __name__ == "__main__":
     
     cloud_thr = args.cloud_thr
     buffer_distance = args.buffer_distance
-    blob_dir = f"chips/{buffer_distance}m_cloudthr{cloud_thr}"
+    blob_dir = f"chips/{buffer_distance}m_cloudthr{cloud_thr}_{args.mask_method}_masking"
     ################### Begin ####################
 
     storage_options={'account_name':os.environ['ACCOUNT_NAME'],\
-                    'account_key':os.environ['BLOB_KEY']}
+                     'account_key':os.environ['BLOB_KEY']}
 
     fs = fsspec.filesystem('az',\
                             account_name=storage_options['account_name'],\
@@ -81,7 +85,7 @@ if __name__ == "__main__":
             ds.station[station].get_cloud_filtered_image_df(cloud_thr)
             ds.station[station].merge_image_df_with_samples(day_tol)
             ds.station[station].perform_chip_cloud_analysis()
-            ds.station[station].get_chip_features(args.write_chips, blob_dir)
+            ds.station[station].get_chip_features(args.write_chips, blob_dir, args.mask_method)
         if args.write_to_csv:
             sstation = str(station).zfill(8)
             outfilename = f'az://{ds.container}/stations/{sstation}/{sstation}_processed_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.csv'
@@ -111,8 +115,7 @@ if __name__ == "__main__":
         else:
             continue
 
-    outfileprefix = f"az://modeling-data/{ds.container}/merged_station_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent"
-
+    outfileprefix = f"az://modeling-data/{ds.container}/feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{args.mask_method}_masking"
+    
     df.to_csv(f"{outfileprefix}.csv", storage_options=storage_options)
-
     print("Done!")

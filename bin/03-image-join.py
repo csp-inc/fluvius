@@ -73,14 +73,17 @@ if __name__ == "__main__":
     ds.get_source_df()
     ds.apply_buffer_to_points(buffer_distance)
     
-    # Define a function for getting station feature data in parallel
-    def get_station_feature_df(station, cloud_thr, day_tol):
+    # Getting station feature data in for loop
+    stations = ds.df["site_no"]
+    cloud_threshold = cloud_thr
+    day_tol = day_tolerance
+    for station in stations:
         ds.get_station_data(station)
         ds.station[station].drop_bad_usgs_obs()
         ds.station[station].build_catalog()
         if ds.station[station].catalog is None:
             print(f"No matching images for station {station}. Skipping...")
-            return
+            continue
         else:
             ds.station[station].get_cloud_filtered_image_df(cloud_thr)
             ds.station[station].merge_image_df_with_samples(day_tol)
@@ -93,14 +96,6 @@ if __name__ == "__main__":
                 outfilename,index=False,
                 storage_options=ds.storage_options)
             print(f'wrote csv to {outfilename}')
-            # print('writing chips!')
-            # ds.station[station].write_tiles_to_blob(working_dirc='/tmp')
-
-    stations = ds.df["site_no"]
-    cloud_threshold = cloud_thr
-    day_tol = day_tolerance
-    for station in stations:
-        get_station_feature_df(station, cloud_threshold, day_tol)
     
     ## Merge dataframes w/ feature data for all stations, write to blob storage
     print("Merging station feature dataframes and saving to blob storage.")

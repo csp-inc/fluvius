@@ -87,6 +87,10 @@ if __name__ == "__main__":
         else:
             ds.station[station].get_cloud_filtered_image_df(cloud_thr)
             ds.station[station].merge_image_df_with_samples(day_tol)
+            if len(ds.station[station].merged_df) == 0:
+                print(f"No cloud-free images for station {station}. Skipping...")
+                continue
+                
             ds.station[station].perform_chip_cloud_analysis()
             ds.station[station].get_chip_features(args.write_chips, blob_dir, args.mask_method)
         if args.write_to_csv:

@@ -145,3 +145,6 @@ rstudio/
 # VSCode
 .vscode
 .vscode-server
+
+# Misc
+core

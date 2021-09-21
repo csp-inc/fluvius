@@ -712,10 +712,14 @@ class WaterStation:
         if not os.path.exists(f'{local_root_dir}/{self.data_source}'):
             os.makedirs(f'{local_root_dir}/{self.data_source}')
         out_name = f'{local_root_dir}/{self.data_source}/{sample_id}.tif'
-        blob_name = f'{blob_root_dir}/{self.data_source}/{sample_id}.tif'
+        blob_name = f'modeling-data/{blob_root_dir}/{self.data_source}/{sample_id}.tif'
+        
         with rio.open(out_name, 'w', **img_meta) as dest:
             dest.write(img)
-        self.upload_local_to_blob(out_name, blob_name)
+        
+        fs = fsspec.filesystem("az", os.environ["ACCOUNT_NAME"], os.environ["BLOB_KEY"])
+        fs.put_file(out_name, blob_name, overwrite=True)
+        # self.upload_local_to_blob(out_name, blob_name)
 
 
     def visualize_chip(self, sample_id):

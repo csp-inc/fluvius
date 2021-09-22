@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
+from scipy.ndimage.filters import generic_filter as gf
 
 def train_test_validate_split(df, proportions, part_colname = "partition"):
     """
@@ -334,3 +335,50 @@ def plot_obs_predict(obs_pred, title, savefig=False, outfn=""):
             facecolor="#FFFFFF",
             dpi=150
         )
+
+def denoise(image, operation = "erosion", kernel_size = 3, iterations = 1):
+
+    """
+    Morphological operations
+
+    Keyword arguments:
+    image -- the image 
+    operation -- the morphological operators (default erosion)
+    kernel_size -- the size of the matrix with which image is convolved (default 3)
+    iterations -- the number of times the operator is applied (default 1)
+    """
+
+    operations = ["erosion", "dilation", "opening", "closing"]
+    if operation not in operations:
+        raise ValueError("Invalid operation type. Expected one of: %s" % operations)
+    if (kernel_size % 2) == 0:
+        raise ValueError("The kernel must be of odd size (e.g., 3, 5, 7)")
+
+    # Create a square matrix of size `kernel_size` as the kernel
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+
+    def erode(image, kernel = kernel, iterations = iterations):
+        for _ in range(iterations):
+            image = gf(image, np.min, footprint = kernel)
+        return image
+
+    def dilate(image, kernel = kernel, iterations = iterations):
+        for _ in range(iterations):
+            image = gf(image, np.max, footprint=kernel)
+        return image
+
+    print("Performing %s" % operation)
+    if operation == "erosion":
+        return erode(image)
+    elif operation == "dilation":
+        return dilate(image)
+    elif operation == "opening": 
+        # opening: the dilation of the erosion
+        arr = dilate(erode(image))
+        arr[image != 1] = 0
+        return arr
+    else: 
+        # closing: the erosion of the dilation
+        arr = erode(dilate(image))
+        arr[image != 1] = 0
+        return arr

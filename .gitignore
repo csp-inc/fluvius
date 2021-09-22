@@ -146,10 +146,6 @@ rstudio/
 .vscode
 .vscode-server
 
-<<<<<<< HEAD
 # Misc
 core
-=======
-# OS miscellany
 .DS_Store
->>>>>>> main

@@ -40,18 +40,21 @@ def train_test_validate_split(df, proportions, part_colname = "partition"):
 
     return pd.concat([train, test, validate])
 
+
 def dates_to_julian(stddate):
     fmt='%Y-%m-%d'
     sdtdate = datetime.datetime.strptime(stddate, fmt)
     sdtdate = sdtdate.timetuple()
     jdate = sdtdate.tm_yday
     return(jdate)
-                
+
+
 def url_to_img(url):
     response = requests.get(url, stream=True)
     response.raw.decode_content = True
     image = Image.open(response.raw)
     return image
+
 
 def local_to_blob(container, localfile, blobname, storage_options):
     account_url = f"https://{storage_options['account_name']}.blob.core.windows.net"
@@ -61,6 +64,7 @@ def local_to_blob(container, localfile, blobname, storage_options):
                 credential=storage_options['account_key'])
     with open(f"{localfile}", "rb") as out_blob:
         blob_data = blobclient.upload_blob(out_blob, overwrite=True)
+
 
 def generate_map(df, lat_colname='Latitude', lon_colname='Longitude'):
     '''
@@ -88,6 +92,10 @@ def generate_map(df, lat_colname='Latitude', lon_colname='Longitude'):
     return plot_map
 
 
+class ModelArchitectureError(Exception):
+    pass
+
+
 def fit_mlp(
         features,
         learning_rate,
@@ -98,8 +106,14 @@ def fit_mlp(
         day_tolerance=8,
         cloud_thr=80,
         mask_method="lulc",
-        min_water_pixels=1
+        min_water_pixels=1,
+        n_layers=3,
+        layer_out_neurons=[24, 12, 6]
     ):
+
+    if len(layer_out_neurons) != n_layers:
+        raise ModelArchitectureError("len(layer_out_neurons) must be equal to n_layers")
+    
     fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method}_masking.csv"
     data = pd.read_csv(fp, storage_options=storage_options)
 
@@ -161,29 +175,41 @@ def fit_mlp(
     val_loader = DataLoader(dataset=val_dataset, batch_size=1)
     test_loader = DataLoader(dataset=test_dataset, batch_size=1)
     itv_loader = DataLoader(dataset=itv_dataset, batch_size=1)
-    class MultipleRegression(nn.Module):
-        def __init__(self, num_features):
-            super(MultipleRegression, self).__init__()
-            
-            self.layer_1 = nn.Linear(num_features, 24)
-            self.layer_2 = nn.Linear(24, 48)
-            self.layer_3 = nn.Linear(48, 12)
-            self.layer_4 = nn.Linear(12, 6)
-            self.layer_out = nn.Linear(6, 1)
-            
-            self.relu = nn.ReLU()
-
-        def forward(self, inputs):
-            x = self.relu(self.layer_1(inputs))
-            x = self.relu(self.layer_2(x))
-            x = self.relu(self.layer_3(x))
-            x = self.relu(self.layer_4(x))
-            x = self.layer_out(x)
-            return (x)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = MultipleRegression(num_features)
+    class MultipleRegression(nn.Module):
+        def __init__(self, num_features, n_layers, layer_out_neurons):
+            super(MultipleRegression, self).__init__()
+            self.n_layers = n_layers
+            self.layer_out_neurons = layer_out_neurons
+
+            most_recent_n_neurons = layer_out_neurons[0]
+            self.layer_1 = nn.Linear(num_features, layer_out_neurons[0])
+
+            for i in range(2, n_layers + 1):
+                setattr(
+                    self,
+                    f"layer_{i}",
+                    nn.Linear(layer_out_neurons[i-2], layer_out_neurons[i-1])
+                )
+                most_recent_n_neurons = layer_out_neurons[i-1]
+
+            self.layer_out = nn.Linear(most_recent_n_neurons, 1)
+            self.relu = nn.ReLU()
+
+
+        def forward(self, inputs):
+            x = self.relu(self.layer_1(inputs))
+            for i in range(2, self.n_layers + 1):
+                x = self.relu(getattr(self, f"layer_{i}")(x))
+            
+            x = self.layer_out(x)
+
+            return (x)
+
+
+    model = MultipleRegression(num_features, n_layers, layer_out_neurons)
     model.to(device)
 
     criterion = nn.MSELoss()
@@ -296,6 +322,8 @@ def fit_mlp(
         "features": features,
         "learning_rate": learning_rate,
         "batch_size": batch_size,
+        "n_layers": n_layers,
+        "layer_out_neurons": layer_out_neurons,
         "loss_stats": loss_stats,
         "epochs": epochs,
         "test_obs_predict": pd.DataFrame({
@@ -319,6 +347,7 @@ def fit_mlp(
     }
     
     return output
+
 
 def plot_obs_predict(obs_pred, title, savefig=False, outfn=""):
     plt.figure(figsize=(8,8))

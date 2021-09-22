@@ -145,3 +145,6 @@ rstudio/
 # VSCode
 .vscode
 .vscode-server
+
+# OS miscellany
+.DS_Store

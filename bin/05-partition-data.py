@@ -25,6 +25,10 @@ if __name__ == "__main__":
         default="csv",\
         type=str,\
         help="filetype for saved merged dataframe (csv or json)")
+    parser.add_argument('--mask_method',\
+        default="lulc",\
+        type=str,\
+        help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
     args = parser.parse_args()
 
     ############### Setup ####################
@@ -46,8 +50,7 @@ if __name__ == "__main__":
                     'account_key':os.environ['BLOB_KEY']}
 
     try:
-        filepath = f"az://modeling-data/merged_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
-        filepath = f"az://modeling-data/merged_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
+        filepath = f"az://modeling-data/merged_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{args.mask_method}_masking.{out_filetype}"
         data = pd.read_csv(filepath, storage_options=storage_options)
     except:
         print(f"Error: no file at {filepath}")
@@ -55,7 +58,7 @@ if __name__ == "__main__":
     ## Add variables for stratifying data partition
     # SSC Quartile
     ssc = np.array(data["SSC (mg/L)"])
-    ssc_quantiles = np.quantile(ssc, [0, 0.5])
+    ssc_quantiles = np.quantile(ssc, [0, 0.25, 0.5, 0.75])
     ssc_quantile_bin = np.digitize(ssc, ssc_quantiles)
 
     # year
@@ -71,15 +74,15 @@ if __name__ == "__main__":
     data["Season"] = np.digitize(np.array(data["julian"]), 366/2 * np.array([0, 1]))
     data["sine_julian"] = np.sin(2*np.pi*data["julian"]/365)
     data["is_brazil"] = 0
-    data["is_brazil"][(data["data_src"] == "itv") | (data["data_src"] == "ana")] = 1
+    data.loc[data["data_src"].isin(["itv", "ana"]), "is_brazil"] = 1
 
     ## Partition the data into train, test, validate
     # First split data into groups to ensure stratified
-    grouped = data.groupby(by = ["SSC Quantile", "Season", "data_src"], group_keys=False)
+    grouped = data.groupby(by = ["SSC Quantile", "data_src"], group_keys=False)
     # now apply the train_test_validate_split function to each group
     partitioned = grouped.apply(lambda x: train_test_validate_split(x, [0.7, 0.15, 0.15]))
 
-    out_filepath = f"az://modeling-data/partitioned_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.{out_filetype}"
+    out_filepath = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{args.mask_method}_masking.{out_filetype}"
 
     if out_filetype == "csv":
         partitioned.to_csv(out_filepath, storage_options=storage_options)

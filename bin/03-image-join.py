@@ -5,7 +5,6 @@ from src.fluvius import WaterData
 import fsspec
 import pandas as pd
 import argparse
-from concurrent import futures
 import matplotlib as plt
 
 # Set the environment variable PC_SDK_SUBSCRIPTION_KEY, or set it here.
@@ -42,6 +41,10 @@ if __name__ == "__main__":
         default=False,\
         type=bool,\
         help="Write chips to blob storage?")
+    parser.add_argument('--mask_method',\
+        default="lulc",\
+        type=str,\
+        help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
     args = parser.parse_args()
 
     #################  set up ####################
@@ -56,32 +59,39 @@ if __name__ == "__main__":
     
     cloud_thr = args.cloud_thr
     buffer_distance = args.buffer_distance
-    blob_dir = f"chips/{buffer_distance}m_cloudthr{cloud_thr}"
+    blob_dir = f"modeling-data/chips/{buffer_distance}m_cloudthr{cloud_thr}_{args.mask_method}_masking"
     ################### Begin ####################
 
-    storage_options={'account_name':os.environ['ACCOUNT_NAME'],\
-                    'account_key':os.environ['BLOB_KEY']}
+    storage_options={'account_name':os.environ['ACCOUNT_NAME'],
+                     'account_key':os.environ['BLOB_KEY']}
 
-    fs = fsspec.filesystem('az',\
-                            account_name=storage_options['account_name'],\
-                            account_key=storage_options['account_key'])  
+    fs = fsspec.filesystem('az',
+                            account_name=os.environ['ACCOUNT_NAME'],
+                            account_key=os.environ['BLOB_KEY'])  
     ds = WaterData(data_source, container, storage_options)
     ds.get_source_df()
     ds.apply_buffer_to_points(buffer_distance)
     
-    # Define a function for getting station feature data in parallel
-    def get_station_feature_df(station, cloud_thr, day_tol):
+    # Getting station feature data in for loop
+    stations = ds.df["site_no"]
+    cloud_threshold = cloud_thr
+    day_tol = day_tolerance
+    for station in stations:
         ds.get_station_data(station)
         ds.station[station].drop_bad_usgs_obs()
         ds.station[station].build_catalog()
         if ds.station[station].catalog is None:
             print(f"No matching images for station {station}. Skipping...")
-            return
+            continue
         else:
             ds.station[station].get_cloud_filtered_image_df(cloud_thr)
             ds.station[station].merge_image_df_with_samples(day_tol)
+            if len(ds.station[station].merged_df) == 0:
+                print(f"No cloud-free images for station {station}. Skipping...")
+                continue
+                
             ds.station[station].perform_chip_cloud_analysis()
-            ds.station[station].get_chip_features(args.write_chips, blob_dir)
+            ds.station[station].get_chip_features(args.write_chips, blob_dir, args.mask_method)
         if args.write_to_csv:
             sstation = str(station).zfill(8)
             outfilename = f'az://{ds.container}/stations/{sstation}/{sstation}_processed_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.csv'
@@ -89,15 +99,6 @@ if __name__ == "__main__":
                 outfilename,index=False,
                 storage_options=ds.storage_options)
             print(f'wrote csv to {outfilename}')
-            # print('writing chips!')
-            # ds.station[station].write_tiles_to_blob(working_dirc='/tmp')
-
-    stations = ds.df["site_no"]
-    cloud_threshold = [cloud_thr] * len(stations)
-    day_tol = [day_tolerance] * len(stations)
-
-    with futures.ThreadPoolExecutor(max_workers=1) as pool:
-        pool.map(get_station_feature_df, stations, cloud_threshold, day_tol)
     
     ## Merge dataframes w/ feature data for all stations, write to blob storage
     print("Merging station feature dataframes and saving to blob storage.")
@@ -111,8 +112,7 @@ if __name__ == "__main__":
         else:
             continue
 
-    outfileprefix = f"az://modeling-data/{ds.container}/merged_station_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent"
-
+    outfileprefix = f"az://modeling-data/{ds.container}/feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{args.mask_method}_masking"
+    
     df.to_csv(f"{outfileprefix}.csv", storage_options=storage_options)
-
     print("Done!")

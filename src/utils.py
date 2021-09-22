@@ -89,17 +89,18 @@ def generate_map(df, lat_colname='Latitude', lon_colname='Longitude'):
 
 
 def fit_mlp(
-        buffer_distance,
-        day_tolerance,
-        cloud_thr,
-        min_water_pixels,
         features,
         learning_rate,
         batch_size,
         epochs,
-        storage_options
+        storage_options,
+        buffer_distance=500,
+        day_tolerance=8,
+        cloud_thr=80,
+        mask_method="lulc",
+        min_water_pixels=1
     ):
-    fp = f"az://modeling-data/partitioned_training_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.csv"
+    fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method}_masking.csv"
     data = pd.read_csv(fp, storage_options=storage_options)
 
     not_enough_water = data["n_water_pixels"] <= min_water_pixels
@@ -156,7 +157,7 @@ def fit_mlp(
     num_features = X_test.shape[1]
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-    # train_loader_all = DataLoader(dataset=train_dataset, batch_size=1)
+    train_loader_all = DataLoader(dataset=train_dataset, batch_size=1)
     val_loader = DataLoader(dataset=val_dataset, batch_size=1)
     test_loader = DataLoader(dataset=test_dataset, batch_size=1)
     itv_loader = DataLoader(dataset=itv_dataset, batch_size=1)
@@ -264,6 +265,17 @@ def fit_mlp(
     test_pred_list = [a.squeeze().tolist() for a in test_pred_list]
     test_mse = mean_squared_error(test_pred_list, y_test)
     test_r_squared = r2_score(test_pred_list, y_test)
+
+    train_pred_list = []
+    with torch.no_grad():
+        model.eval()
+        for X_batch, _ in train_loader_all:
+            X_batch = X_batch.to(device)
+            y_pred = model(X_batch)
+            train_pred_list.append(y_pred.cpu().numpy())
+    train_pred_list = [a.squeeze().tolist() for a in train_pred_list]
+    train_mse = mean_squared_error(train_pred_list, y_train)
+    train_r_squared = r2_score(train_pred_list, y_train)
     
     itv_pred_list = []
     with torch.no_grad():
@@ -292,6 +304,12 @@ def fit_mlp(
         }),
         "test_mse": test_mse,
         "test_R2": test_r_squared,
+        "train_obs_predict": pd.DataFrame({
+            "Train set predictions": train_pred_list,
+            "Train set observations": y_train
+        }),
+        "train_mse": train_mse,
+        "train_R2": train_r_squared,
         "itv_obs_predict": pd.DataFrame({
             "Test set predictions": itv_pred_list,
             "Test set observations": y_itv,

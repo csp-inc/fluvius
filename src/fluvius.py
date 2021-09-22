@@ -6,12 +6,10 @@ from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 #data processing libraries
-from shapely.geometry import Point
 import fsspec
 import os
 import folium
 import time
-import re
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -20,15 +18,16 @@ from rasterio import features
 from rasterio import warp
 from rasterio import windows
 from rasterio.enums import Resampling
-import concurrent.futures
 from PIL import Image
 import matplotlib.pyplot as plt
 #planetary computer libraries
 from pystac_client import Client
+from pystac.extensions.projection import ProjectionExtension as proj
+from pystac.extensions.raster import RasterExtension as raster
 import planetary_computer as pc
 from pystac.extensions.eo import EOExtension as eo
 from azure.storage.blob import BlobClient
-import traceback
+import stackstac
 
 BANDS_10M = ['AOT', 'B02', 'B03', 'B04', 'B08', 'WVP']
 BANDS_20M = ['B05', 'B06', 'B07', 'B8A', 'B11']
@@ -418,28 +417,35 @@ class WaterStation:
         self.total_matched_images = len(self.merged_df)
                    
     def get_scl_chip(self, signed_url, return_meta_transform=False):
-        with rio.open(signed_url) as ds:    
-            aoi_bounds = features.bounds(self.area_of_interest)
-            warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
-            self.scl_window = windows.from_bounds(
-                transform=ds.transform,
-                *warped_aoi_bounds
-            ).round_lengths()
-            band_data = ds.read(window=self.scl_window)
+        with rio.open(signed_url) as ds:
+            if not hasattr(self, 'window_20m'):
+                aoi_bounds = features.bounds(self.area_of_interest)
+                warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
+                self.window_20m = windows.from_bounds(
+                    transform=ds.transform,
+                    *warped_aoi_bounds
+                ).round_lengths()
+
+            band_data = ds.read(
+                window=self.window_20m,
+                out_shape=(
+                    self.window_20m.height * 2,
+                    self.window_20m.width * 2
+                )
+            )
             scl = band_data[0]
             if return_meta_transform:
                 out_meta = ds.meta
-                out_transform = ds.window_transform(self.scl_window)
+                out_transform = ds.window_transform(self.window_20m)
                 return scl, out_meta, out_transform
             return scl
 
     def get_visual_chip(self, signed_url, return_meta_transform=False):
-        with rio.open(signed_url) as ds:    
+        with rio.open(signed_url) as ds:
             aoi_bounds = features.bounds(self.area_of_interest)
             warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
             aoi_window = windows.from_bounds(transform=ds.transform, *warped_aoi_bounds)
             band_data = ds.read(window=aoi_window)
-            self.chip_shape_10m = tuple([1] + list(band_data.shape[1:3])) # need 1st dim to be one since other chips are one band
             img = Image.fromarray(np.transpose(band_data, axes=[1, 2, 0]))
             if return_meta_transform:
                 out_meta = ds.meta
@@ -447,6 +453,33 @@ class WaterStation:
                 return img, out_meta, out_transform
             return img
 
+    def get_io_lulc_chip(self):
+        catalog = Client.open("https://planetarycomputer.microsoft.com/api/stac/v1")
+        search = catalog.search(
+            collections=["io-lulc"],
+            intersects=self.area_of_interest
+        )
+        item = next(search.get_items())
+        epsg = proj.ext(item).epsg
+        nodata = raster.ext(item.assets["data"]).bands[0].nodata
+        aoi_bounds = features.bounds(self.area_of_interest)
+        items = [pc.sign(item).to_dict() for item in search.get_items()]
+        stack = stackstac.stack(
+            items, epsg=epsg, dtype=np.ubyte, fill_value=nodata, bounds_latlon=aoi_bounds
+        )
+
+        merged = stackstac.mosaic(
+            stack,
+            dim="time",
+            axis=None
+        ).squeeze().compute().values
+
+        lulc_img = Image.fromarray(merged).resize(
+            (self.window_20m.height * 2, self.window_20m.width * 2),
+            Image.NEAREST
+        )
+        return np.array(lulc_img)
+    
     def get_spectral_chip(self, hrefs_10m, hrefs_20m, return_meta_transform=False):
         """
         Returns an image with one or more bands along the 3rd dimension from a signed url (one for each band)
@@ -454,33 +487,44 @@ class WaterStation:
             hrefs_10m (list): hrefs for the 10 meter Sentinel bands
             hrefs_20m (list): hrefs for the 20 meter Sentinel bands
         """
+        band_data_20m = list()
+        for href in hrefs_20m:
+            signed_href = pc.sign(href)
+            with rio.open(signed_href) as ds:
+                if not hasattr(self, 'window_20m'):
+                    aoi_bounds = features.bounds(self.area_of_interest)
+                    warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
+                    self.window_20m = windows.from_bounds(
+                        transform=ds.transform,
+                        *warped_aoi_bounds).round_lengths()
+                
+                band_data_20m.append(
+                    ds.read(
+                        window=self.window_20m,
+                        out_shape=(
+                            self.window_20m.height * 2,
+                            self.window_20m.width * 2
+                            ),
+                        resampling=Resampling.nearest
+                    )
+                )
+        
         band_data_10m = list()
         for href in hrefs_10m:
             signed_href = pc.sign(href)
             with rio.open(signed_href) as ds:
                 aoi_window = windows.Window(
-                    self.scl_window.col_off * 2,
-                    self.scl_window.row_off * 2,
-                    self.scl_window.width * 2,
-                    self.scl_window.height * 2
+                    self.window_20m.col_off * 2,
+                    self.window_20m.row_off * 2,
+                    self.window_20m.width * 2,
+                    self.window_20m.height * 2
                 )
                 band_data_10m.append(ds.read(window=aoi_window))
                 if href == hrefs_10m[-1] and return_meta_transform:
                     out_meta = ds.meta
                     out_transform = ds.window_transform(aoi_window)
-        
-        self.chip_shape_10m = band_data_10m[0].shape
-
-        band_data_20m = list()
-        for href in hrefs_20m:
-            signed_href = pc.sign(href)
-            with rio.open(signed_href) as ds:
-                band_data_20m.append(ds.read(out_shape=self.chip_shape_10m,
-                                             window=self.scl_window,
-                                             resampling=Resampling.nearest))
 
         bands_array = np.transpose(np.concatenate(band_data_10m + band_data_20m, axis=0), axes=[1, 2, 0])
-
         if return_meta_transform:
             return bands_array, out_meta, out_transform
         else:
@@ -552,11 +596,17 @@ class WaterStation:
                 except:
                     print(f'{visual_href} returned {522}', file=f)
 
-    def get_chip_features(self, write_chips_to_blob=False, blob_root_dir=""):
+    def get_chip_features(
+            self, 
+            write_chips_to_blob=False,
+            blob_root_dir="",
+            mask_method="lulc" # one of "lulc" or "scl". "lulc" also removes clouds using scl
+        ):
         reflectances = []
         n_water_pixels = []
         metadata = []
-        for i,scene_query in self.merged_df.iterrows():
+
+        for i,scene_query in self.merged_df.reset_index().iterrows():
             print(f"Extracting features for sample {scene_query['sample_id']}")
             hrefs_10m = scene_query[[band + "-href" for band in BANDS_10M]]
             hrefs_20m = scene_query[[band + "-href" for band in BANDS_20M]]
@@ -565,29 +615,34 @@ class WaterStation:
             n_bands = len(hrefs_10m + hrefs_20m)
             try:
                 scl, scl_meta, scl_trans  = self.get_scl_chip(scl_href, True)
-                scl = Image.fromarray(scl)
-                # Resize scl (double its size to match img)
-                scl = np.array(scl.resize(tuple([x*2 for x in scl.size]), Image.NEAREST))
-                water_mask = ((scl==6) | (scl==2))
+
+                if mask_method == "scl":
+                    mask = (scl == 6)
+                elif mask_method == "lulc":
+                    if i == 0:
+                        lulc_water = (self.get_io_lulc_chip() == 1)
+                    scl_mask = ((scl < 8) & 
+                        ((scl != 3) & (scl != 1))) # removes clouds, cloud shadow,
+                                                   # snow, and defective pixels
+                    mask = (scl_mask & lulc_water)
+
                 # Excludes images with no water pixels
-                if np.any(water_mask):
+                if np.any(mask):
                     img, img_meta, img_trans = self.get_spectral_chip(hrefs_10m, hrefs_20m, True)
                     granule_metadata = self.get_chip_metadata(meta_href)
-                    masked_array = img[water_mask, :]
+                    masked_array = img[mask, :]
                     mean_ref = np.nanmean(masked_array, axis=0)
                     reflectances.append(mean_ref)
-                    n_water_pixels.append(np.sum(water_mask))
+                    n_water_pixels.append(np.sum(mask))
                     metadata.append(granule_metadata)
 
                     if write_chips_to_blob:
-                        print()
                         self.write_chip_to_blob(
-                            np.expand_dims(water_mask.astype(float),2),
+                            np.expand_dims(mask.astype(float),2),
                             scl_meta,
                             img_trans, # since it was resampled, proj is equal
                             "data/chips",
                             blob_root_dir,
-                            self.site_no,
                             f"{scene_query['sample_id']}_{scene_query['Date-Time']}_water"
                         )
                         self.write_chip_to_blob(
@@ -596,10 +651,10 @@ class WaterStation:
                             img_trans,
                             "data/chips",
                             blob_root_dir,
-                            self.site_no,
                             f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
                         )
                 else: #no water pixels detected
+                    print(f"No water pixels detected for {scene_query['sample_id']}. Skipping...")
                     reflectances.append([np.nan] * n_bands)
                     n_water_pixels.append(0)
                     metadata.append(EMPTY_METADATA_DICT)
@@ -640,8 +695,7 @@ class WaterStation:
             img_transform,
             local_root_dir,
             blob_root_dir,
-            site_no,
-            sample_id, # sample_id = f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
+            sample_id
         ):
         img = np.moveaxis(array, -1, 0)
         h = img.shape[1]
@@ -658,9 +712,13 @@ class WaterStation:
             os.makedirs(f'{local_root_dir}/{self.data_source}')
         out_name = f'{local_root_dir}/{self.data_source}/{sample_id}.tif'
         blob_name = f'{blob_root_dir}/{self.data_source}/{sample_id}.tif'
+        
         with rio.open(out_name, 'w', **img_meta) as dest:
             dest.write(img)
-        self.upload_local_to_blob(out_name, blob_name)
+        
+        fs = fsspec.filesystem("az", **self.storage_options)
+        fs.put_file(out_name, blob_name, overwrite=True)
+        # self.upload_local_to_blob(out_name, blob_name)
 
 
     def visualize_chip(self, sample_id):

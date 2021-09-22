@@ -59,15 +59,15 @@ if __name__ == "__main__":
     
     cloud_thr = args.cloud_thr
     buffer_distance = args.buffer_distance
-    blob_dir = f"chips/{buffer_distance}m_cloudthr{cloud_thr}_{args.mask_method}_masking"
+    blob_dir = f"modeling-data/chips/{buffer_distance}m_cloudthr{cloud_thr}_{args.mask_method}_masking"
     ################### Begin ####################
 
-    storage_options={'account_name':os.environ['ACCOUNT_NAME'],\
+    storage_options={'account_name':os.environ['ACCOUNT_NAME'],
                      'account_key':os.environ['BLOB_KEY']}
 
-    fs = fsspec.filesystem('az',\
-                            account_name=storage_options['account_name'],\
-                            account_key=storage_options['account_key'])  
+    fs = fsspec.filesystem('az',
+                            account_name=os.environ['ACCOUNT_NAME'],
+                            account_key=os.environ['BLOB_KEY'])  
     ds = WaterData(data_source, container, storage_options)
     ds.get_source_df()
     ds.apply_buffer_to_points(buffer_distance)

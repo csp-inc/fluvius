@@ -58,7 +58,7 @@ if __name__ == "__main__":
     ## Add variables for stratifying data partition
     # SSC Quartile
     ssc = np.array(data["SSC (mg/L)"])
-    ssc_quantiles = np.quantile(ssc, [0, 0.5])
+    ssc_quantiles = np.quantile(ssc, [0, 0.25, 0.5, 0.75])
     ssc_quantile_bin = np.digitize(ssc, ssc_quantiles)
 
     # year
@@ -74,11 +74,11 @@ if __name__ == "__main__":
     data["Season"] = np.digitize(np.array(data["julian"]), 366/2 * np.array([0, 1]))
     data["sine_julian"] = np.sin(2*np.pi*data["julian"]/365)
     data["is_brazil"] = 0
-    data["is_brazil"][(data["data_src"] == "itv") | (data["data_src"] == "ana")] = 1
+    data.loc[data["data_src"].isin(["itv", "ana"]), "is_brazil"] = 1
 
     ## Partition the data into train, test, validate
     # First split data into groups to ensure stratified
-    grouped = data.groupby(by = ["SSC Quantile", "Season", "data_src"], group_keys=False)
+    grouped = data.groupby(by = ["SSC Quantile", "data_src"], group_keys=False)
     # now apply the train_test_validate_split function to each group
     partitioned = grouped.apply(lambda x: train_test_validate_split(x, [0.7, 0.15, 0.15]))
 

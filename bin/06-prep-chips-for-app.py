@@ -25,7 +25,8 @@ rgb_max = 4000
 gamma = 0.7
 
 chip_metadata = pd.DataFrame(columns=["region", "site_no", "sample_id", "Date-Time", "rgb_and_water_png_href"])
-n_chip = 0
+
+n_chip = 0 # initialize
 with rio.Env(
         AZURE_STORAGE_ACCOUNT=os.environ["ACCOUNT_NAME"],
         AZURE_STORAGE_ACCESS_KEY=os.environ["BLOB_KEY"]
@@ -77,7 +78,7 @@ with rio.Env(
 
 ## Merge reflectance and response data to image chip hrefs
 model_data = pd.read_csv(
-    f"az://modeling-data/merged_training_data_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent.csv",
+    f"az://modeling-data/merged_feature_data_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mask_method}_masking.csv",
     storage_options=storage_options
 ).assign(region=lambda x: x.data_src).assign(site_no=lambda x: [sp.split("_")[0] for sp in x.sample_id]).reset_index()
 
@@ -96,4 +97,4 @@ chips_without_features = pd.concat(chips_without_features, axis=0)
 # missing_from_chip = all_data.iloc[missing,].sample_id
 
 
-## all_data.to_json("az://app/fluvius_data_v2_missing_chips.json", storage_options=storage_options)
+all_data.to_json("az://app/fluvius_data_v2.json", storage_options=storage_options)

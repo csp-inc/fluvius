@@ -214,7 +214,7 @@ def fit_mlp(
 
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=300, gamma=0.2)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.2)
 
     loss_stats = {
         "train": [],
@@ -281,16 +281,16 @@ def fit_mlp(
     # plt.legend()
     # plt.savefig("/content/figs/MLP_prelim_results/loss_curves.png", bbox_inches="tight", facecolor="#FFFFFF", dpi=150)
 
-    test_pred_list = []
+    val_pred_list = []
     with torch.no_grad():
         model.eval()
         for X_batch, _ in test_loader:
             X_batch = X_batch.to(device)
             y_pred = model(X_batch)
-            test_pred_list.append(y_pred.cpu().numpy())
-    test_pred_list = [a.squeeze().tolist() for a in test_pred_list]
-    test_mse = mean_squared_error(test_pred_list, y_test)
-    test_r_squared = r2_score(test_pred_list, y_test)
+            val_pred_list.append(y_pred.cpu().numpy())
+    val_pred_list = [a.squeeze().tolist() for a in val_pred_list]
+    val_mse = mean_squared_error(val_pred_list, y_val)
+    val_r_squared = r2_score(val_pred_list, y_val)
 
     train_pred_list = []
     with torch.no_grad():
@@ -327,11 +327,11 @@ def fit_mlp(
         "loss_stats": loss_stats,
         "epochs": epochs,
         "test_obs_predict": pd.DataFrame({
-            "Test set predictions": test_pred_list,
-            "Test set observations": y_test
+            "Validation set predictions": val_pred_list,
+            "Validation set observations": y_test
         }),
-        "test_mse": test_mse,
-        "test_R2": test_r_squared,
+        "val_mse": val_mse,
+        "val_R2": val_r_squared,
         "train_obs_predict": pd.DataFrame({
             "Train set predictions": train_pred_list,
             "Train set observations": y_train
@@ -339,8 +339,8 @@ def fit_mlp(
         "train_mse": train_mse,
         "train_R2": train_r_squared,
         "itv_obs_predict": pd.DataFrame({
-            "Test set predictions": itv_pred_list,
-            "Test set observations": y_itv,
+            "ITV set predictions": itv_pred_list,
+            "ITV set observations": y_itv,
         }),
         "itv_mse": itv_mse,
         "itv_R2": itv_r_squared

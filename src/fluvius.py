@@ -427,13 +427,12 @@ class WaterStation:
                    
     def get_scl_chip(self, signed_url, return_meta_transform=False):
         with rio.open(signed_url) as ds:
-            if not hasattr(self, 'window_20m'):
-                aoi_bounds = features.bounds(self.area_of_interest)
-                warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
-                self.window_20m = windows.from_bounds(
-                    transform=ds.transform,
-                    *warped_aoi_bounds
-                ).round_lengths()
+            aoi_bounds = features.bounds(self.area_of_interest)
+            warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
+            self.window_20m = windows.from_bounds(
+                transform=ds.transform,
+                *warped_aoi_bounds
+            ).round_lengths()
 
             band_data = ds.read(
                 window=self.window_20m,
@@ -500,12 +499,11 @@ class WaterStation:
         for href in hrefs_20m:
             signed_href = pc.sign(href)
             with rio.open(signed_href) as ds:
-                if not hasattr(self, 'window_20m'):
-                    aoi_bounds = features.bounds(self.area_of_interest)
-                    warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
-                    self.window_20m = windows.from_bounds(
-                        transform=ds.transform,
-                        *warped_aoi_bounds).round_lengths()
+                aoi_bounds = features.bounds(self.area_of_interest)
+                warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
+                self.window_20m = windows.from_bounds(
+                    transform=ds.transform,
+                    *warped_aoi_bounds).round_lengths()
                 
                 band_data_20m.append(
                     ds.read(

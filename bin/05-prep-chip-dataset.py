@@ -20,8 +20,8 @@ storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
 
 chip_size = 500
 cloud_thr = 80
-write_chips_blob = False
-write_chips_local = False
+write_chips_blob = True
+write_chips_local = True
 mask_method = "lulc"
 rgb_min = 100
 rgb_max = 4000
@@ -109,6 +109,8 @@ all_data.insert(2, "site_no", site_no)
 all_data.to_csv(f"az://modeling-data/fluvius_data_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mask_method}_masking.csv.json", storage_options=storage_options)
 
 ### Prep JSON for app
+site_metadata = pd.read_csv("az://app/station_metadata.csv", storage_options=storage_options)
+
 sites = all_data.site_no.unique()
 out_dicts = []
 for site in sites:
@@ -135,14 +137,16 @@ for site in sites:
             "rgb_water_chip_href": row["rgb_and_water_png_href"]#,
             #"raw_img_chip": row["raw_img_chip_href"]
         })
-
+    
     out_dicts.append({
         "region": row["region"],
         "site_no": site,
-        "Longitude": str(lon),
-        "Latitude": str(lat),
+        "site_name": [x["site_name"] for i,x in site_metadata.iterrows() if x["site_no"].zfill(8) == site][0],
+        "Longitude": lon,
+        "Latitude": lat,
         "sample_data": samples
     })
+
 
 with fs.open('app/all_data_v2.json', 'w') as fn:
     json.dump(out_dicts, fn)

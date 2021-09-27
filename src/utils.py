@@ -284,7 +284,7 @@ def fit_mlp(
     val_pred_list = []
     with torch.no_grad():
         model.eval()
-        for X_batch, _ in test_loader:
+        for X_batch, _ in val_loader:
             X_batch = X_batch.to(device)
             y_pred = model(X_batch)
             val_pred_list.append(y_pred.cpu().numpy())
@@ -326,9 +326,9 @@ def fit_mlp(
         "layer_out_neurons": layer_out_neurons,
         "loss_stats": loss_stats,
         "epochs": epochs,
-        "test_obs_predict": pd.DataFrame({
+        "val_obs_predict": pd.DataFrame({
             "Validation set predictions": val_pred_list,
-            "Validation set observations": y_test
+            "Validation set observations": y_val
         }),
         "val_mse": val_mse,
         "val_R2": val_r_squared,

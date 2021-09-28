@@ -48,12 +48,6 @@ if __name__ == "__main__":
     
     fs = fsspec.filesystem("az", **storage_options)
 
-    paths_full = fs.ls(
-            f"modeling-data/chips/qa/{composite}_{chip_size}m_" + \
-                f"cloudthr{cloud_thr}_{mask_method}_masking/"
-        )
-    paths = [os.path.basename(x) for x in paths_full]
-
     if not os.path.exists(local_save_dir):
         os.makedirs(local_save_dir)
     else: # start fresh if dir already exists

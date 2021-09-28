@@ -85,8 +85,8 @@ if __name__ == "__main__":
         "az://app/station_metadata.csv",
         storage_options=storage_options)
     all_data = pd.read_csv(
-        f"az://modeling-data/fluvius_data_unpartitioned_buffer{chip_size}" + \
-            f"m_daytol8_cloudthr{cloud_thr}percent_{mask_method}_masking.csv",
+        f"az://modeling-data/fluvius_data_post_qa_unpartitioned_buffer" + 
+        f"{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mask_method}_masking.csv",
         storage_options=storage_options
     )
     sites = all_data.site_no.unique()

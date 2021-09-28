@@ -45,28 +45,54 @@ if __name__ == "__main__":
 
     storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
                        "account_key":os.environ["BLOB_KEY"]}
+    
+    composites = [
+        'rgb', 
+        'cir', 
+        'swir'
+    ]
 
     fs = fsspec.filesystem("az", **storage_options)
 
     # Remove old app image chips if they exist
-    try:
-        fs.rm(f"app/img/rgb_and_{mask_method}_water", recursive=True)
-    except FileNotFoundError:
-        print(f"No directory exists at az://app/img/rgb_and{mask_method}_water, continuing...")
+    for composite in composites:
+        try:
+            fs.rm(
+                f"app/img/{composite}_and_{mask_method}_water", recursive=True
+            )
+        except FileNotFoundError:
+            print(
+                f"No directory exists at az://app/img/{composite}_" + \
+                    f"and{mask_method}_water, continuing..."
+            )
 
-    # Copy over new image chips -- need for-loop to avoid error 
-    for path in [os.path.basename(x) for x in fs.ls(f"modeling-data/chips/qa/rgb_{chip_size}m_cloudthr{cloud_thr}_{mask_method}_masking/")]:
-        fs.copy(
-            f"modeling-data/chips/qa/rgb_{chip_size}m_cloudthr{cloud_thr}_{mask_method}_masking/{path}",
-            f"app/img/rgb_and_{mask_method}_water/{path}"
+        # Copy over new image chips -- need for-loop to avoid error
+        paths_full = fs.ls(
+            f"modeling-data/chips/qa/{composite}_{chip_size}m_" + \
+                f"cloudthr{cloud_thr}_{mask_method}_masking/"
         )
+        paths = [os.path.basename(x) for x in paths_full]
+
+        for path in paths:
+            fs.copy(
+                f"modeling-data/chips/qa/{composite}_{chip_size}m_" + \
+                    f"cloudthr{cloud_thr}_{mask_method}_masking/{path}",
+                f"app/img/{composite}_and_{mask_method}_water/{path}"
+            )
 
     # Read in metadata and prep JSON data for app
-    site_metadata = pd.read_csv("az://app/station_metadata.csv", storage_options=storage_options)
-    all_data = pd.read_csv(f"az://modeling-data/fluvius_data_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mask_method}_masking.csv", storage_options=storage_options)
+    site_metadata = pd.read_csv(
+        "az://app/station_metadata.csv",
+        storage_options=storage_options)
+    all_data = pd.read_csv(
+        f"az://modeling-data/fluvius_data_unpartitioned_buffer{chip_size}" + \
+            f"m_daytol8_cloudthr{cloud_thr}percent_{mask_method}_masking.csv",
+        storage_options=storage_options
+    )
     sites = all_data.site_no.unique()
     
     out_dicts = []
+    url_base = "https://fluviusdata.blob.core.windows.net/app/img"
     for site in sites:
         site_df = all_data[all_data["site_no"] == site].reset_index()
         region = site_df.region.iloc[0]
@@ -88,7 +114,15 @@ if __name__ == "__main__":
                 # "sentinel.2.l2a_B": str(round(row["sentinel-2-l2a_B02"])),
                 # "sentinel.2.l2a_NIR": str(round(row["sentinel-2-l2a_B08"])),
                 # "Chip.Cloud.Pct": str(round(row["Chip Cloud Pct"])),
-                "rgb_water_chip_href": f'https://fluviusdata.blob.core.windows.net/app/img/rgb_and_{mask_method}_water/{os.path.basename(row["rgb_and_water_png_href"])}'
+                "rgb_water_chip_href": 
+                    f'{url_base}/rgb_and_{mask_method}_water/' + \
+                        f'{os.path.basename(row["rgb_and_water_png_href"])}',
+                "cir_water_chip_href": 
+                    f'{url_base}/cir_and_{mask_method}_water/' + \
+                        f'{os.path.basename(row["cir_and_water_png_href"])}',
+                "swir_water_chip_href": 
+                    f'{url_base}/swir_and_{mask_method}_water/' + \
+                        f'{os.path.basename(row["swir_and_water_png_href"])}',
                 #"raw_img_chip": row["raw_img_chip_href"]
             })
         
@@ -104,3 +138,4 @@ if __name__ == "__main__":
     # Push to final JSON data that app reads in
     with fs.open('app/all_data_v2.json', 'w') as fn:
         json.dump(out_dicts, fn)
+    

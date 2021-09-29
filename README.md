@@ -100,9 +100,9 @@ Using a DNS name for $DNS is useful to not require a new dynamic IP address for 
 
 * **Tony Chang** - *Principle Investigator* - [CSP](http://www.csp-inc.org/about-us/core-science-staff/chang-tony/)
 
-## Contributors
-
 * **Vincent Landau** - *Data Scientist* - [CSP](http://www.csp-inc.org/about-us/core-science-staff/landau-vincent/)
+
+* **Luke Zachmann Landau** - *Senior Scientist* - [CSP](http://www.csp-inc.org/about-us/core-science-staff/zachmann-luke/)
 
 
 

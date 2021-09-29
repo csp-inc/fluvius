@@ -82,8 +82,8 @@ if __name__ == "__main__":
         # natural ('true') color
         'rgb': (4, 3, 2), # Earth as humans would see it naturally
         # false color
-        'cir': (8, 4, 3), # emphasizes vegetation health (clear water is black, muddy waters look blue)
-        'swir': (11, 8, 3) # water is black, sediment-laden water and saturated soil will appear blue
+        'cir': (5, 4, 3), # emphasizes vegetation health (clear water is black, muddy waters look blue)
+        'swir': (11, 5, 3) # water is black, sediment-laden water and saturated soil will appear blue
     }
 
     chip_metadata = pd.DataFrame(columns=["region", "site_no", "sample_id", "Date-Time"] + [f"{x}_and_water_png_href" for x in composites])

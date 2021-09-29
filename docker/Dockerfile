@@ -121,7 +121,7 @@ RUN pip3 install \
 
 # Install azcopy
 RUN curl -L https://azcopyvnext.azureedge.net/release20210901/azcopy_linux_amd64_10.12.1.tar.gz > /tmp/azcopy.tar.gz
-RUN tar -xzvf azcopy.tar.gz && rm azcopy.tar.gz
+RUN tar -xzvf /tmp/azcopy.tar.gz && rm /tmp/azcopy.tar.gz
 RUN ln -s /root/azcopy_linux_amd64_10.12.1/azcopy /usr/bin/azcopy
 
 #add vim bindings

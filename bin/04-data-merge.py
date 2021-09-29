@@ -69,10 +69,10 @@ if __name__ == "__main__":
             .assign(data_src="itv")[COLUMNS].dropna()
     except:
         print(f"Error: Bad filepath: {itv_path}")
-        print(f"No ITV dataset with buffer {args.buffer_distance}m, day tolerance {args.day_tolerance}, masking method {args.mask_method}, and cloud threshold {args.cloud_thr}")
+        print(f"No ITV dataset with buffer {args.buffer_distance}m, day tolerance {args.day_tolerance}, masking method {mm1}{mm2}, and cloud threshold {args.cloud_thr}")
         quit()
     try:
-        ana_path = f"az://modeling-data/ana-data/feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{args.mask_method}_masking.csv"
+        ana_path = f"az://modeling-data/ana-data/feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv"
         ana_data = pd.read_csv(ana_path, storage_options=storage_options)\
             .rename(columns={
                 "Suspended Sediment Concentration (mg/L)": "SSC (mg/L)",
@@ -80,10 +80,10 @@ if __name__ == "__main__":
             .assign(data_src="ana")[COLUMNS].dropna()
     except:
         print(f"Error: Bad filepath: {ana_path}")
-        print(f"No ANA dataset with buffer {args.buffer_distance}m, day tolerance {args.day_tolerance}, masking method {args.mask_method}, and cloud threshold {args.cloud_thr}")
+        print(f"No ANA dataset with buffer {args.buffer_distance}m, day tolerance {args.day_tolerance}, masking method {mm1}{mm2}, and cloud threshold {args.cloud_thr}")
         quit()
     try:
-        usgsi_path = f"az://modeling-data/usgsi-data/feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{args.mask_method}_masking.csv"
+        usgsi_path = f"az://modeling-data/usgsi-data/feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv"
         usgsi_data = pd.read_csv(usgsi_path, storage_options=storage_options)\
             .assign(cms=lambda x: x["Instantaneous computed discharge (cfs)_x"] / 35.314666721488588)\
             .rename(
@@ -95,10 +95,10 @@ if __name__ == "__main__":
             .assign(data_src="usgsi")[COLUMNS].dropna()
     except:
         print(f"Error: Bad filepath: {usgsi_path}")
-        print(f"No USGSI dataset with buffer {args.buffer_distance}m, day tolerance {args.day_tolerance}, masking method {args.mask_method}, and cloud threshold {args.cloud_thr}")
+        print(f"No USGSI dataset with buffer {args.buffer_distance}m, day tolerance {args.day_tolerance}, masking method {mm1}{mm2}, and cloud threshold {args.cloud_thr}")
         quit()
     try:
-        usgs_path = f"az://modeling-data/usgs-data/feature_data_buffer{buffer_distance}m_daytol0_cloudthr{cloud_thr}percent_{args.mask_method}_masking.csv"
+        usgs_path = f"az://modeling-data/usgs-data/feature_data_buffer{buffer_distance}m_daytol0_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv"
         usgs_data = pd.read_csv(usgs_path, storage_options=storage_options)\
             .assign(cms=lambda x: x["Instantaneous computed discharge (cfs)"] / 35.314666721488588)\
             .rename(
@@ -109,7 +109,7 @@ if __name__ == "__main__":
             ).assign(data_src="usgs")[COLUMNS].dropna()
     except:
         print(f"Error: Bad filepath: {usgs_path}")
-        print(f"No USGS dataset with buffer {args.buffer_distance}m, masking method {args.mask_method}, and cloud threshold {args.cloud_thr}")
+        print(f"No USGS dataset with buffer {args.buffer_distance}m, masking method {mm1}{mm2}, and cloud threshold {args.cloud_thr}")
         quit()
 
     merged_df = pd.concat([itv_data, ana_data, usgsi_data, usgs_data])
@@ -131,7 +131,7 @@ if __name__ == "__main__":
 
     merged_df.drop(bad_rgb[bad_rgb].index, inplace=True)
     # write output
-    out_filepath = f"az://modeling-data/merged_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{args.mask_method}_masking.{out_filetype}"
+    out_filepath = f"az://modeling-data/merged_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.{out_filetype}"
     if out_filetype == "csv":
         merged_df.to_csv(out_filepath, storage_options=storage_options)
     elif out_filetype == "json":

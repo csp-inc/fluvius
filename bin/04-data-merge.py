@@ -3,15 +3,15 @@ import os
 import pandas as pd
 import argparse
 
-COLUMNS = ["data_src", "sample_id", "Date-Time", "Date", 
-           "Date-Time_Remote", "SSC (mg/L)", "Q (m3/s)",
+COLUMNS = ["data_src", "sample_id", "Longitude", "Latitude", "Date-Time",
+           "Date", "Date-Time_Remote", "SSC (mg/L)", "Q (m3/s)",
            "InSitu_Satellite_Diff", "Chip Cloud Pct", "sentinel-2-l2a_AOT",
            "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
            "sentinel-2-l2a_B08", "sentinel-2-l2a_WVP", "sentinel-2-l2a_B05",
            "sentinel-2-l2a_B06", "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
-           "sentinel-2-l2a_B11", "n_water_pixels", "mean_viewing_azimuth",
-           "mean_viewing_zenith", "mean_solar_azimuth", "mean_solar_zenith",
-           "sensing_time"]
+           "sentinel-2-l2a_B11", "sentinel-2-l2a_B12", "n_water_pixels", 
+           "mean_viewing_azimuth", "mean_viewing_zenith", "mean_solar_azimuth",
+           "mean_solar_zenith", "sensing_time"]
 
 if __name__ == "__main__":
     ############### Parse commnd line args ###################

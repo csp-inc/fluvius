@@ -77,28 +77,31 @@ if __name__ == "__main__":
     cloud_threshold = cloud_thr
     day_tol = day_tolerance
     for station in stations:
-        ds.get_station_data(station)
-        ds.station[station].drop_bad_usgs_obs()
-        ds.station[station].build_catalog()
-        if ds.station[station].catalog is None:
-            print(f"No matching images for station {station}. Skipping...")
-            continue
-        else:
-            ds.station[station].get_cloud_filtered_image_df(cloud_thr)
-            ds.station[station].merge_image_df_with_samples(day_tol)
-            if len(ds.station[station].merged_df) == 0:
-                print(f"No cloud-free images for station {station}. Skipping...")
+        try:
+            ds.get_station_data(station)
+            ds.station[station].drop_bad_usgs_obs()
+            ds.station[station].build_catalog()
+            if ds.station[station].catalog is None:
+                print(f"No matching images for station {station}. Skipping...")
                 continue
-                
-            ds.station[station].perform_chip_cloud_analysis()
-            ds.station[station].get_chip_features(args.write_chips, blob_dir, args.mask_method)
-        if args.write_to_csv:
-            sstation = str(station).zfill(8)
-            outfilename = f'az://{ds.container}/stations/{sstation}/{sstation}_processed_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.csv'
-            ds.station[station].merged_df.to_csv(
-                outfilename,index=False,
-                storage_options=ds.storage_options)
-            print(f'wrote csv to {outfilename}')
+            else:
+                ds.station[station].get_cloud_filtered_image_df(cloud_thr)
+                ds.station[station].merge_image_df_with_samples(day_tol)
+                if len(ds.station[station].merged_df) == 0:
+                    print(f"No cloud-free images for station {station}. Skipping...")
+                    continue
+                    
+                ds.station[station].perform_chip_cloud_analysis()
+                ds.station[station].get_chip_features(args.write_chips, blob_dir, args.mask_method)
+            if args.write_to_csv:
+                sstation = str(station).zfill(8)
+                outfilename = f'az://{ds.container}/stations/{sstation}/{sstation}_processed_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.csv'
+                ds.station[station].merged_df.to_csv(
+                    outfilename,index=False,
+                    storage_options=ds.storage_options)
+                print(f'wrote csv to {outfilename}')
+        except FileNotFoundError:
+            print(f"Source file not found for station {station}. Skipping...")
     
     ## Merge dataframes w/ feature data for all stations, write to blob storage
     print("Merging station feature dataframes and saving to blob storage.")

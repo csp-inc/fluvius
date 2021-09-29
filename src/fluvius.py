@@ -30,7 +30,7 @@ from azure.storage.blob import BlobClient
 import stackstac
 
 BANDS_10M = ['AOT', 'B02', 'B03', 'B04', 'B08', 'WVP']
-BANDS_20M = ['B05', 'B06', 'B07', 'B8A', 'B11']
+BANDS_20M = ['B05', 'B06', 'B07', 'B8A', 'B11', "B12"]
 
 EMPTY_METADATA_DICT = {
     "mean_viewing_azimuth": np.nan,
@@ -289,19 +289,24 @@ class WaterData:
         '''
         if any(self.df['site_no'] == str(station)):
             geometry =  self.df[self.df['site_no'] == str(station)].buffer_geometry.iloc[0]
+            lat = self.df[self.df['site_no'] == str(station)].Latitude.iloc[0]
+            lon = self.df[self.df['site_no'] == str(station)].Longitude.iloc[0]
             aoi = self.get_space_bounds(geometry)
-            ws  = WaterStation(str(station),\
-                    aoi,\
-                    self.container,\
-                    self.storage_options,\
+            ws  = WaterStation(str(station),
+                    lat,
+                    lon,
+                    aoi,
+                    self.container,
+                    self.storage_options,
                     self.data_source)
-            self.station[str(station)] = ws
+            self.station[str(station)] = ws   
         elif station is None:
             for s in self.df['site_no']:
                 #use recursion to get all station data
-                self.get_station_data(str(s))
+                self.get_station_data(str(s))           
         else:
             print('Invalid station name!')
+        
         self.sort_station_data()
         
     def sort_station_data(self):
@@ -312,14 +317,18 @@ class WaterStation:
     ''' 
     Generalized water station data. May make child class for USGS, ANA, and ITV
     '''
-    def __init__(self, site_no, area_of_interest, container, storage_options, data_source):
+    def __init__(self, site_no, lat, lon, area_of_interest, container, storage_options, data_source):
         self.site_no = site_no
+        self.Latitude = lat
+        self.Longitude = lon
         self.area_of_interest = area_of_interest
         self.container = container
         self.storage_options = storage_options
         self.data_source = data_source
         self.src_url = f'az://{container}/stations/{str(site_no).zfill(8)}.csv'
         self.df = pd.read_csv(self.src_url, storage_options=self.storage_options).dropna()
+        self.df.insert(0, "Longitude", lon)
+        self.df.insert(1, "Latitude", lat)
         self.get_time_bounds()
         sample_ids = [f'{str(site_no).zfill(8)}_{s:08d}' for s in (1+np.arange(len(self.df)))]
         #drop duplicates
@@ -392,7 +401,7 @@ class WaterStation:
                 'B07-href':s.assets['B07'].href,
                 'B08-href':s.assets['B08'].href,
                 'B11-href':s.assets['B11'].href,
-                'B07-href':s.assets['B12'].href,
+                'B12-href':s.assets['B12'].href,
                 'B8A-href':s.assets['B8A'].href,
                 'WVP-href':s.assets['WVP'].href,
                 'visual-href':s.assets['visual'].href,
@@ -418,13 +427,12 @@ class WaterStation:
                    
     def get_scl_chip(self, signed_url, return_meta_transform=False):
         with rio.open(signed_url) as ds:
-            if not hasattr(self, 'window_20m'):
-                aoi_bounds = features.bounds(self.area_of_interest)
-                warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
-                self.window_20m = windows.from_bounds(
-                    transform=ds.transform,
-                    *warped_aoi_bounds
-                ).round_lengths()
+            aoi_bounds = features.bounds(self.area_of_interest)
+            warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
+            self.window_20m = windows.from_bounds(
+                transform=ds.transform,
+                *warped_aoi_bounds
+            ).round_lengths()
 
             band_data = ds.read(
                 window=self.window_20m,
@@ -491,12 +499,11 @@ class WaterStation:
         for href in hrefs_20m:
             signed_href = pc.sign(href)
             with rio.open(signed_href) as ds:
-                if not hasattr(self, 'window_20m'):
-                    aoi_bounds = features.bounds(self.area_of_interest)
-                    warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
-                    self.window_20m = windows.from_bounds(
-                        transform=ds.transform,
-                        *warped_aoi_bounds).round_lengths()
+                aoi_bounds = features.bounds(self.area_of_interest)
+                warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
+                self.window_20m = windows.from_bounds(
+                    transform=ds.transform,
+                    *warped_aoi_bounds).round_lengths()
                 
                 band_data_20m.append(
                     ds.read(

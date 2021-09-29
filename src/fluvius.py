@@ -641,14 +641,16 @@ class WaterStation:
                 if np.any(mask):
                     img, img_meta, img_trans = self.get_spectral_chip(hrefs_10m, hrefs_20m, True)
                     # TODO: add ndvi and mndwi calcs here using img
+                    # BANDS_10M = ['AOT', 'B02', 'B03', 'B04', 'B08', 'WVP']
+                    # BANDS_20M = ['B05', 'B06', 'B07', 'B8A', 'B11', "B12"]
                     if mask_method2 == "ndvi":
-                        # TODO!
-                        # ndvi = normalized_diff(img[:, :, 8], img[:, :, 4])
-                        # mask2 = (ndvi < 0.25) # keep only non-vegetated pixels
+                        # TODO: verify, revisit threshold, etc.
+                        ndvi = normalized_diff(img[:, :, 4], img[:, :, 3])
+                        mask2 = (ndvi < 0.25) # keep only non-vegetated pixels
                     elif mask_method2 == 'mnwdi':
-                        # TODO!
-                        # mndwi = normalized_diff(img[:, :, 3], img[:, :, 11])
-                        # mask2 = (mndwi > 0) # keep only 'water' pixels
+                        # TODO: verify
+                        mndwi = normalized_diff(img[:, :, 2], img[:, :, 10])
+                        mask2 = (mndwi > 0) # keep only 'water' pixels
                     else:
                         mask2 = mask
                     mask = (mask & mask2)

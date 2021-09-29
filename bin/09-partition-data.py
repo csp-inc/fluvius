@@ -25,10 +25,14 @@ if __name__ == "__main__":
         default="csv",\
         type=str,\
         help="filetype for saved merged dataframe (csv or json)")
-    parser.add_argument('--mask_method',\
+    parser.add_argument('--mask_method1',\
         default="lulc",\
         type=str,\
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
+    parser.add_argument('--mask_method2',\
+        default="",\
+        type=str,\
+        help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\")")
     args = parser.parse_args()
 
     ############### Setup ####################
@@ -37,7 +41,8 @@ if __name__ == "__main__":
     day_tolerance = args.day_tolerance
     cloud_thr = args.cloud_thr
     out_filetype = args.out_filetype
-    mask_method = args.mask_method
+    mm1 = args.mask_method1
+    mm2 = args.mask_method2
 
     # Set storage options for Azure blob storage
     with open("credentials") as f:
@@ -51,7 +56,7 @@ if __name__ == "__main__":
                     'account_key':os.environ['BLOB_KEY']}
 
     try:
-        filepath = f"az://modeling-data/fluvius_data_post_qa_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mask_method}_masking.csv"
+        filepath = f"az://modeling-data/fluvius_data_post_qa_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv"
         data = pd.read_csv(filepath, storage_options=storage_options)
     except:
         print(f"Error: no file at {filepath}")
@@ -83,11 +88,11 @@ if __name__ == "__main__":
     # now apply the train_test_validate_split function to each group
     partitioned = grouped.apply(lambda x: train_test_validate_split(x, [0.7, 0.15, 0.15]))
 
-    out_filepath = f"az://modeling-data/partitioned_feature_data_buffer{chip_size}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{args.mask_method}_masking.{out_filetype}"
+    out_filepath = f"az://modeling-data/partitioned_feature_data_buffer{chip_size}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.{out_filetype}"
 
     if out_filetype == "csv":
         partitioned.to_csv(out_filepath, storage_options=storage_options)
     elif out_filetype == "json":
         partitioned.to_json(out_filepath, storage_options=storage_options)
-    
+
     print(f"Done. Outputs written to {out_filepath}")

@@ -1,10 +1,8 @@
-#!/bin/bash
-if [ -z "$1" ] 
-then 
-	TAG=data
-else
-	TAG=$1
-fi
+#!/usr/bin/env bash
+
+TAG=${1:-data}
 IMAGE=cspinc/fluvius
+
 IMAGENAME=$IMAGE:$TAG
+
 docker build --rm -t $IMAGENAME .

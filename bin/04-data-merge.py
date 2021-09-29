@@ -9,7 +9,7 @@ COLUMNS = ["data_src", "sample_id", "Longitude", "Latitude", "Date-Time",
            "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
            "sentinel-2-l2a_B08", "sentinel-2-l2a_WVP", "sentinel-2-l2a_B05",
            "sentinel-2-l2a_B06", "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
-           "sentinel-2-l2a_B11", "sentinel-2-l2a_B12", "n_water_pixels", 
+           "sentinel-2-l2a_B11", "sentinel-2-l2a_B12", "n_water_pixels",
            "mean_viewing_azimuth", "mean_viewing_zenith", "mean_solar_azimuth",
            "mean_solar_zenith", "sensing_time"]
 
@@ -32,10 +32,14 @@ if __name__ == "__main__":
         default="csv",\
         type=str,\
         help="filetype for saved merged dataframe (csv or json)")
-    parser.add_argument('--mask_method',\
+    parser.add_argument('--mask_method1',\
         default="lulc",\
         type=str,\
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
+    parser.add_argument('--mask_method2',\
+        default="",\
+        type=str,\
+        help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\")")
     args = parser.parse_args()
     ############### Setup ####################
     # arguments
@@ -43,6 +47,8 @@ if __name__ == "__main__":
     day_tolerance = args.day_tolerance
     cloud_thr = args.cloud_thr
     out_filetype = args.out_filetype
+    mm1 = args.mask_method1
+    mm2 = args.mask_method2
 
     #storage options
     env_vars = open("/content/credentials","r").read().split('\n')
@@ -56,7 +62,7 @@ if __name__ == "__main__":
 
     ############### Read in and merge data ####################
     try:
-        itv_path = f"az://modeling-data/itv-data/feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{args.mask_method}_masking.csv"
+        itv_path = f"az://modeling-data/itv-data/feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv"
         itv_data = pd.read_csv(itv_path, storage_options=storage_options)\
             .rename(columns={"SSC (mg/l)": "SSC (mg/L)",
                              "Q (m³/s)": "Q (m3/s)"})\
@@ -105,7 +111,7 @@ if __name__ == "__main__":
         print(f"Error: Bad filepath: {usgs_path}")
         print(f"No USGS dataset with buffer {args.buffer_distance}m, masking method {args.mask_method}, and cloud threshold {args.cloud_thr}")
         quit()
-    
+
     merged_df = pd.concat([itv_data, ana_data, usgsi_data, usgs_data])
 
     # Drop "problem" observations
@@ -123,12 +129,12 @@ if __name__ == "__main__":
                    (merged_df["sentinel-2-l2a_B03"] > 15000) &\
                    (merged_df["sentinel-2-l2a_B04"] > 15000))
 
-    merged_df.drop(bad_rgb[bad_rgb].index, inplace=True)       
+    merged_df.drop(bad_rgb[bad_rgb].index, inplace=True)
     # write output
     out_filepath = f"az://modeling-data/merged_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{args.mask_method}_masking.{out_filetype}"
     if out_filetype == "csv":
         merged_df.to_csv(out_filepath, storage_options=storage_options)
     elif out_filetype == "json":
         merged_df.to_json(out_filepath, storage_options=storage_options)
-    
+
     print(f"Done. Outputs written to {out_filepath}")

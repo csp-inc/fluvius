@@ -41,10 +41,14 @@ if __name__ == "__main__":
         default=False,\
         type=bool,\
         help="Write chips to blob storage?")
-    parser.add_argument('--mask_method',\
+    parser.add_argument('--mask_method1',\
         default="lulc",\
         type=str,\
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
+    parser.add_argument('--mask_method2',\
+        default="",\
+        type=str,\
+        help="Which additional XXX")
     args = parser.parse_args()
 
     #################  set up ####################
@@ -59,7 +63,9 @@ if __name__ == "__main__":
     
     cloud_thr = args.cloud_thr
     buffer_distance = args.buffer_distance
-    blob_dir = f"modeling-data/chips/{buffer_distance}m_cloudthr{cloud_thr}_{args.mask_method}_masking"
+    mm1 = args.mask_method1
+    mm2 = args.mask_method2
+    blob_dir = f"modeling-data/chips/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking"
     ################### Begin ####################
 
     storage_options={'account_name':os.environ['ACCOUNT_NAME'],

@@ -603,11 +603,15 @@ class WaterStation:
                 except:
                     print(f'{visual_href} returned {522}', file=f)
 
+    def normalized_diff(b1, b2):
+        return (b1 - b2) / (b1 + b2)
+
     def get_chip_features(
             self, 
             write_chips_to_blob=False,
             blob_root_dir="",
-            mask_method="lulc" # one of "lulc" or "scl". "lulc" also removes clouds using scl
+            mask_method1="lulc", # one of "lulc" or "scl". "lulc" also removes clouds using scl
+            mask_method2=""
         ):
         reflectances = []
         n_water_pixels = []
@@ -623,9 +627,9 @@ class WaterStation:
             try:
                 scl, scl_meta, scl_trans  = self.get_scl_chip(scl_href, True)
 
-                if mask_method == "scl":
+                if mask_method1 == "scl":
                     mask = (scl == 6)
-                elif mask_method == "lulc":
+                elif mask_method1 == "lulc":
                     if i == 0:
                         lulc_water = (self.get_io_lulc_chip() == 1)
                     scl_mask = ((scl < 8) & 
@@ -636,30 +640,48 @@ class WaterStation:
                 # Excludes images with no water pixels
                 if np.any(mask):
                     img, img_meta, img_trans = self.get_spectral_chip(hrefs_10m, hrefs_20m, True)
-                    granule_metadata = self.get_chip_metadata(meta_href)
-                    masked_array = img[mask, :]
-                    mean_ref = np.nanmean(masked_array, axis=0)
-                    reflectances.append(mean_ref)
-                    n_water_pixels.append(np.sum(mask))
-                    metadata.append(granule_metadata)
+                    # TODO: add ndvi and mndwi calcs here using img
+                    if mask_method2 == "ndvi":
+                        # TODO!
+                        # ndvi = normalized_diff(img[:, :, 8], img[:, :, 4])
+                        # mask2 = (ndvi < 0.25) # keep only non-vegetated pixels
+                    elif mask_method2 == 'mnwdi':
+                        # TODO!
+                        # mndwi = normalized_diff(img[:, :, 3], img[:, :, 11])
+                        # mask2 = (mndwi > 0) # keep only 'water' pixels
+                    else:
+                        mask2 = mask
+                    mask = (mask & mask2)
+                    if np.any(mask):
+                        granule_metadata = self.get_chip_metadata(meta_href)
+                        masked_array = img[mask, :]
+                        mean_ref = np.nanmean(masked_array, axis=0)
+                        reflectances.append(mean_ref)
+                        n_water_pixels.append(np.sum(mask))
+                        metadata.append(granule_metadata)
 
-                    if write_chips_to_blob:
-                        self.write_chip_to_blob(
-                            np.expand_dims(mask.astype(float),2),
-                            scl_meta,
-                            img_trans, # since it was resampled, proj is equal
-                            "data/chips",
-                            blob_root_dir,
-                            f"{scene_query['sample_id']}_{scene_query['Date-Time']}_water"
-                        )
-                        self.write_chip_to_blob(
-                            img,
-                            img_meta,
-                            img_trans,
-                            "data/chips",
-                            blob_root_dir,
-                            f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
-                        )
+                        if write_chips_to_blob:
+                            self.write_chip_to_blob(
+                                np.expand_dims(mask.astype(float),2),
+                                scl_meta,
+                                img_trans, # since it was resampled, proj is equal
+                                "data/chips",
+                                blob_root_dir,
+                                f"{scene_query['sample_id']}_{scene_query['Date-Time']}_water"
+                            )
+                            self.write_chip_to_blob(
+                                img,
+                                img_meta,
+                                img_trans,
+                                "data/chips",
+                                blob_root_dir,
+                                f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
+                            )
+                        else: #no water pixels detected
+                            print(f"No water pixels detected for {scene_query['sample_id']}. Skipping...")
+                            reflectances.append([np.nan] * n_bands)
+                            n_water_pixels.append(0)
+                            metadata.append(EMPTY_METADATA_DICT)
                 else: #no water pixels detected
                     print(f"No water pixels detected for {scene_query['sample_id']}. Skipping...")
                     reflectances.append([np.nan] * n_bands)

@@ -110,7 +110,20 @@ if __name__ == "__main__":
                                 (rgb_max - rgb_min)) ** gamma * 255
                             ).astype(np.uint8)
                         water_rgb = copy.deepcopy(rgb)
-                        water_rgb[water==0, :] = 0
+
+                        # Set NA pixels to stand-out color based on 
+                        if composite == "rgb":
+                            water_rgb[water==0, 0] = 252
+                            water_rgb[water==0, 1] = 184
+                            water_rgb[water==0, 2] = 255
+                        elif composite == "cir":
+                            water_rgb[water==0, 0] = 166
+                            water_rgb[water==0, 1] = 232
+                            water_rgb[water==0, 2] = 139
+                        elif composite == "swir":
+                            water_rgb[water==0, 0] = 252
+                            water_rgb[water==0, 1] = 184
+                            water_rgb[water==0, 2] = 255
 
                         qa_array = np.concatenate([rgb, water_rgb], axis = (1))^2
                         qa_img = Image.fromarray(qa_array, "RGB")

@@ -113,7 +113,7 @@ def fit_mlp(
 
     if len(layer_out_neurons) != n_layers:
         raise ModelArchitectureError("len(layer_out_neurons) must be equal to n_layers")
-    
+        
     fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method}_masking.csv"
     data = pd.read_csv(fp, storage_options=storage_options)
 
@@ -351,7 +351,7 @@ def fit_mlp(
 
 def plot_obs_predict(obs_pred, title, savefig=False, outfn=""):
     plt.figure(figsize=(8,8))
-    plt.plot(list(range(1,8)),list(range(1,8)), color="black", label="One-to-one 1 line")
+    plt.plot(list(range(0,8)),list(range(0,8)), color="black", label="One-to-one 1 line")
     plt.scatter(obs_pred.iloc[:,0], obs_pred.iloc[:,1])
     plt.xlabel("ln(SSC) Predicted")
     plt.ylabel("ln(SSC) Observed")

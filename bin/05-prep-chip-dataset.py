@@ -72,7 +72,21 @@ if __name__ == "__main__":
     rgb_max = args.rgb_max
     gamma = args.gamma
 
-    chip_metadata = pd.DataFrame(columns=["region", "site_no", "sample_id", "Date-Time", "rgb_and_water_png_href"])
+    composites = [
+    'rgb', 
+    'cir', 
+    'swir'
+    ]
+
+    band_combos = { # https://gisgeography.com/sentinel-2-bands-combinations/
+        # natural ('true') color
+        'rgb': (4, 3, 2), # Earth as humans would see it naturally
+        # false color
+        'cir': (8, 4, 3), # emphasizes vegetation health (clear water is black, muddy waters look blue)
+        'swir': (11, 8, 3) # water is black, sediment-laden water and saturated soil will appear blue
+    }
+
+    chip_metadata = pd.DataFrame(columns=["region", "site_no", "sample_id", "Date-Time"] + [f"{x}_and_water_png_href" for x in composites])
     fs = fsspec.filesystem("az", **storage_options)
 
     n_chip = 0 # initialize
@@ -85,34 +99,38 @@ if __name__ == "__main__":
             chip_obs = [x for x in chip_paths if "water" not in x]
             n_chip += len(chip_obs)
             for path in chip_obs:
-                if (args.local_outpath != None) or write_chips_blob:
-                    with rio.open(f"az://{path}") as chip:
-                        rgb_raw = np.moveaxis(chip.read((4, 3, 2)), 0, -1)
-                        with rio.open(f"az://{path[:-4]}_water.tif") as mask:
-                            water = mask.read(1)
-                    rgb = (
-                        ((np.clip(rgb_raw, rgb_min, rgb_max) - rgb_min) / 
-                            (rgb_max - rgb_min)) ** gamma * 255
-                        ).astype(np.uint8)
-                    water_rgb = copy.deepcopy(rgb)
-                    water_rgb[water==0, :] = 0
+                for composite in composites:
+                    if (args.local_outpath != None) or write_chips_blob:
+                        with rio.open(f"az://{path}") as chip:
+                            rgb_raw = np.moveaxis(chip.read(band_combos[composite]), 0, -1)
+                            with rio.open(f"az://{path[:-4]}_water.tif") as mask:
+                                water = mask.read(1)
+                        rgb = (
+                            ((np.clip(rgb_raw, rgb_min, rgb_max) - rgb_min) / 
+                                (rgb_max - rgb_min)) ** gamma * 255
+                            ).astype(np.uint8)
+                        water_rgb = copy.deepcopy(rgb)
+                        water_rgb[water==0, :] = 0
 
-                    qa_array = np.concatenate([rgb, water_rgb], axis = (1))^2
-                    qa_img = Image.fromarray(qa_array, "RGB")
+                        qa_array = np.concatenate([rgb, water_rgb], axis = (1))^2
+                        qa_img = Image.fromarray(qa_array, "RGB")
 
-                out_name = f"modeling-data/chips/qa/rgb_{chip_size}m_cloudthr{cloud_thr}_{mask_method}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
+                    out_name = f"modeling-data/chips/qa/{composite}_{chip_size}m_cloudthr{cloud_thr}_{mask_method}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
 
-                if args.local_outpath != None:
-                    if not os.path.exists(f'{args.local_outpath}'):
-                        os.makedirs(f'{args.local_outpath}')
-                    qa_img.save(f"{args.local_outpath}/{data_src}_{os.path.basename(path[:-4])}.png")
-                
-                if write_chips_blob:
-                    with fs.open(out_name, "wb") as fn:
-                        qa_img.save(fn, "PNG")
+                    if args.local_outpath != None:
+                        if not os.path.exists(f'{args.local_outpath}'):
+                            os.makedirs(f'{args.local_outpath}')
+                        qa_img.save(f"{args.local_outpath}/{composite}_{data_src}_{os.path.basename(path[:-4])}.png")
+                    
+                    if write_chips_blob:
+                        with fs.open(out_name, "wb") as fn:
+                            qa_img.save(fn, "PNG")
 
-                rgb_water_url = f"https://fluviusdata.blob.core.windows.net/{out_name}"
                 raw_img_url = f"https://fluviusdata.blob.core.windows.net/{path}"
+                rgb_water_url = f"https://fluviusdata.blob.core.windows.net/modeling-data/chips/qa/rgb_{chip_size}m_cloudthr{cloud_thr}_{mask_method}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
+                cir_water_url = f"https://fluviusdata.blob.core.windows.net/modeling-data/chips/qa/cir_{chip_size}m_cloudthr{cloud_thr}_{mask_method}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
+                swir_water_url = f"https://fluviusdata.blob.core.windows.net/modeling-data/chips/qa/swir_{chip_size}m_cloudthr{cloud_thr}_{mask_method}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
+                
                 info = os.path.basename(path[:-4]).split("_")
                 chip_metadata = pd.concat(
                     [chip_metadata,
@@ -123,7 +141,9 @@ if __name__ == "__main__":
                         "Date-Time": [info[2]],
                         "raw_img_chip_href": [raw_img_url],
                         "water_chip_href": [f"{raw_img_url[:-4]}_water.tif"],
-                        "rgb_and_water_png_href": [rgb_water_url]
+                        "rgb_and_water_png_href": [rgb_water_url],
+                        "cir_and_water_png_href": [cir_water_url],
+                        "swir_and_water_png_href": [swir_water_url]
                     })
                     ],
                     ignore_index=True

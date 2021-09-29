@@ -37,6 +37,7 @@ if __name__ == "__main__":
     day_tolerance = args.day_tolerance
     cloud_thr = args.cloud_thr
     out_filetype = args.out_filetype
+    mask_method = args.mask_method
 
     # Set storage options for Azure blob storage
     with open("credentials") as f:
@@ -50,7 +51,7 @@ if __name__ == "__main__":
                     'account_key':os.environ['BLOB_KEY']}
 
     try:
-        filepath = f"az://modeling-data/fluvius_data_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{args.mask_method}_masking.csv"
+        filepath = f"az://modeling-data/fluvius_data_post_qa_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mask_method}_masking.csv"
         data = pd.read_csv(filepath, storage_options=storage_options)
     except:
         print(f"Error: no file at {filepath}")

@@ -1,10 +1,6 @@
-#!/bin/bash
-if [ -z "$1" ]
-then 
-	PORT=8888
-else
-	PORT=$1
-fi
+#!/usr/bin/env bash
+
+PORT=${1:-8888}
 
 TAG=data
 IMAGE=cspinc/fluvius
@@ -15,7 +11,7 @@ if [[ "$(docker images -q $IMAGE 2> /dev/null)" == "" ]]; then
   echo "Image not found, building from recipe...."
   docker build --rm -t $IMAGENAME - < $DPATH
 fi
- 
+
 IP=0.0.0.0
 #BLOB=$BLOBCONTAINER
 docker run --rm \

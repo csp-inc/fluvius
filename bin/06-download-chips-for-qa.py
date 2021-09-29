@@ -15,10 +15,14 @@ if __name__ == "__main__":
         default=500,
         type=int,
         help="search radius used for reflectance data aggregation")
-    parser.add_argument('--mask_method',
-        default="lulc",
-        type=str,
+    parser.add_argument('--mask_method1',\
+        default="lulc",\
+        type=str,\
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
+    parser.add_argument('--mask_method2',\
+        default="",\
+        type=str,\
+        help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\")")
     parser.add_argument("--composite",
         default="rgb",
         type=str,
@@ -32,7 +36,8 @@ if __name__ == "__main__":
     chip_size = args.buffer_distance
     cloud_thr = args.cloud_thr
     day_tol = args.day_tolerance
-    mask_method = args.mask_method
+    mm1 = args.mask_method1
+    mm2 = args.mask_method2
     composite = args.composite
     local_save_dir = args.local_save_dir
 
@@ -45,7 +50,7 @@ if __name__ == "__main__":
 
     storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
                        "account_key":os.environ["BLOB_KEY"]}
-    
+
     fs = fsspec.filesystem("az", **storage_options)
 
     if not os.path.exists(local_save_dir):
@@ -53,19 +58,19 @@ if __name__ == "__main__":
     else: # start fresh if dir already exists
         os.rmdir(local_save_dir)
         os.makedirs(local_save_dir)
-    
-    all_data = pd.read_csv(f"az://modeling-data/fluvius_data_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mask_method}_masking.csv", storage_options=storage_options)
+
+    all_data = pd.read_csv(f"az://modeling-data/fluvius_data_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv", storage_options=storage_options)
     remote_path_basenames = [x.split("/")[-1] for x in all_data.rgb_and_water_png_href]
 
     for path in remote_path_basenames:
         if path in remote_path_basenames:
             fs.get_file(
                 f"modeling-data/chips/qa/{composite}_{chip_size}m_" + \
-                    f"cloudthr{cloud_thr}_{mask_method}_masking/{path}",
+                    f"cloudthr{cloud_thr}_{mm1}{mm2}_masking/{path}",
                 f"{local_save_dir}/{path}"
             )
     print(
-        f"\nDone! \n\n" + 
+        f"\nDone! \n\n" +
         f"Now delete the QA chips in {local_save_dir} that represent \n" +
         "bad samples. Then run bin/07-remove-bad-obs.py using \n" +
         f"{local_save_dir} as the input directory to remove the bad \n" +

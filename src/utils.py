@@ -351,7 +351,7 @@ def fit_mlp(
 
 def plot_obs_predict(obs_pred, title, savefig=False, outfn=""):
     plt.figure(figsize=(8,8))
-    plt.plot(list(range(1,8)),list(range(0,8)), color="black", label="One-to-one 1 line")
+    plt.plot(list(range(0,8)),list(range(0,8)), color="black", label="One-to-one 1 line")
     plt.scatter(obs_pred.iloc[:,0], obs_pred.iloc[:,1])
     plt.xlabel("ln(SSC) Predicted")
     plt.ylabel("ln(SSC) Observed")

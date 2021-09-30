@@ -673,17 +673,18 @@ class WaterStation:
                                 blob_root_dir,
                                 f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
                             )
-                        else: #no water pixels detected
-                            print(f"No water pixels detected for {scene_query['sample_id']}. Skipping...")
-                            reflectances.append([np.nan] * n_bands)
-                            n_water_pixels.append(0)
-                            metadata.append(EMPTY_METADATA_DICT)
+                    else: #no water pixels detected
+                        print(f"No water pixels detected for {scene_query['sample_id']} after mask_method2. Skipping...")
+                        reflectances.append([np.nan] * n_bands)
+                        n_water_pixels.append(0)
+                        metadata.append(EMPTY_METADATA_DICT)
                 else: #no water pixels detected
-                    print(f"No water pixels detected for {scene_query['sample_id']}. Skipping...")
+                    print(f"No water pixels detected for {scene_query['sample_id']} after mask_method1. Skipping...")
                     reflectances.append([np.nan] * n_bands)
                     n_water_pixels.append(0)
                     metadata.append(EMPTY_METADATA_DICT)
             except:
+                print(f"Error for {scene_query['sample_id']}! Skipping...")
                 #print(f"{scene_query['visual-href']} returned response!")
                 reflectances.append([np.nan] * n_bands)
                 n_water_pixels.append(np.nan)
@@ -695,7 +696,10 @@ class WaterStation:
         
         collection = 'sentinel-2-l2a'
         bands = BANDS_10M + BANDS_20M
+        
         for i,band in enumerate(bands):
+            # print(band)
+            # print(reflectances[:,i].shape)
             self.merged_df[f'{collection}_{band}'] = reflectances[:,i]
 
         self.merged_df['n_water_pixels'] = n_water_pixels

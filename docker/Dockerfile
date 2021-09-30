@@ -111,9 +111,9 @@ RUN pip3 install \
     torchvision==0.10.0 \
     oauth2client==4.1.3 \ 
     intake[complete]==0.6.2 \
-    planetary-computer==0.3.0rc3 \
-    pystac==1.0.0 \
-    pystac-client==0.2.0-beta.2 \
+    planetary-computer==0.4.2 \
+    pystac==1.1.0 \
+    pystac-client==0.3.0b1 \
     scikit-learn==0.24.2 \
     imageio==2.9.0 \
     lxml==4.6.3 \

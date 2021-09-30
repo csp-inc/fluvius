@@ -603,9 +603,6 @@ class WaterStation:
                 except:
                     print(f'{visual_href} returned {522}', file=f)
 
-    def normalized_diff(b1, b2):
-        return (b1 - b2) / (b1 + b2)
-
     def get_chip_features(
             self, 
             write_chips_to_blob=False,
@@ -640,9 +637,6 @@ class WaterStation:
                 # Excludes images with no water pixels
                 if np.any(mask):
                     img, img_meta, img_trans = self.get_spectral_chip(hrefs_10m, hrefs_20m, True)
-                    # TODO: add ndvi and mndwi calcs here using img
-                    # BANDS_10M = ['AOT', 'B02', 'B03', 'B04', 'B08', 'WVP']
-                    # BANDS_20M = ['B05', 'B06', 'B07', 'B8A', 'B11', "B12"]
                     if mask_method2 == "ndvi":
                         # TODO: verify, revisit threshold, etc.
                         ndvi = normalized_diff(img[:, :, 4], img[:, :, 3])
@@ -775,3 +769,7 @@ class WaterStation:
         ax[3].imshow(water_mask,cmap='Blues')
         ax[3].set_title('Water Mask')
         ax[3].axis('off')
+
+# Utility functions.
+def normalized_diff(b1, b2):
+    return (b1 - b2) / (b1 + b2)

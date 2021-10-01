@@ -1,5 +1,6 @@
-#!/bin/bash
-TAG=data
+#!/usr/bin/env bash
+
+TAG=${1:-data}
 IMAGE=cspinc/fluvius
 IMAGENAME=$IMAGE:$TAG
 DPATH=docker/Dockerfile
@@ -13,4 +14,4 @@ docker run --rm -td --ipc "host"  \
 	-v $('pwd'):/content \
 	-v /home/$USER/.vscode-server/:/root/.vscode-server/ \
 	-w /content \
-	$IMAGENAME 
+	$IMAGENAME

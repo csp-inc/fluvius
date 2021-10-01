@@ -36,10 +36,14 @@ if __name__ == "__main__":
         default="csv",\
         type=str,\
         help="filetype for saved merged dataframe (csv or json)")
-    parser.add_argument('--mask_method',\
+    parser.add_argument('--mask_method1',\
         default="lulc",\
         type=str,\
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
+    parser.add_argument('--mask_method2',\
+        default="",\
+        type=str,\
+        help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\")")
     parser.add_argument('--write_chips_blob',\
         default=False,\
         type=bool,\
@@ -67,17 +71,13 @@ if __name__ == "__main__":
     day_tol = args.day_tolerance
     write_chips_blob = args.write_chips_blob
 
-    mask_method = args.mask_method
+    mm1 = args.mask_method1
+    mm2 = args.mask_method2
     rgb_min = args.rgb_min
     rgb_max = args.rgb_max
     gamma = args.gamma
 
-    composites = [
-    'rgb', 
-    'cir', 
-    'swir'
-    ]
-
+    composites = ['rgb', 'cir', 'swir']
     band_combos = { # https://gisgeography.com/sentinel-2-bands-combinations/
         # natural ('true') color
         'rgb': (4, 3, 2), # Earth as humans would see it naturally
@@ -95,7 +95,7 @@ if __name__ == "__main__":
             AZURE_STORAGE_ACCESS_KEY=os.environ["BLOB_KEY"]
         ):
         for data_src in ["itv", "ana", "usgsi", "usgs"]:
-            chip_paths = fs.ls(f"modeling-data/chips/{chip_size}m_cloudthr{cloud_thr}_{mask_method}_masking/{data_src}")
+            chip_paths = fs.ls(f"modeling-data/chips/{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{data_src}")
             chip_obs = [x for x in chip_paths if "water" not in x]
             n_chip += len(chip_obs)
             for path in chip_obs:
@@ -106,31 +106,44 @@ if __name__ == "__main__":
                             with rio.open(f"az://{path[:-4]}_water.tif") as mask:
                                 water = mask.read(1)
                         rgb = (
-                            ((np.clip(rgb_raw, rgb_min, rgb_max) - rgb_min) / 
+                            ((np.clip(rgb_raw, rgb_min, rgb_max) - rgb_min) /
                                 (rgb_max - rgb_min)) ** gamma * 255
                             ).astype(np.uint8)
                         water_rgb = copy.deepcopy(rgb)
-                        water_rgb[water==0, :] = 0
+
+                        # Set NA pixels to stand-out color based on 
+                        if composite == "rgb":
+                            water_rgb[water==0, 0] = 252
+                            water_rgb[water==0, 1] = 184
+                            water_rgb[water==0, 2] = 255
+                        elif composite == "cir":
+                            water_rgb[water==0, 0] = 166
+                            water_rgb[water==0, 1] = 232
+                            water_rgb[water==0, 2] = 139
+                        elif composite == "swir":
+                            water_rgb[water==0, 0] = 252
+                            water_rgb[water==0, 1] = 184
+                            water_rgb[water==0, 2] = 255
 
                         qa_array = np.concatenate([rgb, water_rgb], axis = (1))^2
                         qa_img = Image.fromarray(qa_array, "RGB")
 
-                    out_name = f"modeling-data/chips/qa/{composite}_{chip_size}m_cloudthr{cloud_thr}_{mask_method}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
+                    out_name = f"modeling-data/chips/qa/{composite}_{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
 
-                    if args.local_outpath != None:
+                    if args.local_outpath is not None:
                         if not os.path.exists(f'{args.local_outpath}'):
                             os.makedirs(f'{args.local_outpath}')
                         qa_img.save(f"{args.local_outpath}/{composite}_{data_src}_{os.path.basename(path[:-4])}.png")
-                    
+
                     if write_chips_blob:
                         with fs.open(out_name, "wb") as fn:
                             qa_img.save(fn, "PNG")
 
                 raw_img_url = f"https://fluviusdata.blob.core.windows.net/{path}"
-                rgb_water_url = f"https://fluviusdata.blob.core.windows.net/modeling-data/chips/qa/rgb_{chip_size}m_cloudthr{cloud_thr}_{mask_method}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
-                cir_water_url = f"https://fluviusdata.blob.core.windows.net/modeling-data/chips/qa/cir_{chip_size}m_cloudthr{cloud_thr}_{mask_method}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
-                swir_water_url = f"https://fluviusdata.blob.core.windows.net/modeling-data/chips/qa/swir_{chip_size}m_cloudthr{cloud_thr}_{mask_method}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
-                
+                rgb_water_url = f"https://fluviusdata.blob.core.windows.net/modeling-data/chips/qa/rgb_{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
+                cir_water_url = f"https://fluviusdata.blob.core.windows.net/modeling-data/chips/qa/cir_{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
+                swir_water_url = f"https://fluviusdata.blob.core.windows.net/modeling-data/chips/qa/swir_{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
+
                 info = os.path.basename(path[:-4]).split("_")
                 chip_metadata = pd.concat(
                     [chip_metadata,
@@ -151,7 +164,7 @@ if __name__ == "__main__":
 
     ## Merge reflectance and response data to image chip hrefs
     model_data = pd.read_csv(
-        f"az://modeling-data/merged_feature_data_buffer{chip_size}m_daytol{day_tol}_cloudthr{cloud_thr}percent_{mask_method}_masking.csv",
+        f"az://modeling-data/merged_feature_data_buffer{chip_size}m_daytol{day_tol}_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv",
         storage_options=storage_options
     ).assign(region=lambda x: x.data_src).assign(site_no=lambda x: [sp.split("_")[0] for sp in x.sample_id]).reset_index()
 
@@ -161,4 +174,4 @@ if __name__ == "__main__":
     all_data.drop(["site_no_y", "site_no_x", "level_0", "Unnamed: 0"], axis=1, inplace=True)
     all_data.insert(2, "site_no", site_no)
 
-    all_data.to_csv(f"az://modeling-data/fluvius_data_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mask_method}_masking.csv", storage_options=storage_options)
+    all_data.to_csv(f"az://modeling-data/fluvius_data_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv", storage_options=storage_options)

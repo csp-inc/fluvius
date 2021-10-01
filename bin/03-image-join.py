@@ -41,10 +41,14 @@ if __name__ == "__main__":
         default=False,\
         type=bool,\
         help="Write chips to blob storage?")
-    parser.add_argument('--mask_method',\
+    parser.add_argument('--mask_method1',\
         default="lulc",\
         type=str,\
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
+    parser.add_argument('--mask_method2',\
+        default="",\
+        type=str,\
+        help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\")")
     args = parser.parse_args()
 
     #################  set up ####################
@@ -55,11 +59,13 @@ if __name__ == "__main__":
     if data_source == 'usgs':
         day_tolerance = 0 #reduce this for usgs-data
     else:
-        day_tolerance = args.day_tolerance 
-    
+        day_tolerance = args.day_tolerance
+
     cloud_thr = args.cloud_thr
     buffer_distance = args.buffer_distance
-    blob_dir = f"modeling-data/chips/{buffer_distance}m_cloudthr{cloud_thr}_{args.mask_method}_masking"
+    mm1 = args.mask_method1
+    mm2 = args.mask_method2
+    blob_dir = f"modeling-data/chips/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking"
     ################### Begin ####################
 
     storage_options={'account_name':os.environ['ACCOUNT_NAME'],
@@ -67,11 +73,11 @@ if __name__ == "__main__":
 
     fs = fsspec.filesystem('az',
                             account_name=os.environ['ACCOUNT_NAME'],
-                            account_key=os.environ['BLOB_KEY'])  
+                            account_key=os.environ['BLOB_KEY'])
     ds = WaterData(data_source, container, storage_options)
     ds.get_source_df()
     ds.apply_buffer_to_points(buffer_distance)
-    
+
     # Getting station feature data in for loop
     stations = ds.df["site_no"]
     cloud_threshold = cloud_thr
@@ -90,9 +96,9 @@ if __name__ == "__main__":
                 if len(ds.station[station].merged_df) == 0:
                     print(f"No cloud-free images for station {station}. Skipping...")
                     continue
-                    
+
                 ds.station[station].perform_chip_cloud_analysis()
-                ds.station[station].get_chip_features(args.write_chips, blob_dir, args.mask_method)
+                ds.station[station].get_chip_features(args.write_chips, blob_dir, mm1, mm2)
             if args.write_to_csv:
                 sstation = str(station).zfill(8)
                 outfilename = f'az://{ds.container}/stations/{sstation}/{sstation}_processed_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.csv'
@@ -102,7 +108,7 @@ if __name__ == "__main__":
                 print(f'wrote csv to {outfilename}')
         except FileNotFoundError:
             print(f"Source file not found for station {station}. Skipping...")
-    
+
     ## Merge dataframes w/ feature data for all stations, write to blob storage
     print("Merging station feature dataframes and saving to blob storage.")
     df = pd.DataFrame()
@@ -115,7 +121,7 @@ if __name__ == "__main__":
         else:
             continue
 
-    outfileprefix = f"az://modeling-data/{ds.container}/feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{args.mask_method}_masking"
-    
+    outfileprefix = f"az://modeling-data/{ds.container}/feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking"
+
     df.to_csv(f"{outfileprefix}.csv", storage_options=storage_options)
     print("Done!")

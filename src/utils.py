@@ -20,12 +20,12 @@ def train_test_validate_split(df, proportions, part_colname = "partition"):
     """
     Takes a DataFrame (`df`) and splits it into train, test, and validate
     partitions. Returns a DataFrame with a new column, `part_colname` specifying
-    which partition each row belongs to. `proportions` is a list of length 3 with 
+    which partition each row belongs to. `proportions` is a list of length 3 with
     desired proportions for train, test, and validate partitions, in that order.
     """
     if sum(proportions) != 1 | len(proportions) != 3:
         sys.exit("Error: proportions must be length 3 and sum to 1.")
-    
+
     # first sample train data
     train = df.sample(frac=proportions[0], random_state=2)
     train[part_colname] = "train"
@@ -105,7 +105,8 @@ def fit_mlp(
         buffer_distance=500,
         day_tolerance=8,
         cloud_thr=80,
-        mask_method="lulc",
+        mask_method1="lulc",
+        mask_method2="",
         min_water_pixels=1,
         n_layers=3,
         layer_out_neurons=[24, 12, 6]
@@ -113,8 +114,8 @@ def fit_mlp(
 
     if len(layer_out_neurons) != n_layers:
         raise ModelArchitectureError("len(layer_out_neurons) must be equal to n_layers")
-        
-    fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method}_masking.csv"
+
+    fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking.csv"
     data = pd.read_csv(fp, storage_options=storage_options)
 
     not_enough_water = data["n_water_pixels"] <= min_water_pixels
@@ -153,14 +154,14 @@ def fit_mlp(
     X_itv, y_itv = np.array(X_itv), np.array(y_itv)
 
     class RegressionDataset(Dataset):
-        
+
         def __init__(self, X_data, y_data):
             self.X_data = X_data
             self.y_data = y_data
-            
+
         def __getitem__(self, index):
             return self.X_data[index], self.y_data[index]
-            
+
         def __len__ (self):
             return len(self.X_data)
 
@@ -203,7 +204,7 @@ def fit_mlp(
             x = self.relu(self.layer_1(inputs))
             for i in range(2, self.n_layers + 1):
                 x = self.relu(getattr(self, f"layer_{i}")(x))
-            
+
             x = self.layer_out(x)
 
             return (x)
@@ -243,7 +244,7 @@ def fit_mlp(
                 train_loss.backward()
 
                 return train_loss
-            
+
             # Update weights
             optimizer.step(closure)
 
@@ -251,20 +252,20 @@ def fit_mlp(
             train_loss = closure()
             train_epoch_loss += train_loss.item()
 
-        # VALIDATION    
+        # VALIDATION
         with torch.no_grad():
             val_epoch_loss = 0
             model.eval()
             for X_val_batch, y_val_batch in val_loader:
                 X_val_batch, y_val_batch = X_val_batch.to(device), y_val_batch.to(device)
-                
+
                 y_val_pred = model(X_val_batch)
-                            
+
                 val_loss = criterion(y_val_pred, y_val_batch.unsqueeze(1))
-                
+
                 val_epoch_loss += val_loss.item()
         loss_stats["train"].append(train_epoch_loss/len(train_loader))
-        loss_stats["val"].append(val_epoch_loss/len(val_loader))                              
+        loss_stats["val"].append(val_epoch_loss/len(val_loader))
 
         scheduler.step()
 
@@ -302,7 +303,7 @@ def fit_mlp(
     train_pred_list = [a.squeeze().tolist() for a in train_pred_list]
     train_mse = mean_squared_error(train_pred_list, y_train)
     train_r_squared = r2_score(train_pred_list, y_train)
-    
+
     itv_pred_list = []
     with torch.no_grad():
         model.eval()
@@ -345,7 +346,7 @@ def fit_mlp(
         "itv_mse": itv_mse,
         "itv_R2": itv_r_squared
     }
-    
+
     return output
 
 
@@ -371,7 +372,7 @@ def denoise(image, operation = "erosion", kernel_size = 3, iterations = 1):
     Morphological operations
 
     Keyword arguments:
-    image -- the image 
+    image -- the image
     operation -- the morphological operators (default erosion)
     kernel_size -- the size of the matrix with which image is convolved (default 3)
     iterations -- the number of times the operator is applied (default 1)
@@ -401,12 +402,12 @@ def denoise(image, operation = "erosion", kernel_size = 3, iterations = 1):
         return erode(image)
     elif operation == "dilation":
         return dilate(image)
-    elif operation == "opening": 
+    elif operation == "opening":
         # opening: the dilation of the erosion
         arr = dilate(erode(image))
         arr[image != 1] = 0
         return arr
-    else: 
+    else:
         # closing: the erosion of the dilation
         arr = erode(dilate(image))
         arr[image != 1] = 0

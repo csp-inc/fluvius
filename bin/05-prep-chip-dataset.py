@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
                     out_name = f"modeling-data/chips/qa/{composite}_{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
 
-                    if args.local_outpath != None:
+                    if args.local_outpath is not None:
                         if not os.path.exists(f'{args.local_outpath}'):
                             os.makedirs(f'{args.local_outpath}')
                         qa_img.save(f"{args.local_outpath}/{composite}_{data_src}_{os.path.basename(path[:-4])}.png")

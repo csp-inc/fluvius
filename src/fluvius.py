@@ -40,7 +40,7 @@ EMPTY_METADATA_DICT = {
     "sensing_time": pd.NaT
 }
 
-BAD_USGS_COLS = ["Instantaneous computed discharge (cfs)_x", 
+BAD_USGS_COLS = ["Instantaneous computed discharge (cfs)_x",
                  "Instantaneous computed discharge (cfs)_y"]
 
 class USGS_Water_DB:
@@ -69,7 +69,7 @@ class USGS_Water_DB:
         if result.status_code==200:
             if self.verbose:
                 print(f'Data found at {url}!')
-            soup = bs(result.text, 'html.parser') 
+            soup = bs(result.text, 'html.parser')
             return soup
         else:
             if self.verbose:
@@ -135,7 +135,7 @@ class USGS_Station:
         if result.status_code==200:
             if self.verbose:
                 print('Data found!')
-            soup = bs(result.text, 'html.parser') 
+            soup = bs(result.text, 'html.parser')
             return soup
         else:
             if self.verbose:
@@ -166,8 +166,8 @@ class USGS_Station:
         textsoup = self.get_url_text(water_url)
         out = None
         if textsoup is not None:
-            out = self.process_soup(textsoup, attribute) 
-        return out 
+            out = self.process_soup(textsoup, attribute)
+        return out
 
     def get_water_df(self, sleep_time=3, write_to_csv=False):
         #check if the csv file exists, if not download it...
@@ -181,7 +181,7 @@ class USGS_Station:
                 merged = d_df.merge(ssd_df, on='Date-Time')
                 if d_df is not None:
                     if self.verbose:
-                        print(f'Found {year} {self.site_no} data!') 
+                        print(f'Found {year} {self.site_no} data!')
                     d.append(merged)
             except: #need to work on this a little bit to check for data or at least build method
                 if self.verbose:
@@ -190,7 +190,7 @@ class USGS_Station:
         if d:
             self.df = pd.concat(d, ignore_index=True).dropna()
             if write_to_csv:
-                sitefile = f'/content/data/{self.site_no}_data.csv' 
+                sitefile = f'/content/data/{self.site_no}_data.csv'
                 self.df.to_csv(sitefile, index=False)
                 print(f'Wrote {sitefile}!')
         else:
@@ -215,13 +215,13 @@ class WaterData:
                 account_name=self.storage_options['account_name'], \
                 account_key=self.storage_options['account_key'])
         return fs.ls(f'{self.station_path}')
-    
+
     def get_source_df(self):
         '''
         Returns the station dataframe <pandas.DataFrame>
         '''
         source_url = f'az://{self.container}/{self.data_source}_station_metadata.csv'
-        source_df = pd.read_csv(source_url, storage_options=self.storage_options) 
+        source_df = pd.read_csv(source_url, storage_options=self.storage_options)
         #fs_list = self.get_available_station_list()
         #station_list = pd.DataFrame({'site_no':filter(None,\
         #                                   map(lambda sub:(''.join([ele for ele in sub])), fs_list))})
@@ -299,22 +299,22 @@ class WaterData:
                     self.container,
                     self.storage_options,
                     self.data_source)
-            self.station[str(station)] = ws   
+            self.station[str(station)] = ws
         elif station is None:
             for s in self.df['site_no']:
                 #use recursion to get all station data
-                self.get_station_data(str(s))           
+                self.get_station_data(str(s))
         else:
             print('Invalid station name!')
-        
+
         self.sort_station_data()
-        
+
     def sort_station_data(self):
         self.station = {key: value for key, value in sorted(self.station.items())}
 
 
 class WaterStation:
-    ''' 
+    '''
     Generalized water station data. May make child class for USGS, ANA, and ITV
     '''
     def __init__(self, site_no, lat, lon, area_of_interest, container, storage_options, data_source):
@@ -350,7 +350,7 @@ class WaterStation:
         """
         Some stations from USGS have two measurements of instantaneous computed
         discharge. This method drops observations for which the two measurements
-        are not equal. Note that the method only applies to "usgs" stations. If 
+        are not equal. Note that the method only applies to "usgs" stations. If
         WaterStation.data_source is not equal to "usgs", the method does nothing,
         so it can be safely applied to WaterStations from any data source with
         minimal performance impact.
@@ -368,16 +368,16 @@ class WaterStation:
                 )
 
     def build_catalog(self, collection='sentinel-2-l2a'):
-        ''' 
+        '''
         Use pystac-client to search for Sentinel 2 L2A data
         '''
         catalog = Client.open("https://planetarycomputer.microsoft.com/api/stac/v1")
         print(f'building catalog for station {self.site_no} with {collection}!')
 
         search = catalog.search(
-            collections=[collection], 
-            intersects=self.area_of_interest, 
-            datetime=self.time_of_interest    
+            collections=[collection],
+            intersects=self.area_of_interest,
+            datetime=self.time_of_interest
             )
         matched_list = list(search.get_items())
         print(f"{len(matched_list)} Items found")
@@ -424,7 +424,7 @@ class WaterStation:
         self.merged_df['InSitu_Satellite_Diff'] = \
                 self.merged_df['Date-Time']-self.merged_df['Date-Time_Remote']
         self.total_matched_images = len(self.merged_df)
-                   
+
     def get_scl_chip(self, signed_url, return_meta_transform=False):
         with rio.open(signed_url) as ds:
             aoi_bounds = features.bounds(self.area_of_interest)
@@ -487,7 +487,7 @@ class WaterStation:
             Image.NEAREST
         )
         return np.array(lulc_img)
-    
+
     def get_spectral_chip(self, hrefs_10m, hrefs_20m, return_meta_transform=False):
         """
         Returns an image with one or more bands along the 3rd dimension from a signed url (one for each band)
@@ -504,7 +504,7 @@ class WaterStation:
                 self.window_20m = windows.from_bounds(
                     transform=ds.transform,
                     *warped_aoi_bounds).round_lengths()
-                
+
                 band_data_20m.append(
                     ds.read(
                         window=self.window_20m,
@@ -515,7 +515,7 @@ class WaterStation:
                         resampling=Resampling.nearest
                     )
                 )
-        
+
         band_data_10m = list()
         for href in hrefs_10m:
             signed_href = pc.sign(href)
@@ -541,9 +541,9 @@ class WaterStation:
         req = requests.get(signed_url)
         soup = bs(req.text, "xml")
         mean_viewing_angles = soup.find_all("Mean_Viewing_Incidence_Angle")
-        mean_viewing_azimuth = np.mean([float(angles.find("AZIMUTH_ANGLE").get_text()) 
+        mean_viewing_azimuth = np.mean([float(angles.find("AZIMUTH_ANGLE").get_text())
                                         for angles in mean_viewing_angles])
-        mean_viewing_zenith = np.mean([float(angles.find("ZENITH_ANGLE").get_text()) 
+        mean_viewing_zenith = np.mean([float(angles.find("ZENITH_ANGLE").get_text())
                                     for angles in mean_viewing_angles])
 
         mean_sun_angles = soup.find("Mean_Sun_Angle")
@@ -579,7 +579,7 @@ class WaterStation:
                 if not quiet:
                     print(f"{sc['scl-href']} cloud chip error!")
         self.merged_df['Chip Cloud Pct'] = chip_clouds_list
-        
+
     def chip_cloud_analysis(self, scl):
         scl = np.array(scl)
         n_total_pxls = np.multiply(scl.shape[0], scl.shape[1])
@@ -604,7 +604,7 @@ class WaterStation:
                     print(f'{visual_href} returned {522}', file=f)
 
     def get_chip_features(
-            self, 
+            self,
             write_chips_to_blob=False,
             blob_root_dir="",
             mask_method1="lulc", # one of "lulc" or "scl". "lulc" also removes clouds using scl
@@ -629,7 +629,7 @@ class WaterStation:
                 elif mask_method1 == "lulc":
                     if i == 0:
                         lulc_water = (self.get_io_lulc_chip() == 1)
-                    scl_mask = ((scl < 8) & 
+                    scl_mask = ((scl < 8) &
                         ((scl != 3) & (scl != 1))) # removes clouds, cloud shadow,
                                                    # snow, and defective pixels
                     mask = (scl_mask & lulc_water)
@@ -689,17 +689,15 @@ class WaterStation:
                 reflectances.append([np.nan] * n_bands)
                 n_water_pixels.append(np.nan)
                 metadata.append(EMPTY_METADATA_DICT)
-            
+
         reflectances = np.array(reflectances)
         n_water_pixels = np.array(n_water_pixels)
         metadata = pd.DataFrame(metadata)
-        
+
         collection = 'sentinel-2-l2a'
         bands = BANDS_10M + BANDS_20M
-        
+
         for i,band in enumerate(bands):
-            # print(band)
-            # print(reflectances[:,i].shape)
             self.merged_df[f'{collection}_{band}'] = reflectances[:,i]
 
         self.merged_df['n_water_pixels'] = n_water_pixels
@@ -715,7 +713,7 @@ class WaterStation:
                 blob_name=blobname,\
                 credential=self.storage_options['account_key'])
         with open(f"{localfile}", "rb") as out_blob:
-            blobclient.upload_blob(out_blob, overwrite=True) 
+            blobclient.upload_blob(out_blob, overwrite=True)
 
     def write_chip_to_blob(
             self,
@@ -741,10 +739,10 @@ class WaterStation:
             os.makedirs(f'{local_root_dir}/{self.data_source}')
         out_name = f'{local_root_dir}/{self.data_source}/{sample_id}.tif'
         blob_name = f'{blob_root_dir}/{self.data_source}/{sample_id}.tif'
-        
+
         with rio.open(out_name, 'w', **img_meta) as dest:
             dest.write(img)
-        
+
         fs = fsspec.filesystem("az", **self.storage_options)
         fs.put_file(out_name, blob_name, overwrite=True)
         # self.upload_local_to_blob(out_name, blob_name)

@@ -1,4 +1,4 @@
-{mm1}{mm2}import os, pandas as pd, argparse
+import os, pandas as pd, argparse
 
 from pandas.core.algorithms import diff
 

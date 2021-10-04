@@ -27,10 +27,6 @@ if __name__ == "__main__":
         default="rgb",
         type=str,
         help="Which color composite to download. \"rgb\", color infrared (\"cir\"), or short-wave infrared (\"swir\")")
-    parser.add_argument("--local_save_dir",
-        default="data/qa_chips",
-        type=str,
-        help="The local filepath to which QA chips will be saved")
     args = parser.parse_args()
 
     chip_size = args.buffer_distance

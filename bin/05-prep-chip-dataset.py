@@ -43,7 +43,7 @@ if __name__ == "__main__":
     parser.add_argument('--mask_method2',\
         default="",\
         type=str,\
-        help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\")")
+        help="Which additional index to use, if any, to update the mask, (\"ndvi\") or (\"mndwi\")")
     parser.add_argument('--write_chips_blob',\
         default=False,\
         type=bool,\

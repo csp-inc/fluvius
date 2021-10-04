@@ -48,7 +48,7 @@ if __name__ == "__main__":
     parser.add_argument('--mask_method2',\
         default="",\
         type=str,\
-        help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\")")
+        help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\")")
     args = parser.parse_args()
 
     #################  set up ####################

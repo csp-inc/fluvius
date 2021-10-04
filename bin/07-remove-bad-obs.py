@@ -5,6 +5,14 @@ from pandas.core.algorithms import diff
 if __name__ == "__main__":
     ############### Parse commnd line args ###################
     parser = argparse.ArgumentParser()
+    parser.add_argument('--qa_chip_list_name',\
+        default="good_chips.csv",\
+        type=str,\
+        help="The Azure filename for the list of good chips. " +\
+             "Assumed to be in the \"modeling-data/chips/post-qa/{chip_size}" +\
+             "m_cloudthr{cloud_thr}_{mm1}{mm2}_masking` directory\". " +\
+             "This will be used to determine which samples in the feature " +\
+             "dataframe to keep.")
     parser.add_argument('--day_tolerance',\
         default=8,\
         type=int,\
@@ -24,11 +32,7 @@ if __name__ == "__main__":
     parser.add_argument('--mask_method2',\
         default="",\
         type=str,\
-        help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\")")
-    parser.add_argument('--qa_chip_dir',\
-        default="data/qa_chips",\
-        type=str,\
-        help="The local directory containing filtered QA chips. The remaining chips will be used to determine which samples in the feature dataframe to keep.")
+        help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\")")
     args = parser.parse_args()
 
     chip_size = args.buffer_distance
@@ -36,7 +40,7 @@ if __name__ == "__main__":
     day_tol = args.day_tolerance
     mm1 = args.mask_method1
     mm2 = args.mask_method2
-    chip_dir = args.qa_chip_dir
+    chip_list_fn = f"az://modeling-data/good-chip-lists/{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{args.qa_chip_list_name}"
 
     with open("/content/credentials") as f:
         env_vars = f.read().split("\n")
@@ -50,10 +54,9 @@ if __name__ == "__main__":
 
     all_data = pd.read_csv(f"az://modeling-data/fluvius_data_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv", storage_options=storage_options)
 
-    good_chips = os.listdir(chip_dir)
-
+    good_chips = list(pd.read_csv(chip_list_fn, storage_options=storage_options).chips)
     all_data_chip_basename = [x.split("/")[-1] for x in all_data.rgb_and_water_png_href]
-    set(good_chips).difference(set(all_data_chip_basename))
+    
     keep = [x in good_chips for x in all_data_chip_basename]
 
     filtered_data = all_data.loc[keep, ]

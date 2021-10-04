@@ -37,7 +37,7 @@ if __name__ == "__main__":
     day_tol = args.day_tolerance
     mm1 = args.mask_method1
     mm2 = args.mask_method2
-    chip_dir = f"data/qa_chips/" #{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking"
+    chip_dir = f"data/qa_chips/{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking"
     chip_list_name = f"az://modeling-data/good-chip-lists/{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{args.qa_chip_list_name}"
     
     with open("/content/credentials") as f:

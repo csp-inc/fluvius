@@ -68,6 +68,6 @@ if __name__ == "__main__":
     print(
         f"\nDone! \n\n" +
         f"Now delete the QA chips in {local_save_dir} that represent \n" +
-        "bad samples. Then run bin/06b-upload-good-chips.py using \n" +
+        "bad samples. Then run bin/06b-upload-good-chips.py \n" +
         "to upload the list of good chips to Azure blob storage."
     )

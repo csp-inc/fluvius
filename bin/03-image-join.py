@@ -7,6 +7,9 @@ import pandas as pd
 import argparse
 import matplotlib as plt
 
+import faulthandler
+faulthandler.enable()
+
 # Set the environment variable PC_SDK_SUBSCRIPTION_KEY, or set it here.
 # The Hub sets PC_SDK_SUBSCRIPTION_KEY automatically.
 # pc.settings.set_subscription_key(<YOUR API Key>)

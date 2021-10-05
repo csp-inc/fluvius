@@ -28,6 +28,7 @@ import planetary_computer as pc
 from pystac.extensions.eo import EOExtension as eo
 from azure.storage.blob import BlobClient
 import stackstac
+import traceback
 
 BANDS_10M = ['AOT', 'B02', 'B03', 'B04', 'B08', 'WVP']
 BANDS_20M = ['B05', 'B06', 'B07', 'B8A', 'B11', "B12"]
@@ -684,6 +685,7 @@ class WaterStation:
                     n_water_pixels.append(0)
                     metadata.append(EMPTY_METADATA_DICT)
             except:
+                traceback.print_exc()
                 print(f"Error for {scene_query['sample_id']}! Skipping...")
                 #print(f"{scene_query['visual-href']} returned response!")
                 reflectances.append([np.nan] * n_bands)

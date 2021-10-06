@@ -5,7 +5,10 @@ from src.fluvius import WaterData
 import fsspec
 import pandas as pd
 import argparse
-import matplotlib as plt
+import shutil
+
+import faulthandler
+faulthandler.enable()
 
 # Set the environment variable PC_SDK_SUBSCRIPTION_KEY, or set it here.
 # The Hub sets PC_SDK_SUBSCRIPTION_KEY automatically.
@@ -65,11 +68,18 @@ if __name__ == "__main__":
     buffer_distance = args.buffer_distance
     mm1 = args.mask_method1
     mm2 = args.mask_method2
-    blob_dir = f"modeling-data/chips/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking"
-    ################### Begin ####################
+    local_save_dir = f"data/chips/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking"
 
-    storage_options={'account_name':os.environ['ACCOUNT_NAME'],
-                     'account_key':os.environ['BLOB_KEY']}
+    ################### Begin ####################
+    if not os.path.exists(local_save_dir):
+        os.makedirs(local_save_dir)
+    else: # remove for data source if exists to start fresh
+        if os.path.exists(f"{local_save_dir}/{data_source}")
+            shutil.rmtree(f"{local_save_dir}/{data_source}") 
+        
+    
+    storage_options= {'account_name':os.environ['ACCOUNT_NAME'],
+                      'account_key':os.environ['BLOB_KEY']}
 
     fs = fsspec.filesystem('az',
                             account_name=os.environ['ACCOUNT_NAME'],
@@ -98,7 +108,7 @@ if __name__ == "__main__":
                     continue
 
                 ds.station[station].perform_chip_cloud_analysis()
-                ds.station[station].get_chip_features(args.write_chips, blob_dir, mm1, mm2)
+                ds.station[station].get_chip_features(args.write_chips, local_save_dir, mm1, mm2)
             if args.write_to_csv:
                 sstation = str(station).zfill(8)
                 outfilename = f'az://{ds.container}/stations/{sstation}/{sstation}_processed_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent.csv'
@@ -108,6 +118,16 @@ if __name__ == "__main__":
                 print(f'wrote csv to {outfilename}')
         except FileNotFoundError:
             print(f"Source file not found for station {station}. Skipping...")
+    
+    ### Upload the chips to blob storage
+    print("Uploading chips to blob storage.")
+    blob_dir = f"modeling-data/chips/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{data_source}/"
+    try:
+        fs.rm(blob_dir, recursive=True)
+    except:
+        pass
+    
+    fs.put(f"{local_save_dir}/{data_source}/", blob_dir, recursive=True)
 
     ## Merge dataframes w/ feature data for all stations, write to blob storage
     print("Merging station feature dataframes and saving to blob storage.")

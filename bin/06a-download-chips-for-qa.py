@@ -22,15 +22,11 @@ if __name__ == "__main__":
     parser.add_argument('--mask_method2',\
         default="",\
         type=str,\
-        help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\")")
+        help="Which additional index to use, if any, to update the mask, (\"ndvi\") or (\"mndwi\")")
     parser.add_argument("--composite",
         default="rgb",
         type=str,
         help="Which color composite to download. \"rgb\", color infrared (\"cir\"), or short-wave infrared (\"swir\")")
-    parser.add_argument("--local_save_dir",
-        default="data/qa_chips",
-        type=str,
-        help="The local filepath to which QA chips will be saved")
     args = parser.parse_args()
 
     chip_size = args.buffer_distance
@@ -39,7 +35,7 @@ if __name__ == "__main__":
     mm1 = args.mask_method1
     mm2 = args.mask_method2
     composite = args.composite
-    local_save_dir = args.local_save_dir
+    local_save_dir = f"data/qa_chips/{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking"
 
     with open("/content/credentials") as f:
         env_vars = f.read().split("\n")
@@ -72,7 +68,6 @@ if __name__ == "__main__":
     print(
         f"\nDone! \n\n" +
         f"Now delete the QA chips in {local_save_dir} that represent \n" +
-        "bad samples. Then run bin/07-remove-bad-obs.py using \n" +
-        f"{local_save_dir} as the input directory to remove the bad \n" +
-        "observations from the feature dataframe prior to model training."
+        "bad samples. Then run bin/06b-upload-good-chips.py \n" +
+        "to upload the list of good chips to Azure blob storage."
     )

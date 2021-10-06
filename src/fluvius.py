@@ -808,4 +808,6 @@ class WaterStation:
 
 # Utility functions.
 def normalized_diff(b1, b2):
+    b1 = b1.astype(float)
+    b2 = b2.astype(float)
     return (b1 - b2) / (b1 + b2)

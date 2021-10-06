@@ -74,7 +74,7 @@ if __name__ == "__main__":
     if not os.path.exists(local_save_dir):
         os.makedirs(local_save_dir)
     else: # remove for data source if exists to start fresh
-        if os.path.exists(f"{local_save_dir}/{data_source}")
+        if os.path.exists(f"{local_save_dir}/{data_source}"):
             shutil.rmtree(f"{local_save_dir}/{data_source}") 
         
     

@@ -1,4 +1,4 @@
-import fsspec, os, argparse, pandas as pd
+import fsspec, os, argparse, pandas as pd, shutil
 
 if __name__ == "__main__":
     ############### Parse commnd line args ###################
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     if not os.path.exists(local_save_dir):
         os.makedirs(local_save_dir)
     else: # start fresh if dir already exists
-        os.rmdir(local_save_dir)
+        shutil.rmtree(local_save_dir)
         os.makedirs(local_save_dir)
 
     all_data = pd.read_csv(f"az://modeling-data/fluvius_data_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv", storage_options=storage_options)

@@ -45,7 +45,7 @@ if __name__ == "__main__":
         type=str,\
         help="Which additional index to use, if any, to update the mask, (\"ndvi\") or (\"mndwi\")")
     parser.add_argument('--write_chips_blob',\
-        default=False,\
+        default=True,\
         type=bool,\
         help="Should QA chips be written to blob storage?")
     parser.add_argument('--rgb_min',\

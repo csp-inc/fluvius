@@ -28,6 +28,7 @@ import planetary_computer as pc
 from pystac.extensions.eo import EOExtension as eo
 from azure.storage.blob import BlobClient
 import stackstac
+import traceback
 
 BANDS_10M = ['AOT', 'B02', 'B03', 'B04', 'B08', 'WVP']
 BANDS_20M = ['B05', 'B06', 'B07', 'B8A', 'B11', "B12"]
@@ -44,10 +45,12 @@ BAD_USGS_COLS = ["Instantaneous computed discharge (cfs)_x",
                  "Instantaneous computed discharge (cfs)_y"]
 
 class USGS_Water_DB:
+
     def __init__(self, verbose=False):
         self.source_url = 'https://nrtwq.usgs.gov'
         self.verbose = verbose
         self.create_driver()
+
 
     def create_driver(self):
         chrome_options = Options()
@@ -57,11 +60,13 @@ class USGS_Water_DB:
         driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
         self.driver = driver
 
+
     def get_station_df(self):
         soup = self.get_url_text(self.source_url)
         js = str(soup.findAll('script')[6])
         marker_text_raw = js.split('L.marker')[1:-1]
         self.station_df = pd.concat([self.get_marker_info(m) for m in marker_text_raw]).reset_index(drop=True)
+
 
     def get_url_text(self, url):
         self.driver.get(url)
@@ -76,6 +81,7 @@ class USGS_Water_DB:
                 print(f'{url} response not 202!')
         return None
 
+
     def process_soup(self, soup):
         data_raw = str(soup).split('\n')
         data_raw = [elem for elem in data_raw if not ('#' in elem)]
@@ -89,6 +95,7 @@ class USGS_Water_DB:
         df = pd.DataFrame(data=data, columns=columns)
         return df
 
+
     def get_marker_info(self, marker_text):
         site_no = marker_text.split('site_no=')[1].split('>')[0].replace('"','')
         point = [float(p) for p in marker_text.split('[')[1].split(']')[0].split(',')]
@@ -97,6 +104,7 @@ class USGS_Water_DB:
         site_name = marker_text.split('<hr>')[1].split('<br')[0]
         df = pd.DataFrame([{'site_no':site_no,'site_name':site_name,'Latitude':lat,'Longitude':lon}])
         return gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.Longitude,df.Latitude))
+
 
 class USGS_Station:
 
@@ -107,12 +115,14 @@ class USGS_Station:
         self.year_range = year_range
         self.create_driver()
 
+
     def create_driver(self):
         chrome_options = Options()
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         self.driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+
 
     def get_water_url(self, attribute, year):
         pcode_list = {'discharge':'00060',\
@@ -129,6 +139,7 @@ class USGS_Station:
         url = f"{l['url_header']}site_no={l['site_no']}&pcode={l['pcode']}&period={l['period']}&timestep={l['timestep']}&format=rdb&is_verbose=y"
         return url
 
+
     def get_url_text(self, url):
         self.driver.get(url)
         result = requests.get(url, allow_redirects=False)
@@ -141,6 +152,7 @@ class USGS_Station:
             if self.verbose:
                 print('Data does not exist')
             return None
+
 
     def process_soup(self,soup,attribute):
         #might need to update this method to include instantaneous measurements
@@ -161,6 +173,7 @@ class USGS_Station:
         df = pd.DataFrame(data=data, columns=columns)
         return df
 
+
     def get_water_attribute(self, attribute, year):
         water_url = self.get_water_url(attribute, year)
         textsoup = self.get_url_text(water_url)
@@ -168,6 +181,7 @@ class USGS_Station:
         if textsoup is not None:
             out = self.process_soup(textsoup, attribute)
         return out
+
 
     def get_water_df(self, sleep_time=3, write_to_csv=False):
         #check if the csv file exists, if not download it...
@@ -196,6 +210,7 @@ class USGS_Station:
         else:
             self.df = None
 
+
 class WaterData:
 
     def __init__(self, data_source, container, storage_options):
@@ -207,6 +222,7 @@ class WaterData:
         self.station_path = f'{self.container}/stations'
         self.station = {}
 
+
     def get_available_station_list(self):
         '''
         Searches the blob container and saves the list of directories
@@ -215,6 +231,7 @@ class WaterData:
                 account_name=self.storage_options['account_name'], \
                 account_key=self.storage_options['account_key'])
         return fs.ls(f'{self.station_path}')
+
 
     def get_source_df(self):
         '''
@@ -237,6 +254,7 @@ class WaterData:
                                crs=crs)
         self.df = gdf
 
+
     def apply_buffer_to_points(self, buffer_distance, buffer_type='square', resolution=1):
         buffer_style = {'round':1, 'flat':2, 'square':3}
         srcdf = self.df.copy()
@@ -246,6 +264,7 @@ class WaterData:
                                       resolution=resolution)
         srcdf = srcdf.to_crs('EPSG:4326')
         self.df['buffer_geometry'] = srcdf.geometry
+
 
     def generate_map(self):
         '''
@@ -275,6 +294,7 @@ class WaterData:
                 overlay = False,\
                 control = True).add_to(self.plot_map)
 
+
     def get_space_bounds(self, geometry):
         coordinates =  np.dstack(geometry.boundary.coords.xy).tolist()
         area_of_interest = {
@@ -282,6 +302,7 @@ class WaterData:
         "coordinates": coordinates,
         }
         return area_of_interest
+
 
     def get_station_data(self, station=None):
         '''
@@ -309,6 +330,7 @@ class WaterData:
 
         self.sort_station_data()
 
+
     def sort_station_data(self):
         self.station = {key: value for key, value in sorted(self.station.items())}
 
@@ -335,16 +357,19 @@ class WaterStation:
         self.df.insert(0,'sample_id',sample_ids)
         self.df = self.df.drop_duplicates(subset='Date-Time')
 
+
     def format_time(self):
         self.df['Date-Time'] = pd.to_datetime(self.df['Date-Time'])
         self.df['Date-Time'] = self.df['Date-Time'].dt.date
         self.df = self.df.sort_values(by='Date-Time')
+
 
     def get_time_bounds(self):
         self.format_time()
         start = self.df['Date-Time'].iloc[0].strftime('%Y-%m-%d')
         end = self.df['Date-Time'].iloc[-1].strftime('%Y-%m-%d')
         self.time_of_interest = f'{start}/{end}'
+
 
     def drop_bad_usgs_obs(self):
         """
@@ -367,6 +392,7 @@ class WaterStation:
                     inplace=True
                 )
 
+
     def build_catalog(self, collection='sentinel-2-l2a'):
         '''
         Use pystac-client to search for Sentinel 2 L2A data
@@ -385,6 +411,7 @@ class WaterStation:
             self.catalog = None
         else:
             self.catalog = search
+
 
     def get_cloud_filtered_image_df(self, cloud_thr):
         if not hasattr(self, 'catalog'):
@@ -412,6 +439,7 @@ class WaterStation:
         cloud_list['Date-Time'] = cloud_list['Date-Time'].dt.date
         self.image_df = cloud_list.sort_values(by='Date-Time')
 
+
     def merge_image_df_with_samples(self, day_tolerance=8):
         self.merged_df = self.df.copy()
         self.merged_df['Date'] = pd.to_datetime(self.merged_df['Date-Time'])
@@ -424,6 +452,7 @@ class WaterStation:
         self.merged_df['InSitu_Satellite_Diff'] = \
                 self.merged_df['Date-Time']-self.merged_df['Date-Time_Remote']
         self.total_matched_images = len(self.merged_df)
+
 
     def get_scl_chip(self, signed_url, return_meta_transform=False):
         with rio.open(signed_url) as ds:
@@ -448,6 +477,7 @@ class WaterStation:
                 return scl, out_meta, out_transform
             return scl
 
+
     def get_visual_chip(self, signed_url, return_meta_transform=False):
         with rio.open(signed_url) as ds:
             aoi_bounds = features.bounds(self.area_of_interest)
@@ -460,6 +490,7 @@ class WaterStation:
                 out_transform = ds.window_transform(aoi_window)
                 return img, out_meta, out_transform
             return img
+
 
     def get_io_lulc_chip(self):
         catalog = Client.open("https://planetarycomputer.microsoft.com/api/stac/v1")
@@ -487,6 +518,7 @@ class WaterStation:
             Image.NEAREST
         )
         return np.array(lulc_img)
+
 
     def get_spectral_chip(self, hrefs_10m, hrefs_20m, return_meta_transform=False):
         """
@@ -537,6 +569,7 @@ class WaterStation:
         else:
             return bands_array
 
+
     def get_chip_metadata(self, signed_url):
         req = requests.get(signed_url)
         soup = bs(req.text, "xml")
@@ -562,6 +595,7 @@ class WaterStation:
 
         return meta_attributes
 
+
     def perform_chip_cloud_analysis(self, quiet=False):
         #probably can perform this in parallel
         '''
@@ -580,12 +614,14 @@ class WaterStation:
                     print(f"{sc['scl-href']} cloud chip error!")
         self.merged_df['Chip Cloud Pct'] = chip_clouds_list
 
+
     def chip_cloud_analysis(self, scl):
         scl = np.array(scl)
         n_total_pxls = np.multiply(scl.shape[0], scl.shape[1])
         n_cloud_pxls = np.sum((scl>=7) & (scl<=10))
         chip_cloud_pct = 100*(n_cloud_pxls/n_total_pxls)
         return chip_cloud_pct
+
 
     def check_response(self,logfile='/content/log/response.log'):
         for i, scene_query in self.merged_df.iterrows():
@@ -603,10 +639,11 @@ class WaterStation:
                 except:
                     print(f'{visual_href} returned {522}', file=f)
 
+
     def get_chip_features(
             self,
-            write_chips_to_blob=False,
-            blob_root_dir="",
+            write_chips=False,
+            local_save_dir="data/chips_default",
             mask_method1="lulc", # one of "lulc" or "scl". "lulc" also removes clouds using scl
             mask_method2=""
         ):
@@ -656,21 +693,19 @@ class WaterStation:
                         n_water_pixels.append(np.sum(mask))
                         metadata.append(granule_metadata)
 
-                        if write_chips_to_blob:
-                            self.write_chip_to_blob(
+                        if write_chips:
+                            self.write_chip_to_local(
                                 np.expand_dims(mask.astype(float),2),
                                 scl_meta,
                                 img_trans, # since it was resampled, proj is equal
-                                "data/chips",
-                                blob_root_dir,
+                                local_save_dir,
                                 f"{scene_query['sample_id']}_{scene_query['Date-Time']}_water"
                             )
-                            self.write_chip_to_blob(
+                            self.write_chip_to_local(
                                 img,
                                 img_meta,
                                 img_trans,
-                                "data/chips",
-                                blob_root_dir,
+                                local_save_dir,
                                 f"{scene_query['sample_id']}_{scene_query['Date-Time']}"
                             )
                     else: #no water pixels detected
@@ -684,6 +719,7 @@ class WaterStation:
                     n_water_pixels.append(0)
                     metadata.append(EMPTY_METADATA_DICT)
             except:
+                traceback.print_exc()
                 print(f"Error for {scene_query['sample_id']}! Skipping...")
                 #print(f"{scene_query['visual-href']} returned response!")
                 reflectances.append([np.nan] * n_bands)
@@ -703,6 +739,7 @@ class WaterStation:
         self.merged_df['n_water_pixels'] = n_water_pixels
         self.merged_df = pd.concat([self.merged_df.reset_index(), metadata], axis = 1).set_index('index')
 
+
     def upload_local_to_blob(self, localfile, blobname):
         #blobclient = BlobClient.from_connection_string(conn_str=self.connection_string,\
         #                                            container_name=self.container,\
@@ -715,13 +752,13 @@ class WaterStation:
         with open(f"{localfile}", "rb") as out_blob:
             blobclient.upload_blob(out_blob, overwrite=True)
 
-    def write_chip_to_blob(
+
+    def write_chip_to_local(
             self,
             array,
             img_meta,
             img_transform,
             local_root_dir,
-            blob_root_dir,
             sample_id
         ):
         img = np.moveaxis(array, -1, 0)
@@ -737,15 +774,11 @@ class WaterStation:
                     'transform': img_transform}
         if not os.path.exists(f'{local_root_dir}/{self.data_source}'):
             os.makedirs(f'{local_root_dir}/{self.data_source}')
+        
         out_name = f'{local_root_dir}/{self.data_source}/{sample_id}.tif'
-        blob_name = f'{blob_root_dir}/{self.data_source}/{sample_id}.tif'
 
         with rio.open(out_name, 'w', **img_meta) as dest:
             dest.write(img)
-
-        fs = fsspec.filesystem("az", **self.storage_options)
-        fs.put_file(out_name, blob_name, overwrite=True)
-        # self.upload_local_to_blob(out_name, blob_name)
 
 
     def visualize_chip(self, sample_id):
@@ -772,6 +805,9 @@ class WaterStation:
         ax[3].set_title('Water Mask')
         ax[3].axis('off')
 
+
 # Utility functions.
 def normalized_diff(b1, b2):
+    b1 = b1.astype(float)
+    b2 = b2.astype(float)
     return (b1 - b2) / (b1 + b2)

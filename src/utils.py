@@ -92,10 +92,6 @@ def generate_map(df, lat_colname='Latitude', lon_colname='Longitude'):
     return plot_map
 
 
-class ModelArchitectureError(Exception):
-    pass
-
-
 def fit_mlp(
         features,
         learning_rate,
@@ -108,12 +104,12 @@ def fit_mlp(
         mask_method1="lulc",
         mask_method2="",
         min_water_pixels=1,
-        n_layers=3,
-        layer_out_neurons=[24, 12, 6]
+        layer_out_neurons=[24, 12, 6],
+        learn_sched_step_size=200, 
+        learn_sched_gamma=0.2
     ):
 
-    if len(layer_out_neurons) != n_layers:
-        raise ModelArchitectureError("len(layer_out_neurons) must be equal to n_layers")
+    n_layers = len(layer_out_neurons)
 
     fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking.csv"
     data = pd.read_csv(fp, storage_options=storage_options)
@@ -215,7 +211,11 @@ def fit_mlp(
 
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.2)
+    scheduler = optim.lr_scheduler.StepLR(
+        optimizer,
+        step_size=learn_sched_step_size,
+        gamma=learn_sched_gamma
+    )
 
     loss_stats = {
         "train": [],
@@ -264,6 +264,7 @@ def fit_mlp(
                 val_loss = criterion(y_val_pred, y_val_batch.unsqueeze(1))
 
                 val_epoch_loss += val_loss.item()
+        
         loss_stats["train"].append(train_epoch_loss/len(train_loader))
         loss_stats["val"].append(val_epoch_loss/len(val_loader))
 
@@ -323,7 +324,6 @@ def fit_mlp(
         "features": features,
         "learning_rate": learning_rate,
         "batch_size": batch_size,
-        "n_layers": n_layers,
         "layer_out_neurons": layer_out_neurons,
         "loss_stats": loss_stats,
         "epochs": epochs,
@@ -365,6 +365,7 @@ def plot_obs_predict(obs_pred, title, savefig=False, outfn=""):
             facecolor="#FFFFFF",
             dpi=150
         )
+
 
 def denoise(image, operation = "erosion", kernel_size = 3, iterations = 1):
 

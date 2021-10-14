@@ -3,7 +3,16 @@ if __name__ == "__main__":
     sys.path.append("/content")
     from src.utils import fit_mlp
     import multiprocessing as mp
-    import pickle, hashlib
+    import pickle, hashlib, argparse, psutil
+
+
+    ############### Parse commnd line args ###################
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--n_workers',
+        default=psutil.cpu_count(logical = False),
+        type=int,
+        help="How many workers to use for fitting models in parallel (recommended not to go over number of physical cores")
+    args = parser.parse_args()
 
     with open("/content/credentials") as f:
         env_vars = f.read().split("\n")
@@ -60,7 +69,7 @@ if __name__ == "__main__":
             "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
             "sentinel-2-l2a_B05", "sentinel-2-l2a_B06",
             # Short-wave infrared
-            "sentinel-2-l2a_B11", "sentinel-2-l2a_B12"
+            "sentinel-2-l2a_B11", "sentinel-2-l2a_B12",
             # Site/time variables
             "is_brazil",
             # Scene metadata
@@ -227,7 +236,7 @@ if __name__ == "__main__":
             
             with open(fn, 'wb') as f:
                 pickle.dump(model_out, f, protocol=pickle.HIGHEST_PROTOCOL)
-        
-    my_pool = mp.Pool(processes=3)
-    my_pool.map(fit_model, permutations)
 
+    print(f"Beggining model fits with {args.n_workers} workers in parallel...")        
+    my_pool = mp.Pool(processes=args.n_workers)
+    my_pool.map(fit_model, permutations)

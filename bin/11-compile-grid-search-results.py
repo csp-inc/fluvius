@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
         metadata = metadata.append(row_dict, ignore_index=True)
     
-    metadata.to_csv(f"{directory}/grid_search_metadata.csv")
+    metadata.to_csv(f"{directory}/grid_search_metadata.csv", index=False)
 
 
     

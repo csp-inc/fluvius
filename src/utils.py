@@ -163,14 +163,12 @@ def fit_mlp(
 
     train_dataset = RegressionDataset(torch.from_numpy(X_train).float(), torch.from_numpy(y_train).float())
     val_dataset = RegressionDataset(torch.from_numpy(X_val).float(), torch.from_numpy(y_val).float())
-    test_dataset = RegressionDataset(torch.from_numpy(X_test).float(), torch.from_numpy(y_test).float())
     itv_dataset = RegressionDataset(torch.from_numpy(X_itv).float(), torch.from_numpy(y_itv).float())
     num_features = X_test.shape[1]
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
     train_loader_all = DataLoader(dataset=train_dataset, batch_size=1)
     val_loader = DataLoader(dataset=val_dataset, batch_size=1)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=1)
     itv_loader = DataLoader(dataset=itv_dataset, batch_size=1)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

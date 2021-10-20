@@ -73,8 +73,6 @@ RUN apt-get -y install python3.8-distutils
 RUN curl -o /tmp/get_pip.py https://bootstrap.pypa.io/get-pip.py
 RUN python3.8 /tmp/get_pip.py
 RUN pip3 install \
-    azureml-core==1.32.0 \
-    azureml-sdk==1.32.0 \
     azure-cli-core==2.26.1 \
     azure-storage-blob==12.8.1 \
     adlfs==2021.7.1 \
@@ -86,6 +84,8 @@ RUN pip3 install \
     folium==0.12.1 \
     fsspec==2021.7.0 \
     python-dateutil==2.8.2 \
+    simplejson==3.17.4 \
+    anyio==3.3.3 \
     rasterio==1.2.6 \
     dask[complete]==2021.7.1 \
     dask-geopandas==0.1.0a4 \

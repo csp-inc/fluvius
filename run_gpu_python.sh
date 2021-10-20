@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-TAG=${1:-data}
+TAG=${1:-gpu}
 IMAGE=cspinc/fluvius
 IMAGENAME=$IMAGE:$TAG
-DPATH=docker/Dockerfile
+DPATH=docker/gpu.Dockerfile
 
 if [[ "$(docker images -q $IMAGENAME 2> /dev/null)" == "" ]]; then
   echo "Image not found, building from recipe...."
@@ -11,6 +11,7 @@ if [[ "$(docker images -q $IMAGENAME 2> /dev/null)" == "" ]]; then
 fi
 
 docker run --rm -td --ipc "host"  \
+	--gpus all \
 	-v $('pwd'):/content \
 	-v /home/$USER/.vscode-server/:/root/.vscode-server/ \
 	-w /content \

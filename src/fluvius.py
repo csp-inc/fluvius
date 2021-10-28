@@ -258,7 +258,7 @@ class WaterData:
     def apply_buffer_to_points(self, buffer_distance, buffer_type='square', resolution=1):
         buffer_style = {'round':1, 'flat':2, 'square':3}
         srcdf = self.df.copy()
-        srcdf = srcdf.to_crs('EPSG:3857')
+        srcdf = srcdf.to_crs('EPSG:8858') # Equal Earth Americas projection
         srcdf = srcdf.geometry.buffer(buffer_distance,\
                                       cap_style=buffer_style[buffer_type],\
                                       resolution=resolution)
@@ -492,14 +492,13 @@ class WaterStation:
             return img
 
 
-    def get_io_lulc_chip(self):
+    def get_io_lulc_chip(self, epsg):
         catalog = Client.open("https://planetarycomputer.microsoft.com/api/stac/v1")
         search = catalog.search(
             collections=["io-lulc"],
             intersects=self.area_of_interest
         )
         item = next(search.get_items())
-        epsg = proj.ext(item).epsg
         nodata = raster.ext(item.assets["data"]).bands[0].nodata
         aoi_bounds = features.bounds(self.area_of_interest)
         items = [pc.sign(item).to_dict() for item in search.get_items()]
@@ -664,8 +663,7 @@ class WaterStation:
                 if mask_method1 == "scl":
                     mask = (scl == 6)
                 elif mask_method1 == "lulc":
-                    if i == 0:
-                        lulc_water = (self.get_io_lulc_chip() == 1)
+                    lulc_water = (self.get_io_lulc_chip(scl_meta["crs"].to_epsg()) == 1)
                     scl_mask = ((scl < 8) &
                         ((scl != 3) & (scl != 1))) # removes clouds, cloud shadow,
                                                    # snow, and defective pixels

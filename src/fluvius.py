@@ -513,7 +513,7 @@ class WaterStation:
         ).squeeze().compute().values
 
         lulc_img = Image.fromarray(merged).resize(
-            (self.window_20m.height * 2, self.window_20m.width * 2),
+            (self.window_20m.width * 2, self.window_20m.height * 2),
             Image.NEAREST
         )
         return np.array(lulc_img)
@@ -563,6 +563,7 @@ class WaterStation:
                     out_transform = ds.window_transform(aoi_window)
 
         bands_array = np.transpose(np.concatenate(band_data_10m + band_data_20m, axis=0), axes=[1, 2, 0])
+
         if return_meta_transform:
             return bands_array, out_meta, out_transform
         else:
@@ -685,7 +686,8 @@ class WaterStation:
                     mask = (mask & mask2)
                     if np.any(mask):
                         granule_metadata = self.get_chip_metadata(meta_href)
-                        masked_array = img[mask, :]
+                        masked_array = img[mask, :].astype(float)
+                        masked_array[masked_array == 0] = np.nan
                         mean_ref = np.nanmean(masked_array, axis=0)
                         reflectances.append(mean_ref)
                         n_water_pixels.append(np.sum(mask))

@@ -23,7 +23,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_src',
         type=str,
-        choices=["itv", "ana", "usgs", "ugsi"],
+        choices=["itv", "ana", "usgs", "usgsi"],
         help="name of data source")
     parser.add_argument('--day_tolerance',
         default=8,

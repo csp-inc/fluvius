@@ -516,7 +516,7 @@ class WaterStation:
             stack,
             dim="time",
             axis=None
-        ).squeeze().compute().values
+        ).squeeze().compute(scheduler="single-threaded").values
 
         lulc_img = Image.fromarray(merged).resize(
             (self.window_20m.width * 2, self.window_20m.height * 2),

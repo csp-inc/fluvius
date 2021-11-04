@@ -13,6 +13,8 @@ import time
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+from pyproj import CRS, Transformer
+import utm
 import rasterio as rio
 from rasterio import features
 from rasterio import warp
@@ -213,9 +215,10 @@ class USGS_Station:
 
 class WaterData:
 
-    def __init__(self, data_source, container, storage_options):
+    def __init__(self, data_source, container, buffer_distance, storage_options):
         self.container = container
         self.data_source = data_source
+        self.buffer = buffer_distance
         self.storage_options = {'account_name':storage_options['account_name'],\
                                 'account_key':storage_options['account_key']}
         self.filesystem = 'az'
@@ -255,17 +258,6 @@ class WaterData:
         self.df = gdf
 
 
-    def apply_buffer_to_points(self, buffer_distance, buffer_type='square', resolution=1):
-        buffer_style = {'round':1, 'flat':2, 'square':3}
-        srcdf = self.df.copy()
-        srcdf = srcdf.to_crs('EPSG:3857')
-        srcdf = srcdf.geometry.buffer(buffer_distance,\
-                                      cap_style=buffer_style[buffer_type],\
-                                      resolution=resolution)
-        srcdf = srcdf.to_crs('EPSG:4326')
-        self.df['buffer_geometry'] = srcdf.geometry
-
-
     def generate_map(self):
         '''
         plots web map using folium
@@ -295,28 +287,17 @@ class WaterData:
                 control = True).add_to(self.plot_map)
 
 
-    def get_space_bounds(self, geometry):
-        coordinates =  np.dstack(geometry.boundary.coords.xy).tolist()
-        area_of_interest = {
-        "type": "Polygon",
-        "coordinates": coordinates,
-        }
-        return area_of_interest
-
-
     def get_station_data(self, station=None):
         '''
         gets all the station data if station is None.
         '''
         if any(self.df['site_no'] == str(station)):
-            geometry =  self.df[self.df['site_no'] == str(station)].buffer_geometry.iloc[0]
             lat = self.df[self.df['site_no'] == str(station)].Latitude.iloc[0]
             lon = self.df[self.df['site_no'] == str(station)].Longitude.iloc[0]
-            aoi = self.get_space_bounds(geometry)
             ws  = WaterStation(str(station),
                     lat,
                     lon,
-                    aoi,
+                    self.buffer,
                     self.container,
                     self.storage_options,
                     self.data_source)
@@ -339,11 +320,11 @@ class WaterStation:
     '''
     Generalized water station data. May make child class for USGS, ANA, and ITV
     '''
-    def __init__(self, site_no, lat, lon, area_of_interest, container, storage_options, data_source):
+    def __init__(self, site_no, lat, lon, buffer, container, storage_options, data_source):
         self.site_no = site_no
         self.Latitude = lat
         self.Longitude = lon
-        self.area_of_interest = area_of_interest
+        self.buffer = buffer
         self.container = container
         self.storage_options = storage_options
         self.data_source = data_source
@@ -357,6 +338,31 @@ class WaterStation:
         self.df.insert(0,'sample_id',sample_ids)
         self.df = self.df.drop_duplicates(subset='Date-Time')
 
+        self.area_of_interest = self.get_area_of_interest()
+
+    def get_area_of_interest(self):
+        lat, lon = self.Latitude, self.Longitude
+
+        y, x, zone, _ = utm.from_latlon(lat, lon)
+        
+        new_epsg = CRS.from_dict({'proj': 'utm', 'zone': zone, 'south': self.data_source in ["ana", "itv"]}).to_epsg()
+
+        bottom, top = y - self.buffer, y + self.buffer
+        left, right = x - self.buffer, x + self.buffer
+
+        # Convert bounds back to Lat/Lon
+        transformer = Transformer.from_crs(f"epsg:{new_epsg}", "epsg:4326")
+        bottom1, left1 = transformer.transform(bottom, left)
+        top1, right1 = transformer.transform(top, right)
+
+        aoi = {
+            "type": "Polygon",
+            "coordinates": [
+                [ [left1, bottom1], [left1, top1], [right1, top1], [right1, bottom1], [left1, bottom1]]
+            ]
+        }
+        return aoi
+        
 
     def format_time(self):
         self.df['Date-Time'] = pd.to_datetime(self.df['Date-Time'])
@@ -492,14 +498,13 @@ class WaterStation:
             return img
 
 
-    def get_io_lulc_chip(self):
+    def get_io_lulc_chip(self, epsg):
         catalog = Client.open("https://planetarycomputer.microsoft.com/api/stac/v1")
         search = catalog.search(
             collections=["io-lulc"],
             intersects=self.area_of_interest
         )
         item = next(search.get_items())
-        epsg = proj.ext(item).epsg
         nodata = raster.ext(item.assets["data"]).bands[0].nodata
         aoi_bounds = features.bounds(self.area_of_interest)
         items = [pc.sign(item).to_dict() for item in search.get_items()]
@@ -511,10 +516,10 @@ class WaterStation:
             stack,
             dim="time",
             axis=None
-        ).squeeze().compute().values
+        ).squeeze().compute(scheduler="single-threaded").values
 
         lulc_img = Image.fromarray(merged).resize(
-            (self.window_20m.height * 2, self.window_20m.width * 2),
+            (self.window_20m.width * 2, self.window_20m.height * 2),
             Image.NEAREST
         )
         return np.array(lulc_img)
@@ -564,6 +569,7 @@ class WaterStation:
                     out_transform = ds.window_transform(aoi_window)
 
         bands_array = np.transpose(np.concatenate(band_data_10m + band_data_20m, axis=0), axes=[1, 2, 0])
+
         if return_meta_transform:
             return bands_array, out_meta, out_transform
         else:
@@ -664,8 +670,7 @@ class WaterStation:
                 if mask_method1 == "scl":
                     mask = (scl == 6)
                 elif mask_method1 == "lulc":
-                    if i == 0:
-                        lulc_water = (self.get_io_lulc_chip() == 1)
+                    lulc_water = (self.get_io_lulc_chip(scl_meta["crs"].to_epsg()) == 1)
                     scl_mask = ((scl < 8) &
                         ((scl != 3) & (scl != 1))) # removes clouds, cloud shadow,
                                                    # snow, and defective pixels
@@ -674,6 +679,7 @@ class WaterStation:
                 # Excludes images with no water pixels
                 if np.any(mask):
                     img, img_meta, img_trans = self.get_spectral_chip(hrefs_10m, hrefs_20m, True)
+                    print(f"Image shape: {img.shape}")
                     if mask_method2 == "ndvi":
                         # TODO: verify, revisit threshold, etc.
                         ndvi = normalized_diff(img[:, :, 4], img[:, :, 3])
@@ -687,7 +693,8 @@ class WaterStation:
                     mask = (mask & mask2)
                     if np.any(mask):
                         granule_metadata = self.get_chip_metadata(meta_href)
-                        masked_array = img[mask, :]
+                        masked_array = img[mask, :].astype(float)
+                        masked_array[masked_array == 0] = np.nan
                         mean_ref = np.nanmean(masked_array, axis=0)
                         reflectances.append(mean_ref)
                         n_water_pixels.append(np.sum(mask))

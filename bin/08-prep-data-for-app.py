@@ -1,7 +1,8 @@
+from numpy import integer
 import pandas as pd
 import os
 import fsspec
-import datetime as dt
+import datetime as dt, time
 import json
 import argparse
 
@@ -111,6 +112,7 @@ if __name__ == "__main__":
                 "SSC.mg.L": str(row["SSC (mg/L)"]),
                 "Q.m3.s": str(row["Q (m3/s)"]),
                 "sample_date": row["Date-Time"],
+                "sample_timestamp": round(time.mktime(dt.date.fromisoformat(row["Date-Time_Remote"]).timetuple()))*1000,
                 # "sample_julian": str(dt.date.fromisoformat(row["Date-Time"]).timetuple().tm_yday),
                 # "acquisition_date": row["Date-Time_Remote"],
                 # "acquisition_julian": str(dt.date.fromisoformat(row["Date-Time_Remote"]).timetuple().tm_yday),

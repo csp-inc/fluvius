@@ -21,36 +21,39 @@ for var in env_vars[:-1]:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_src',\
-        type=str,\
+    parser.add_argument('--data_src',
+        type=str,
+        choices=["itv", "ana", "usgs", "usgsi"],
         help="name of data source")
-    parser.add_argument('--day_tolerance',\
-        default=8,\
-        type=int,\
+    parser.add_argument('--day_tolerance',
+        default=8,
+        type=int,
         help="days of search around sample date")
-    parser.add_argument('--cloud_thr',\
-        default=80,\
-        type=int,\
+    parser.add_argument('--cloud_thr',
+        default=80,
+        type=int,
         help="percent of cloud cover acceptable")
-    parser.add_argument('--buffer_distance',\
-        default=500,\
-        type=int,\
+    parser.add_argument('--buffer_distance',
+        default=500,
+        type=int,
         help="search radius to use for reflectance data aggregation")
-    parser.add_argument('--write_to_csv',\
-        default=False,\
-        type=bool,\
+    parser.add_argument('--write_to_csv',
+        default=False,
+        type=bool,
         help="Write out csvs to ./data?")
-    parser.add_argument('--write_chips',\
-        default=False,\
-        type=bool,\
+    parser.add_argument('--write_chips',
+        default=False,
+        type=bool,
         help="Write chips to blob storage?")
-    parser.add_argument('--mask_method1',\
-        default="lulc",\
-        type=str,\
+    parser.add_argument('--mask_method1',
+        default="lulc",
+        choices=["lulc", "scl"],
+        type=str,
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
-    parser.add_argument('--mask_method2',\
-        default="",\
-        type=str,\
+    parser.add_argument('--mask_method2',
+        default="",
+        choices=["ndvi", "mndwi", ""],
+        type=str,
         help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\")")
     args = parser.parse_args()
 
@@ -84,9 +87,8 @@ if __name__ == "__main__":
     fs = fsspec.filesystem('az',
                             account_name=os.environ['ACCOUNT_NAME'],
                             account_key=os.environ['BLOB_KEY'])
-    ds = WaterData(data_source, container, storage_options)
+    ds = WaterData(data_source, container, buffer_distance, storage_options)
     ds.get_source_df()
-    ds.apply_buffer_to_points(buffer_distance)
 
     # Getting station feature data in for loop
     stations = ds.df["site_no"]

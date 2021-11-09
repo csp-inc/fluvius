@@ -413,3 +413,20 @@ def denoise(image, operation = "erosion", kernel_size = 3, iterations = 1):
         arr = erode(dilate(image))
         arr[image != 1] = 0
         return arr
+
+"""
+    Assumes a torch.tensor that is scaled from -1 to 1
+"""
+def tensor_to_rgb(a, rgb, clip_bounds=[0,0.5], gamma=1):
+    rgb_array = np.transpose(a[rgb, :, :].numpy().astype(float), (1,2,0)) + 1 # 
+    rgb_array = ((np.clip(rgb_array, *clip_bounds) - clip_bounds[0]) /
+                                (clip_bounds[1] - clip_bounds[0])) ** gamma * 255 
+    img = Image.fromarray(np.round(rgb_array).astype(np.uint8))
+
+    return img
+
+
+def plot_image(img, figsize=(8,8)):
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.imshow(img, interpolation='nearest')
+    

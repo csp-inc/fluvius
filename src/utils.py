@@ -342,7 +342,9 @@ def fit_mlp(
             "ITV set observations": y_itv,
         }),
         "itv_mse": itv_mse,
-        "itv_R2": itv_r_squared
+        "itv_R2": itv_r_squared,
+        "scaler": scaler,
+        "model":model
     }
 
     return output

@@ -343,6 +343,9 @@ def fit_mlp(
         }),
         "itv_mse": itv_mse,
         "itv_R2": itv_r_squared,
+        "train": train,
+        "validate": validate,
+        "test": test,
         "scaler": scaler,
         "model":model
     }

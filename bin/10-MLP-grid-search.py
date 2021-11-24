@@ -235,11 +235,12 @@ if __name__ == "__main__":
         )
     )
 
-    if not os.path.exists("output/mlp"):
+    if not os.path.exists(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking"):
         os.makedirs(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking")
     
+    
     def fit_model(args):
-        args_hash = hashlib.sha224("_".join([str(x) for x in args]).encode("utf-8")).hexdigest()
+        args_hash = hashlib.sha224("_".join([str(x) for x in args]).encode("utf-8")).hexdigest()[0:20]
         fn = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{args_hash}.pickle"
 
         if not os.path.exists(fn):
@@ -262,6 +263,7 @@ if __name__ == "__main__":
             with open(fn, 'wb') as f:
                 pickle.dump(model_out, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-    print(f"Beggining model fits with {args.n_workers} workers in parallel...")        
+    print(f"Beginning model fits with {args.n_workers} workers in parallel...")        
+  
     my_pool = mp.Pool(processes=args.n_workers)
     my_pool.map(fit_model, permutations)

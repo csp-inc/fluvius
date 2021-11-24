@@ -172,7 +172,7 @@ def fit_mlp(
     itv_loader = DataLoader(dataset=itv_dataset, batch_size=1)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+    global MultipleRegression
     class MultipleRegression(nn.Module):
         def __init__(self, num_features, n_layers, layer_out_neurons):
             super(MultipleRegression, self).__init__()

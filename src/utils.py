@@ -364,7 +364,7 @@ def fit_mlp_cv(
         day_tolerance=8,
         cloud_thr=80,
         mask_method1="lulc",
-        mask_method2="",
+        mask_method2="mndwi",
         min_water_pixels=10,
         layer_out_neurons=[24, 12, 6],
         learn_sched_step_size=200, 
@@ -374,7 +374,11 @@ def fit_mlp_cv(
     n_layers = len(layer_out_neurons)
 
     # Read the data
-    fp = f"/content/local/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_tmp_5fold.csv"
+    if mask_method2 == "ndvi":
+        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
+    elif mask_method2 == "mndwi":
+         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_14folds.csv"
+
     data = pd.read_csv(fp)
 
     data = data[data["partition"] != "testing"]
@@ -399,8 +403,9 @@ def fit_mlp_cv(
     y_train_fold = []
     val_site_mse = []
     val_pooled_mse = []
+    val_R2_fold = []
 
-    for fold in [1, 2, 3, 4, 5]:
+    for fold in [i for i in range(1, len(np.unique(data["fold_idx"])) + 1)]:
         X_train = X_scaled[data["fold_idx"] != fold]
         y_train = data[data["fold_idx"] != fold][response]
         X_val = X_scaled[data["fold_idx"] == fold]
@@ -484,8 +489,10 @@ def fit_mlp_cv(
             "val_pooled": []
         }
 
+        val_R2 = []
+
         # Train the model
-        print("Begin training.")
+        print(f"Training on fold {fold}.")
         for e in range(1, epochs+1):
             # TRAINING
             train_epoch_loss = 0
@@ -535,6 +542,9 @@ def fit_mlp_cv(
             
             scheduler.step()
 
+            # calculate R^2 for this epoch
+            val_R2.append(r2_score(val_pred, y_val))
+
             if (e % 50 == 0) and verbose:
                 print(f"Epoch {e}/{epochs} | Train Loss: {train_epoch_loss/len(train_loader):.5f} | Val Loss (mean of sites): {val_loss_site:.5f} | Val Loss (pooled mean): {val_loss:.5f}")
         
@@ -578,8 +588,12 @@ def fit_mlp_cv(
         train_pred_fold.append(train_pred_list)
         y_train_fold.append(list(y_train))
 
+        # Track validation R^2 per epoch per fold
+        val_R2_fold.append(val_R2)
+
 
     output = {
+        "training_data": fp,
         "buffer_distance": buffer_distance,
         "day_tolerance": day_tolerance,
         "cloud_thr": cloud_thr,
@@ -591,10 +605,11 @@ def fit_mlp_cv(
         "batch_size": batch_size,
         "layer_out_neurons": layer_out_neurons,
         "epochs": epochs,
-        "activation": activation_function,
+        "activation": f"{activation_function}",
         "train_loss_fold": train_loss_fold,
         "val_site_loss_fold": val_loss_fold,
         "val_pooled_loss_fold": val_pooled_loss_fold,
+        "val_R2_fold": val_R2_fold,
         "val_site_mse": np.average(val_site_mse, weights=fold_n_sites),
         "val_pooled_mse": np.average(val_pooled_mse, weights=fold_n_sites),
         "y_obs_val_fold": y_val_fold,

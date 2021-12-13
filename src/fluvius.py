@@ -684,7 +684,7 @@ class WaterStation:
                         # TODO: verify, revisit threshold, etc.
                         ndvi = normalized_diff(img[:, :, 4], img[:, :, 3])
                         mask2 = (ndvi < 0.25) # keep only non-vegetated pixels
-                    elif mask_method2 == 'mnwdi':
+                    elif mask_method2 == 'mndwi':
                         # TODO: verify
                         mndwi = normalized_diff(img[:, :, 2], img[:, :, 10])
                         mask2 = (mndwi > 0) # keep only 'water' pixels

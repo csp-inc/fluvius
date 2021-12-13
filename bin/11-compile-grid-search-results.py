@@ -4,9 +4,9 @@ if __name__ == "__main__":
     ############### Parse commnd line args ###################
     parser = argparse.ArgumentParser()
     parser.add_argument('--path_to_models',
-        default="output/mlp",
+        default="output/mlp/500m_cloudthr80_lulcmndwi_masking",
         type=str,
-        help="How many workers to use for fitting models in parallel (recommended not to go over number of physical cores")
+        help="Path the the model outputs")
     args = parser.parse_args()
 
     directory = args.path_to_models

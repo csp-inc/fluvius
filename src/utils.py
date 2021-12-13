@@ -172,7 +172,7 @@ def fit_mlp(
     itv_loader = DataLoader(dataset=itv_dataset, batch_size=1)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+    global MultipleRegression
     class MultipleRegression(nn.Module):
         def __init__(self, num_features, n_layers, layer_out_neurons):
             super(MultipleRegression, self).__init__()
@@ -342,7 +342,280 @@ def fit_mlp(
             "ITV set observations": y_itv,
         }),
         "itv_mse": itv_mse,
-        "itv_R2": itv_r_squared
+        "itv_R2": itv_r_squared,
+        "train": train,
+        "validate": validate,
+        "test": test,
+        "scaler": scaler,
+        "model":model
+    }
+
+    return output
+
+
+def fit_mlp_cv(
+        features,
+        learning_rate,
+        batch_size,
+        epochs,
+        storage_options,
+        activation_function=nn.SELU(),
+        buffer_distance=500,
+        day_tolerance=8,
+        cloud_thr=80,
+        mask_method1="lulc",
+        mask_method2="mndwi",
+        min_water_pixels=10,
+        layer_out_neurons=[24, 12, 6],
+        learn_sched_step_size=200, 
+        learn_sched_gamma=0.2,
+        verbose=True
+    ):    
+    n_layers = len(layer_out_neurons)
+    torch.set_num_threads(1)
+    # Read the data
+    if mask_method2 == "ndvi":
+        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
+    elif mask_method2 == "mndwi":
+         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_tmp.csv"
+
+    data = pd.read_csv(fp)
+
+    data = data[data["partition"] != "testing"]
+    data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
+    response = "Log SSC (mg/L)"
+    not_enough_water = data["n_water_pixels"] < min_water_pixels
+    data.drop(not_enough_water[not_enough_water].index, inplace=True)
+    lnssc_0 = data["Log SSC (mg/L)"] == 0
+    data.drop(lnssc_0[lnssc_0].index, inplace=True)
+
+    scaler = MinMaxScaler()
+    X_scaled = scaler.fit_transform(data[features])
+
+    fold_n_sites = []
+
+    val_pred_fold = []
+    train_pred_fold = []
+    val_loss_fold = []
+    val_pooled_loss_fold = []
+    train_loss_fold = []
+    y_val_fold = []
+    y_train_fold = []
+    val_site_mse = []
+    val_pooled_mse = []
+    val_R2_fold = []
+
+    for fold in [i for i in range(1, len(np.unique(data["fold_idx"])) + 1)]:
+        X_train = X_scaled[data["fold_idx"] != fold]
+        y_train = data[data["fold_idx"] != fold][response]
+        X_val = X_scaled[data["fold_idx"] == fold]
+        y_val = data[data["fold_idx"] == fold][response]
+        site_val = list(data[data["fold_idx"] == fold]["site_no"])
+        X_train, y_train = np.array(X_train), np.array(y_train)
+        X_val, y_val = np.array(X_val), np.array(y_val)
+
+        class RegressionDataset(Dataset):
+
+            def __init__(self, X_data, y_data):
+                self.X_data = X_data
+                self.y_data = y_data
+
+            def __getitem__(self, index):
+                return self.X_data[index], self.y_data[index]
+
+            def __len__ (self):
+                return len(self.X_data)
+
+        train_dataset = RegressionDataset(torch.from_numpy(X_train).float(), torch.from_numpy(y_train).float())
+        val_dataset = RegressionDataset(torch.from_numpy(X_val).float(), torch.from_numpy(y_val).float())
+
+        num_features = X_train.shape[1]
+
+        train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
+        train_loader_all = DataLoader(dataset=train_dataset, batch_size=1)
+        val_loader = DataLoader(dataset=val_dataset, batch_size=1)
+
+
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        global MultipleRegression
+        class MultipleRegression(nn.Module):
+            def __init__(self, num_features, n_layers, layer_out_neurons):
+                super(MultipleRegression, self).__init__()
+                self.n_layers = n_layers
+                self.layer_out_neurons = layer_out_neurons
+
+                most_recent_n_neurons = layer_out_neurons[0]
+                self.layer_1 = nn.Linear(num_features, layer_out_neurons[0])
+
+                for i in range(2, n_layers + 1):
+                    setattr(
+                        self,
+                        f"layer_{i}",
+                        nn.Linear(layer_out_neurons[i-2], layer_out_neurons[i-1])
+                    )
+                    most_recent_n_neurons = layer_out_neurons[i-1]
+
+                self.layer_out = nn.Linear(most_recent_n_neurons, 1)
+                # self.activate = torch.nn.PReLU(num_parameters=1, init=0.1)
+                self.activate = activation_function
+
+
+            def forward(self, inputs):
+                x = self.activate(self.layer_1(inputs))
+                for i in range(2, self.n_layers + 1):
+                    x = self.activate(getattr(self, f"layer_{i}")(x))
+
+                # bias = torch.full((x.shape[0], 1), 1.)
+                # x = self.layer_out(torch.cat((bias, x), 1))
+                x = self.layer_out(x)
+
+                return (x)
+
+
+        model = MultipleRegression(num_features, n_layers, layer_out_neurons)
+        model.to(device)
+
+        criterion = nn.MSELoss()
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+        scheduler = optim.lr_scheduler.StepLR(
+            optimizer,
+            step_size=learn_sched_step_size,
+            gamma=learn_sched_gamma
+        )
+
+        loss_stats = {
+            "train": [],
+            "val": [],
+            "val_pooled": []
+        }
+
+        val_R2 = []
+
+        # Train the model
+        print(f"Training on fold {fold}.")
+        for e in range(1, epochs+1):
+            # TRAINING
+            train_epoch_loss = 0
+            model.train()
+
+            for X_train_batch, y_train_batch in train_loader:
+                # grab data to iteration and send to CPU
+                X_train_batch, y_train_batch = X_train_batch.to(device), y_train_batch.to(device)
+
+                def closure():
+                    # Zero gradients
+                    optimizer.zero_grad()
+                    # Forward pass
+                    y_train_pred = model(X_train_batch)
+                    # Compute loss
+                    train_loss = criterion(y_train_pred, y_train_batch.unsqueeze(1))
+                    # Backward pass
+                    train_loss.backward()
+
+                    return train_loss
+
+                # Update weights
+                optimizer.step(closure)
+
+                # Update the running loss
+                train_loss = closure()
+                train_epoch_loss += train_loss.item()
+
+            val_pred = [] 
+            
+            with torch.no_grad():
+                model.eval()
+                for X_batch, _ in val_loader:
+                    X_batch = X_batch.to(device)
+                    y_pred = model(X_batch).cpu().squeeze().tolist()#.numpy()
+                    val_pred.append(y_pred)
+
+            val_pred = np.array(val_pred)
+            val_se = list((val_pred - y_val)**2)
+
+            group_means = [np.mean(val_se[site_val == a]) for a in np.unique(site_val)]
+            val_loss_site = np.mean(group_means)
+            val_loss = np.mean(val_se)
+            loss_stats["val"].append(val_loss_site)
+            loss_stats["val_pooled"].append(val_loss)
+            loss_stats["train"].append(train_epoch_loss/len(train_loader))
+            
+            scheduler.step()
+
+            # calculate R^2 for this epoch
+            val_R2.append(r2_score(val_pred, y_val))
+
+            if (e % 50 == 0) and verbose:
+                print(f"Epoch {e}/{epochs} | Train Loss: {train_epoch_loss/len(train_loader):.5f} | Val Loss (mean of sites): {val_loss_site:.5f} | Val Loss (pooled mean): {val_loss:.5f}")
+        
+        train_pred_list = []
+
+        with torch.no_grad():
+            model.eval()
+            for X_batch, _ in train_loader_all:
+                X_batch = X_batch.to(device)
+                y_pred = model(X_batch).cpu().squeeze().tolist()
+                train_pred_list.append(y_pred)
+
+        val_pred_list = []
+
+        with torch.no_grad():
+            model.eval()
+            for X_batch, _ in val_loader:
+                X_batch = X_batch.to(device)
+                y_pred = model(X_batch).cpu().squeeze().tolist()
+                val_pred_list.append(y_pred)
+
+        val_pred = np.array(val_pred_list)
+        val_se = list((val_pred - y_val)**2)
+        group_means = [np.mean(val_se[site_val == a]) for a in np.unique(site_val)]
+
+        # Overall MSE for validation (pooled, and grouped by site with equal weight)
+        val_site_mse.append(np.mean(group_means))
+        val_pooled_mse.append(np.mean(val_se))
+
+        # Number of sites in each fold (used for weighted averages of MSE)
+        fold_n_sites.append(len(np.unique(site_val)))
+
+        # Per-epoch losses
+        val_loss_fold.append(loss_stats["val"])
+        val_pooled_loss_fold.append(loss_stats["val_pooled"])
+        train_loss_fold.append(loss_stats["train"])
+        
+        # Observations and predictions for validation and train (for each fold)
+        val_pred_fold.append(val_pred_list)
+        y_val_fold.append(list(y_val))
+        train_pred_fold.append(train_pred_list)
+        y_train_fold.append(list(y_train))
+
+        # Track validation R^2 per epoch per fold
+        val_R2_fold.append(val_R2)
+
+
+    output = {
+        "training_data": fp,
+        "buffer_distance": buffer_distance,
+        "day_tolerance": day_tolerance,
+        "cloud_thr": cloud_thr,
+        "min_water_pixels": min_water_pixels,
+        "features": features,
+        "learning_rate": learning_rate,
+        "learn_sched_step_size": learn_sched_step_size,
+        "learn_sched_gamma": learn_sched_gamma,
+        "batch_size": batch_size,
+        "layer_out_neurons": layer_out_neurons,
+        "epochs": epochs,
+        "activation": f"{activation_function}",
+        "train_loss_fold": train_loss_fold,
+        "val_site_loss_fold": val_loss_fold,
+        "val_pooled_loss_fold": val_pooled_loss_fold,
+        "val_R2_fold": val_R2_fold,
+        "val_site_mse": np.average(val_site_mse, weights=fold_n_sites),
+        "val_pooled_mse": np.average(val_pooled_mse, weights=fold_n_sites),
+        "y_obs_val_fold": y_val_fold,
+        "y_pred_val_fold": val_pred_fold,
+        "y_obs_train_fold": y_train_fold,
+        "y_pred_train_fold": train_pred_fold
     }
 
     return output

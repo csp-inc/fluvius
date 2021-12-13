@@ -372,7 +372,7 @@ def fit_mlp_cv(
         verbose=True
     ):    
     n_layers = len(layer_out_neurons)
-
+    torch.set_num_threads(1)
     # Read the data
     if mask_method2 == "ndvi":
         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"

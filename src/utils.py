@@ -359,7 +359,7 @@ def fit_mlp_cv(
         batch_size,
         epochs,
         storage_options,
-        activation_function=nn.LeakyReLU(),
+        activation_function=nn.SELU(),
         buffer_distance=500,
         day_tolerance=8,
         cloud_thr=80,
@@ -377,7 +377,7 @@ def fit_mlp_cv(
     if mask_method2 == "ndvi":
         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
     elif mask_method2 == "mndwi":
-         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_14folds.csv"
+         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_tmp.csv"
 
     data = pd.read_csv(fp)
 

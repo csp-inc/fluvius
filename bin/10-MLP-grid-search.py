@@ -192,7 +192,7 @@ if __name__ == "__main__":
     batch_size = [16, 32, 48, 64]
     learning_rate = [0.01, 0.005, 0.001]
     learn_sched_gamma = [0.5, 0.2]
-    learn_sched_step = [250]
+    learn_sched_step = [200]
 
 
     layer_out_neurons = [
@@ -249,6 +249,8 @@ if __name__ == "__main__":
             
             with open(fn, 'wb') as f:
                 pickle.dump(model_out, f, protocol=pickle.HIGHEST_PROTOCOL)
+        else:
+            print("Model output already exists. Skipping...")
 
     print(f"Beginning model fits with {args.n_workers} workers in parallel...")        
   

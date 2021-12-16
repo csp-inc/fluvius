@@ -536,7 +536,7 @@ def fit_mlp_full(
     torch.save(model.state_dict(), f"{model_out}.pt")
 
     with open(f"{model_out}_metadata.pickle", 'wb') as f:
-        pickle.dump(model_out, f, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(output, f, protocol=pickle.HIGHEST_PROTOCOL)
     
     return output
 

@@ -255,4 +255,4 @@ if __name__ == "__main__":
     print(f"Beginning model fits with {args.n_workers} workers in parallel...")        
   
     my_pool = mp.Pool(processes=args.n_workers)
-    my_pool.map(fit_model, permutations)
+    my_pool.map(fit_model, permutations, chunksize=4)

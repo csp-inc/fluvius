@@ -6,6 +6,7 @@ import numpy as np
 import datetime
 import pandas as pd
 import sys
+import pickle
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -15,6 +16,39 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import generic_filter as gf
+
+class MultipleRegression(nn.Module):
+        def __init__(self, num_features, n_layers, layer_out_neurons, activation_function):
+            super(MultipleRegression, self).__init__()
+            self.n_layers = n_layers
+            self.layer_out_neurons = layer_out_neurons
+
+            most_recent_n_neurons = layer_out_neurons[0]
+            self.layer_1 = nn.Linear(num_features, layer_out_neurons[0])
+
+            for i in range(2, n_layers + 1):
+                setattr(
+                    self,
+                    f"layer_{i}",
+                    nn.Linear(layer_out_neurons[i-2], layer_out_neurons[i-1])
+                )
+                most_recent_n_neurons = layer_out_neurons[i-1]
+
+            self.layer_out = nn.Linear(most_recent_n_neurons, 1)
+            # self.activate = torch.nn.PReLU(num_parameters=1, init=0.1)
+            self.activate = activation_function
+
+
+        def forward(self, inputs):
+            x = self.activate(self.layer_1(inputs))
+            for i in range(2, self.n_layers + 1):
+                x = self.activate(getattr(self, f"layer_{i}")(x))
+
+            # bias = torch.full((x.shape[0], 1), 1.)
+            # x = self.layer_out(torch.cat((bias, x), 1))
+            x = self.layer_out(x)
+
+            return (x)
 
 def train_test_validate_split(df, proportions, part_colname = "partition"):
     """
@@ -90,267 +124,6 @@ def generate_map(df, lat_colname='Latitude', lon_colname='Longitude'):
                 control = True).add_to(plot_map)
 
     return plot_map
-
-
-def fit_mlp(
-        features,
-        learning_rate,
-        batch_size,
-        epochs,
-        storage_options,
-        buffer_distance=500,
-        day_tolerance=8,
-        cloud_thr=80,
-        mask_method1="lulc",
-        mask_method2="",
-        min_water_pixels=1,
-        layer_out_neurons=[24, 12, 6],
-        learn_sched_step_size=200, 
-        learn_sched_gamma=0.2
-    ):
-
-    n_layers = len(layer_out_neurons)
-
-    fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking.csv"
-    data = pd.read_csv(fp, storage_options=storage_options)
-
-    not_enough_water = data["n_water_pixels"] <= min_water_pixels
-    data.drop(not_enough_water[not_enough_water].index, inplace=True)
-    data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
-
-    lnssc_0 = data["Log SSC (mg/L)"] == 0
-    data.drop(lnssc_0[lnssc_0].index, inplace=True)
-
-    data["Intercept"] = 1
-
-    train = data[data["partition"] == "train"]
-    test = data[data["partition"] == "test"]
-    validate = data[data["partition"] == "validate"]
-    itv = data[data["data_src"] == "itv"]
-    response = "Log SSC (mg/L)"
-
-    y_train = train[response]
-    X_train = train[features]
-    y_test = test[response]
-    X_test = test[features]
-    y_val = validate[response]
-    X_val = validate[features]
-    y_itv = itv[response]
-    X_itv = itv[features]
-
-    ## Subsequent code adapted from https://towardsdatascience.com/pytorch-tabular-regression-428e9c9ac93
-    scaler = MinMaxScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_val = scaler.transform(X_val)
-    X_test = scaler.transform(X_test)
-    X_itv = scaler.transform(X_itv)
-    X_train, y_train = np.array(X_train), np.array(y_train)
-    X_val, y_val = np.array(X_val), np.array(y_val)
-    X_test, y_test = np.array(X_test), np.array(y_test)
-    X_itv, y_itv = np.array(X_itv), np.array(y_itv)
-
-    class RegressionDataset(Dataset):
-
-        def __init__(self, X_data, y_data):
-            self.X_data = X_data
-            self.y_data = y_data
-
-        def __getitem__(self, index):
-            return self.X_data[index], self.y_data[index]
-
-        def __len__ (self):
-            return len(self.X_data)
-
-    train_dataset = RegressionDataset(torch.from_numpy(X_train).float(), torch.from_numpy(y_train).float())
-    val_dataset = RegressionDataset(torch.from_numpy(X_val).float(), torch.from_numpy(y_val).float())
-    itv_dataset = RegressionDataset(torch.from_numpy(X_itv).float(), torch.from_numpy(y_itv).float())
-    num_features = X_test.shape[1]
-
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-    train_loader_all = DataLoader(dataset=train_dataset, batch_size=1)
-    val_loader = DataLoader(dataset=val_dataset, batch_size=1)
-    itv_loader = DataLoader(dataset=itv_dataset, batch_size=1)
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    global MultipleRegression
-    class MultipleRegression(nn.Module):
-        def __init__(self, num_features, n_layers, layer_out_neurons):
-            super(MultipleRegression, self).__init__()
-            self.n_layers = n_layers
-            self.layer_out_neurons = layer_out_neurons
-
-            most_recent_n_neurons = layer_out_neurons[0]
-            self.layer_1 = nn.Linear(num_features, layer_out_neurons[0])
-
-            for i in range(2, n_layers + 1):
-                setattr(
-                    self,
-                    f"layer_{i}",
-                    nn.Linear(layer_out_neurons[i-2], layer_out_neurons[i-1])
-                )
-                most_recent_n_neurons = layer_out_neurons[i-1]
-
-            self.layer_out = nn.Linear(most_recent_n_neurons, 1)
-            self.relu = nn.ReLU()
-
-
-        def forward(self, inputs):
-            x = self.relu(self.layer_1(inputs))
-            for i in range(2, self.n_layers + 1):
-                x = self.relu(getattr(self, f"layer_{i}")(x))
-
-            x = self.layer_out(x)
-
-            return (x)
-
-
-    model = MultipleRegression(num_features, n_layers, layer_out_neurons)
-    model.to(device)
-
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.StepLR(
-        optimizer,
-        step_size=learn_sched_step_size,
-        gamma=learn_sched_gamma
-    )
-
-    loss_stats = {
-        "train": [],
-        "val": []
-    }
-
-    # Train the model
-    print("Begin training.")
-    for e in range(1, epochs+1):
-        # TRAINING
-        train_epoch_loss = 0
-        model.train()
-
-        for X_train_batch, y_train_batch in train_loader:
-            # grab data to iteration and send to CPU
-            X_train_batch, y_train_batch = X_train_batch.to(device), y_train_batch.to(device)
-
-            def closure():
-                # Zero gradients
-                optimizer.zero_grad()
-                # Forward pass
-                y_train_pred = model(X_train_batch)
-                # Compute loss
-                train_loss = criterion(y_train_pred, y_train_batch.unsqueeze(1))
-                # Backward pass
-                train_loss.backward()
-
-                return train_loss
-
-            # Update weights
-            optimizer.step(closure)
-
-            # Update the running loss
-            train_loss = closure()
-            train_epoch_loss += train_loss.item()
-
-        # VALIDATION
-        with torch.no_grad():
-            val_epoch_loss = 0
-            model.eval()
-            for X_val_batch, y_val_batch in val_loader:
-                X_val_batch, y_val_batch = X_val_batch.to(device), y_val_batch.to(device)
-
-                y_val_pred = model(X_val_batch)
-
-                val_loss = criterion(y_val_pred, y_val_batch.unsqueeze(1))
-
-                val_epoch_loss += val_loss.item()
-        
-        loss_stats["train"].append(train_epoch_loss/len(train_loader))
-        loss_stats["val"].append(val_epoch_loss/len(val_loader))
-
-        scheduler.step()
-
-        if (e % 10 == 0):
-            print(f"Epoch {e}/{epochs} | Train Loss: {train_epoch_loss/len(train_loader):.5f} | Val Loss: {val_epoch_loss/len(val_loader):.5f}")
-
-    # plt.figure(figsize=(8,6))
-    # plt.plot(loss_stats["train"], color="teal", label="training")
-    # plt.plot(loss_stats["val"], color="orange", label="validation")
-    # plt.title("Loss Curves for Training and Validation Data")
-    # plt.xlabel("Epoch")
-    # plt.ylabel("Loss")
-
-    # plt.legend()
-    # plt.savefig("/content/figs/MLP_prelim_results/loss_curves.png", bbox_inches="tight", facecolor="#FFFFFF", dpi=150)
-
-    val_pred_list = []
-    with torch.no_grad():
-        model.eval()
-        for X_batch, _ in val_loader:
-            X_batch = X_batch.to(device)
-            y_pred = model(X_batch)
-            val_pred_list.append(y_pred.cpu().numpy())
-    val_pred_list = [a.squeeze().tolist() for a in val_pred_list]
-    val_mse = mean_squared_error(val_pred_list, y_val)
-    val_r_squared = r2_score(val_pred_list, y_val)
-
-    train_pred_list = []
-    with torch.no_grad():
-        model.eval()
-        for X_batch, _ in train_loader_all:
-            X_batch = X_batch.to(device)
-            y_pred = model(X_batch)
-            train_pred_list.append(y_pred.cpu().numpy())
-    train_pred_list = [a.squeeze().tolist() for a in train_pred_list]
-    train_mse = mean_squared_error(train_pred_list, y_train)
-    train_r_squared = r2_score(train_pred_list, y_train)
-
-    itv_pred_list = []
-    with torch.no_grad():
-        model.eval()
-        for X_batch, _ in itv_loader:
-            X_batch = X_batch.to(device)
-            y_pred = model(X_batch)
-            itv_pred_list.append(y_pred.cpu().numpy())
-    itv_pred_list = [a.squeeze().tolist() for a in itv_pred_list]
-    itv_mse = mean_squared_error(itv_pred_list, y_itv)
-    itv_r_squared = r2_score(itv_pred_list, y_itv)
-
-    output = {
-        "buffer_distance": buffer_distance,
-        "day_tolerance": day_tolerance,
-        "cloud_thr": cloud_thr,
-        "min_water_pixels": min_water_pixels,
-        "features": features,
-        "learning_rate": learning_rate,
-        "batch_size": batch_size,
-        "layer_out_neurons": layer_out_neurons,
-        "loss_stats": loss_stats,
-        "epochs": epochs,
-        "val_obs_predict": pd.DataFrame({
-            "Validation set predictions": val_pred_list,
-            "Validation set observations": y_val
-        }),
-        "val_mse": val_mse,
-        "val_R2": val_r_squared,
-        "train_obs_predict": pd.DataFrame({
-            "Train set predictions": train_pred_list,
-            "Train set observations": y_train
-        }),
-        "train_mse": train_mse,
-        "train_R2": train_r_squared,
-        "itv_obs_predict": pd.DataFrame({
-            "ITV set predictions": itv_pred_list,
-            "ITV set observations": y_itv,
-        }),
-        "itv_mse": itv_mse,
-        "itv_R2": itv_r_squared,
-        "train": train,
-        "validate": validate,
-        "test": test,
-        "scaler": scaler,
-        "model":model
-    }
-
-    return output
 
 
 def fit_mlp_cv(
@@ -437,42 +210,8 @@ def fit_mlp_cv(
 
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        global MultipleRegression
-        class MultipleRegression(nn.Module):
-            def __init__(self, num_features, n_layers, layer_out_neurons):
-                super(MultipleRegression, self).__init__()
-                self.n_layers = n_layers
-                self.layer_out_neurons = layer_out_neurons
 
-                most_recent_n_neurons = layer_out_neurons[0]
-                self.layer_1 = nn.Linear(num_features, layer_out_neurons[0])
-
-                for i in range(2, n_layers + 1):
-                    setattr(
-                        self,
-                        f"layer_{i}",
-                        nn.Linear(layer_out_neurons[i-2], layer_out_neurons[i-1])
-                    )
-                    most_recent_n_neurons = layer_out_neurons[i-1]
-
-                self.layer_out = nn.Linear(most_recent_n_neurons, 1)
-                # self.activate = torch.nn.PReLU(num_parameters=1, init=0.1)
-                self.activate = activation_function
-
-
-            def forward(self, inputs):
-                x = self.activate(self.layer_1(inputs))
-                for i in range(2, self.n_layers + 1):
-                    x = self.activate(getattr(self, f"layer_{i}")(x))
-
-                # bias = torch.full((x.shape[0], 1), 1.)
-                # x = self.layer_out(torch.cat((bias, x), 1))
-                x = self.layer_out(x)
-
-                return (x)
-
-
-        model = MultipleRegression(num_features, n_layers, layer_out_neurons)
+        model = MultipleRegression(num_features, n_layers, layer_out_neurons, activation_function)
         model.to(device)
 
         criterion = nn.MSELoss()
@@ -618,6 +357,187 @@ def fit_mlp_cv(
         "y_pred_train_fold": train_pred_fold
     }
 
+    return output
+
+
+def fit_mlp_full(
+        features,
+        learning_rate,
+        batch_size,
+        epochs,
+        storage_options,
+        activation_function=nn.SELU(),
+        buffer_distance=500,
+        day_tolerance=8,
+        cloud_thr=80,
+        mask_method1="lulc",
+        mask_method2="mndwi",
+        min_water_pixels=10,
+        layer_out_neurons=[24, 12, 6],
+        learn_sched_step_size=200, 
+        learn_sched_gamma=0.2,
+        verbose=True,
+        model_out = "output/top_model"
+    ):    
+    n_layers = len(layer_out_neurons)
+
+    # Read the data
+    if mask_method2 == "ndvi":
+        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
+    elif mask_method2 == "mndwi":
+         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_tmp.csv"
+
+    data = pd.read_csv(fp)
+    data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
+
+    test = data[data["partition"] == "testing"]
+    data = data[data["partition"] != "testing"]
+    
+    response = "Log SSC (mg/L)"
+    not_enough_water = data["n_water_pixels"] < min_water_pixels
+    data.drop(not_enough_water[not_enough_water].index, inplace=True)
+    lnssc_0 = data["Log SSC (mg/L)"] == 0
+    data.drop(lnssc_0[lnssc_0].index, inplace=True)
+
+    scaler = MinMaxScaler()
+    X_train_scaled = scaler.fit_transform(data[features])
+    X_test_scaled = scaler.transform(test[features])
+
+    y_train = data[response]
+    y_test = test[response]
+
+    X_train_scaled, y_train = np.array(X_train_scaled), np.array(y_train)
+    X_test_scaled, y_test = np.array(X_test_scaled), np.array(y_test)
+
+    class RegressionDataset(Dataset):
+
+        def __init__(self, X_data, y_data):
+            self.X_data = X_data
+            self.y_data = y_data
+
+        def __getitem__(self, index):
+            return self.X_data[index], self.y_data[index]
+
+        def __len__ (self):
+            return len(self.X_data)
+
+    train_dataset = RegressionDataset(torch.from_numpy(X_train_scaled).float(), torch.from_numpy(y_train).float())
+    test_dataset = RegressionDataset(torch.from_numpy(X_test_scaled).float(), torch.from_numpy(y_test).float())
+
+    num_features = X_train_scaled.shape[1]
+
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
+    train_loader_all = DataLoader(dataset=train_dataset, batch_size=1)
+    test_loader = DataLoader(dataset=test_dataset, batch_size=1)
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    model = MultipleRegression(num_features, n_layers, layer_out_neurons, activation_function)
+    model.to(device)
+
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    scheduler = optim.lr_scheduler.StepLR(
+        optimizer,
+        step_size=learn_sched_step_size,
+        gamma=learn_sched_gamma
+    )
+
+    train_loss_list = []
+
+    # Train the model
+    for e in range(1, epochs+1):
+        # TRAINING
+        train_epoch_loss = 0
+        model.train()
+
+        for X_train_batch, y_train_batch in train_loader:
+            # grab data to iteration and send to CPU
+            X_train_batch, y_train_batch = X_train_batch.to(device), y_train_batch.to(device)
+
+            def closure():
+                # Zero gradients
+                optimizer.zero_grad()
+                # Forward pass
+                y_train_pred = model(X_train_batch)
+                # Compute loss
+                train_loss = criterion(y_train_pred, y_train_batch.unsqueeze(1))
+                # Backward pass
+                train_loss.backward()
+
+                return train_loss
+
+            # Update weights
+            optimizer.step(closure)
+
+            # Update the running loss
+            train_loss = closure()
+            train_epoch_loss += train_loss.item()
+        
+        train_loss_list.append(train_epoch_loss/len(train_loader))
+        scheduler.step()
+
+        if (e % 50 == 0) and verbose:
+            print(f"Epoch {e}/{epochs} | Train Loss: {train_epoch_loss/len(train_loader):.5f}", end="\r")
+    
+    train_pred_list = []
+    with torch.no_grad():
+        model.eval()
+        for X_batch, _ in train_loader_all:
+            X_batch = X_batch.to(device)
+            y_pred = model(X_batch).cpu().squeeze().tolist()
+            train_pred_list.append(y_pred)
+
+    test_pred_list = []
+    with torch.no_grad():
+        model.eval()
+        for X_batch, _ in test_loader:
+            X_batch = X_batch.to(device)
+            test_pred = model(X_batch).cpu().squeeze().tolist()
+            test_pred_list.append(test_pred)
+
+    test_pred = np.array(test_pred_list)
+    test_se = list((test_pred - y_test)**2)
+
+    site_test = list(test["site_no"])
+
+    group_means = [np.mean(test_se[site_test == a]) for a in np.unique(site_test)]
+    test_site_mse = np.mean(group_means)
+    test_pooled_mse = np.mean(test_se)
+
+    output = {
+        "training_data": fp,
+        "buffer_distance": buffer_distance,
+        "day_tolerance": day_tolerance,
+        "cloud_thr": cloud_thr,
+        "min_water_pixels": min_water_pixels,
+        "features": features,
+        "learning_rate": learning_rate,
+        "learn_sched_step_size": learn_sched_step_size,
+        "learn_sched_gamma": learn_sched_gamma,
+        "batch_size": batch_size,
+        "layer_out_neurons": layer_out_neurons,
+        "epochs": epochs,
+        "activation": f"{activation_function}",
+        "train_loss": train_loss_list,
+        "train_pooled_mse": train_loss_list[-1],
+        "test_site_mse": test_site_mse,
+        "test_pooled_mse": test_pooled_mse,
+        "y_train_sample_id": list(data["sample_id"]),
+        "y_test_sample_id": list(test["sample_id"]),
+        #"X_test_scaled": X_test_scaled,
+        "y_obs_train": y_train,
+        "y_pred_train": train_pred_list,
+        "y_obs_test": y_test,
+        "y_pred_test": test_pred_list
+    }
+
+    # save the model!
+    torch.save(model.state_dict(), f"{model_out}.pt")
+
+    with open(f"{model_out}_metadata.pickle", 'wb') as f:
+        pickle.dump(model_out, f, protocol=pickle.HIGHEST_PROTOCOL)
+    
     return output
 
 

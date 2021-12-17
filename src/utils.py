@@ -6,6 +6,7 @@ import numpy as np
 import datetime
 import pandas as pd
 import sys
+import fsspec
 import pickle
 import torch
 import torch.nn as nn
@@ -43,9 +44,6 @@ class MultipleRegression(nn.Module):
             x = self.activate(self.layer_1(inputs))
             for i in range(2, self.n_layers + 1):
                 x = self.activate(getattr(self, f"layer_{i}")(x))
-
-            # bias = torch.full((x.shape[0], 1), 1.)
-            # x = self.layer_out(torch.cat((bias, x), 1))
             x = self.layer_out(x)
 
             return (x)
@@ -533,10 +531,14 @@ def fit_mlp_full(
     }
 
     # save the model!
-    torch.save(model.state_dict(), f"{model_out}.pt")
+    torch.save(model.state_dict(), f"output/{model_out}.pt")
 
-    with open(f"{model_out}_metadata.pickle", 'wb') as f:
+    with open(f"output/{model_out}_metadata.pickle", 'wb') as f:
         pickle.dump(output, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    fs = fsspec.filesystem("az", **storage_options)
+    fs.put_file(f"output/{model_out}.pt", f"model-output/{model_out}.pt", overwrite=True)
+    fs.put_file(f"/content/output/{model_out}_metadata.pickle", f"model-output/{model_out}_metadata.pickle", overwrite=True)
     
     return output
 

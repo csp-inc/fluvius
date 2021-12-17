@@ -1,12 +1,26 @@
-if __name__ == "__main__":
-    import os, pandas as pd, argparse, pickle
+import os, pandas as pd, argparse, pickle, fsspec
 
+with open("/content/credentials") as f:
+    env_vars = f.read().split("\n")
+
+for var in env_vars:
+    key, value = var.split(" = ")
+    os.environ[key] = value
+
+storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
+                   "account_key":os.environ["BLOB_KEY"]}
+
+if __name__ == "__main__":
     ############### Parse commnd line args ###################
     parser = argparse.ArgumentParser()
     parser.add_argument('--path_to_models',
-        default="/content/output/mlp/500m_cloudthr80_lulcmndwi_masking_tmp_5fold",
+        default="output/mlp/500m_cloudthr80_lulcmndwi_masking_tmp_5fold",
         type=str,
-        help="Path the the model outputs")
+        help="Path to the model outputs")
+    parser.add_argument('--results_output',
+        default="mlp/grid_search_metadata.csv",
+        type=str,
+        help="Where shoul results be saved? Path should be relative to the output folder locally and the model-output container on blob storage.")
     args = parser.parse_args()
 
     directory = args.path_to_models
@@ -40,4 +54,5 @@ if __name__ == "__main__":
 
         metadata = metadata.append(row_dict, ignore_index=True)
     
-    metadata.to_csv(f"output/mlp/grid_search_metadata.csv", index=False)
+    metadata.to_csv(f"output/{args.results_output}", index=False)
+    metadata.to_csv(f"az://model-output/{args.results_output}", index=False, storage_options=storage_options)

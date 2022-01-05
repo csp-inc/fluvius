@@ -71,7 +71,7 @@ if __name__ == "__main__":
     start_date = datetime.date.fromisoformat(args.start_date)
     end_date = datetime.date.fromisoformat(args.end_date)
 
-    local_save_dir = f"data/prediction-chips/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking"
+    local_save_dir = f"data/prediction-chips/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/"
 
     ################### Begin ####################
     if not os.path.exists(local_save_dir):
@@ -93,9 +93,11 @@ if __name__ == "__main__":
     stations = ds.df["site_no"]
     cloud_threshold = cloud_thr
     day_tol = day_tolerance
+
     for station in stations:
         if (station in ["ITV1", "ITV2"]) and (mm1 == "lulc"): # lulc has no water pixels for these sties
             continue
+
         try:
             ds.get_station_data(station)
             daterange = pd.date_range(
@@ -105,8 +107,8 @@ if __name__ == "__main__":
 
             dates = [x.date() for x in daterange]
 
-            lat = [ds.station[station].df["Latitude"][0]] * len(dates)
-            lon = [ds.station[station].df["Longitude"][0]] * len(dates)
+            lat = [ds.station[station].df["Latitude"].iloc[0]] * len(dates)
+            lon = [ds.station[station].df["Longitude"].iloc[0]] * len(dates)
 
             sample_ids = [f"{ds.station[station].site_no.zfill(8)}_pred_{str(i).zfill(8)}" for i in range(0, len(dates))]
 
@@ -116,6 +118,7 @@ if __name__ == "__main__":
                 "Latitude": lat,
                 "Date-Time": dates
             })
+
             ds.station[station].time_of_interest = f"{args.start_date}/{args.end_date}"
             ds.station[station].build_catalog()
             if ds.station[station].catalog is None:
@@ -132,16 +135,6 @@ if __name__ == "__main__":
                 ds.station[station].get_chip_features(args.write_chips, local_save_dir, mm1, mm2)
         except FileNotFoundError:
             print(f"Source file not found for station {station}. Skipping...")
-    
-    ### Upload the chips to blob storage
-    print("Uploading chips to blob storage.")
-    blob_dir = f"prediction-data/chips/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{data_source}/"
-    try:
-        fs.rm(blob_dir, recursive=True)
-    except:
-        pass
-    
-    fs.put(f"{local_save_dir}/{data_source}/", blob_dir, recursive=True)
 
     ## Merge dataframes w/ feature data for all stations, write to blob storage
     print("Merging station feature dataframes and saving to blob storage.")
@@ -158,4 +151,16 @@ if __name__ == "__main__":
     outfileprefix = f"az://prediction-data/{ds.container}/feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking"
 
     df.to_csv(f"{outfileprefix}.csv", storage_options=storage_options)
+
+    ## Upload the chips to blob storage
+    print("Uploading chips to blob storage.")
+    if args.write_chips:
+        blob_dir = f"prediction-data/chips/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{data_source}/"
+        try:
+            fs.rm(blob_dir, recursive=True)
+        except:
+            pass
+        
+        fs.put(f"{local_save_dir}/{data_source}/", blob_dir, recursive=True)
+
     print("Done!")

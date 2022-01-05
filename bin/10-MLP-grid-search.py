@@ -5,6 +5,7 @@ if __name__ == "__main__":
     import multiprocessing as mp
     import pickle, hashlib, argparse, psutil
     import torch.nn as nn
+    import json
 
 
     ############### Parse commnd line args ###################
@@ -188,24 +189,25 @@ if __name__ == "__main__":
         ]
     ]
 
-    epochs = [500, 1000, 1500]
-    batch_size = [16, 32, 48, 64]
-    learning_rate = [0.01, 0.005, 0.001]
+    epochs = [1000, 1500]
+    batch_size = [32, 48, 64]
+    learning_rate = [0.005, 0.001]
     learn_sched_gamma = [0.5, 0.2]
     learn_sched_step = [200]
 
 
     layer_out_neurons = [
-        [ 6, 12, 6],
-        [ 6, 24, 6],
-        [12, 16, 8],
-        [12, 24, 8],
-        [ 4,  8, 4],
-        [12,  6, 3],
-        [24, 12, 6]  
+        [4, 4, 4],
+        [2, 4, 2],
+        [4, 4, 2],
+        [4, 2, 2]
+        [6, 4, 2],
+        [6, 6, 2],
+        [8, 4],
+        [4, 4]
     ]
 
-    activation = [nn.ReLU(), nn.SELU(), nn.PReLU(init=0.05)]
+    activation = [nn.SELU(), nn.PReLU(init=0.05)]
 
     permutations = list(
         itertools.product(
@@ -226,7 +228,7 @@ if __name__ == "__main__":
     
     def fit_model(args):
         args_hash = hashlib.sha224("_".join([str(x) for x in args]).encode("utf-8")).hexdigest()[0:20]
-        fn = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_tmp_5fold/{args_hash}.pickle"
+        fn = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold/{args_hash}.json"
 
         if not os.path.exists(fn):
             model_out = fit_mlp_cv(
@@ -248,7 +250,7 @@ if __name__ == "__main__":
             )
             
             with open(fn, 'wb') as f:
-                pickle.dump(model_out, f, protocol=pickle.HIGHEST_PROTOCOL)
+                json.dump(model_out, f)
         else:
             print("Model output already exists. Skipping...")
 

@@ -45,6 +45,7 @@ if __name__ == "__main__":
             "layers": model_dict["layer_out_neurons"],
             "activation_layer": model_dict["activation"],
             "epochs": model_dict["epochs"],
+            "learning_rate": model_dict["learning_rate"],
             "batch_size": model_dict["batch_size"],
             "sched_gamma": model_dict["learn_sched_gamma"],
             "sched_step": model_dict["learn_sched_step_size"],

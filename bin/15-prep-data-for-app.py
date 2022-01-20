@@ -91,6 +91,13 @@ if __name__ == "__main__":
         f"{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv",
         storage_options=storage_options
     )
+
+    prediction_data = pd.read_csv(
+        f"az://predictions/itv-predictions/feature_data_buffer500m_daytol0_cloudthr80percent_lulcmndwi_masking.csv", 
+        storage_options=storage_options
+    ).dropna()
+    pred_sites = [x.split("_")[0].lstrip("0") for x in prediction_data["sample_id"]]
+    prediction_data["site_no"] = pred_sites
     sites = all_data.site_no.unique()
 
     out_dicts = []
@@ -128,6 +135,22 @@ if __name__ == "__main__":
                         f'{os.path.basename(row["swir_and_water_png_href"])}',
                 #"raw_img_chip": row["raw_img_chip_href"]
             })
+        
+        site_pred_df = prediction_data[prediction_data["site_no"] == site].reset_index()
+        predictions = []
+        for i, row in site_pred_df.iterrows():
+            predictions.append({
+                "sample_id": row["sample_id"],
+                "SSC.mg.L": str(row["Predicted Log SSC (mg/L)"]),
+                "sample_date": row["Date"],
+                "sample_timestamp": round(time.mktime(dt.date.fromisoformat(row["Date"]).timetuple()))*1000,
+                "rgb_water_chip_href":
+                    f'placeholder...',
+                "cir_water_chip_href":
+                    f'placeholder...',
+                "swir_water_chip_href":
+                    f'placeholder...'
+            })
 
         out_dicts.append({
             "region": row["region"],
@@ -135,9 +158,10 @@ if __name__ == "__main__":
             "site_name": [x["site_name"] for i,x in site_metadata.iterrows() if x["site_no"].zfill(8) == site][0],
             "Longitude": lon,
             "Latitude": lat,
-            "sample_data": samples
+            "sample_data": samples,
+            "predictions": predictions
         })
 
     # Push to final JSON data that app reads in
-    with fs.open('app/all_data_v2.json', 'w') as fn:
+    with fs.open('app/all_data_v3.json', 'w') as fn:
         json.dump(out_dicts, fn)

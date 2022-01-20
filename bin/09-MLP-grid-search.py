@@ -13,7 +13,7 @@ if __name__ == "__main__":
     parser.add_argument('--n_workers',
         default=psutil.cpu_count(logical = False),
         type=int,
-        help="How many workers to use for fitting models in parallel (recommended not to go over number of physical cores"
+        help="How many workers to use for fitting models in parallel (recommended not to go over number of physical cores)"
     )
     parser.add_argument('--cloud_thr',
         default=80,
@@ -74,7 +74,20 @@ if __name__ == "__main__":
             "sentinel-2-l2a_B08",
             # Red edge bands
             "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
+            "sentinel-2-l2a_B05", "sentinel-2-l2a_B06"
+        ],
+        [
+            # Aerosol optical thickness
+            "sentinel-2-l2a_AOT", 
+            # RGB
+            "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
+            # Near infrared
+            "sentinel-2-l2a_B08",
+            # Red edge bands
+            "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
             "sentinel-2-l2a_B05", "sentinel-2-l2a_B06",
+            # Site/time variables
+            "is_brazil"
         ],
         [
             # Aerosol optical thickness
@@ -90,26 +103,6 @@ if __name__ == "__main__":
             "sentinel-2-l2a_B11", "sentinel-2-l2a_B12"
         ],
         [
-            # Aerosol optical thickness
-            "sentinel-2-l2a_AOT", 
-            # RGB
-            "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
-            # Near infrared
-            "sentinel-2-l2a_B08",
-            # Red edge bands
-            "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
-            "sentinel-2-l2a_B05", "sentinel-2-l2a_B06",
-            # Short-wave infrared
-            "sentinel-2-l2a_B11", "sentinel-2-l2a_B12",
-            # Site/time variables
-            "is_brazil",
-            # Scene metadata
-            "mean_viewing_azimuth", "mean_viewing_zenith",
-            "mean_solar_azimuth", "mean_solar_zenith"
-        ],
-        [
-            # Aerosol optical thickness
-            "sentinel-2-l2a_AOT", 
             # RGB
             "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
             # Near infrared
@@ -132,83 +125,28 @@ if __name__ == "__main__":
             # Red edge bands
             "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
             "sentinel-2-l2a_B05", "sentinel-2-l2a_B06",
-            # Site/time variables
-            "is_brazil",
-            # Scene metadata
-            "mean_viewing_azimuth", "mean_viewing_zenith",
-            "mean_solar_azimuth", "mean_solar_zenith"
-        ],
-        [
-            # Aerosol optical thickness
-            "sentinel-2-l2a_AOT", 
-            # RGB
-            "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
-            # Near infrared
-            "sentinel-2-l2a_B08",
-            # Red edge bands
-            "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
-            "sentinel-2-l2a_B05", "sentinel-2-l2a_B06",
-            # Site/time variables
-            "is_brazil",
-            # Short-wave infrared
-            "sentinel-2-l2a_B11", "sentinel-2-l2a_B12"
-        ],
-        [
-            # Aerosol optical thickness
-            "sentinel-2-l2a_AOT", 
-            # RGB
-            "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
-            # Near infrared
-            "sentinel-2-l2a_B08",
-            # Red edge bands
-            "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
-            "sentinel-2-l2a_B05", "sentinel-2-l2a_B06",
             # Short-wave infrared
             "sentinel-2-l2a_B11", "sentinel-2-l2a_B12",
-            # Scene metadata
-            "mean_viewing_azimuth", "mean_viewing_zenith",
-            "mean_solar_azimuth", "mean_solar_zenith"
-        ],
-        [
-            # Aerosol optical thickness
-            "sentinel-2-l2a_AOT", 
-            # RGB
-            "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
-            # Near infrared
-            "sentinel-2-l2a_B08",
-            # Red edge bands
-            "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
-            "sentinel-2-l2a_B05", "sentinel-2-l2a_B06",
             # Site/time variables
-            "is_brazil",
-            # Short-wave infrared
-            "sentinel-2-l2a_B11", "sentinel-2-l2a_B12",
-            # Scene metadata
-            "mean_viewing_azimuth", "mean_viewing_zenith",
-            "mean_solar_azimuth", "mean_solar_zenith"
+            "is_brazil"
         ]
     ]
 
-    epochs = [1000, 1500]
-    batch_size = [32, 48, 64]
-    learning_rate = [0.005, 0.001]
-    learn_sched_gamma = [0.5, 0.2]
-    learn_sched_step = [200]
-
+    epochs = [1500, 2000]
+    batch_size = [32, 64]
+    learning_rate = [0.005, 0.01]
 
     layer_out_neurons = [
         [4, 4, 4],
         [2, 4, 2],
         [4, 4, 2],
-        [4, 2, 2]
-        [6, 4, 2],
-        [6, 6, 2],
+        [4, 2, 2],
         [8, 4],
         [4, 4]
     ]
 
-    activation = [nn.SELU(), nn.PReLU(init=0.05)]
-
+    activation = nn.PReLU(num_parameters=1)
+    weight_decay = [1e-2, 2e-2]
     permutations = list(
         itertools.product(
             features,
@@ -216,19 +154,17 @@ if __name__ == "__main__":
             batch_size,
             epochs,
             layer_out_neurons,
-            learn_sched_gamma,
-            learn_sched_step,
-            activation
+            weight_decay
         )
     )
-    print(len(permutations))
-    if not os.path.exists(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_tmp_5fold"):
-        os.makedirs(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_tmp_5fold")
+    print(f"Fitting {len(permutations)} models...")
+    if not os.path.exists(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold_v2"):
+        os.makedirs(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold_v2")
     
     
     def fit_model(args):
         args_hash = hashlib.sha224("_".join([str(x) for x in args]).encode("utf-8")).hexdigest()[0:20]
-        fn = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold/{args_hash}.json"
+        fn = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold_v2/{args_hash}.json"
 
         if not os.path.exists(fn):
             model_out = fit_mlp_cv(
@@ -237,19 +173,18 @@ if __name__ == "__main__":
                 batch_size=args[2],
                 epochs=args[3],
                 storage_options=storage_options,
-                activation_function=args[7],
+                activation_function=activation,
                 day_tolerance=8,
                 cloud_thr=cloud_thr,
                 mask_method1=mm1,
                 mask_method2="mndwi",
                 min_water_pixels=20,
                 layer_out_neurons=args[4],
-                learn_sched_step_size=args[6],
-                learn_sched_gamma=args[5],
+                weight_decay=args[5],
                 verbose=False
             )
             
-            with open(fn, 'wb') as f:
+            with open(fn, 'w') as f:
                 json.dump(model_out, f)
         else:
             print("Model output already exists. Skipping...")

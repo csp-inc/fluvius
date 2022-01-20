@@ -47,7 +47,7 @@ if __name__ == "__main__":
         type=str,
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
     parser.add_argument('--mask_method2',
-        default="",
+        default="mndwi",
         choices=["ndvi", "mndwi", ""],
         type=str,
         help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\")")
@@ -59,7 +59,6 @@ if __name__ == "__main__":
     mm1 = args.mask_method1
     mm2 = args.mask_method2
 
-    fs = fsspec.filesystem("az", **storage_options)
     # Load in the top model metadata
     with open(f"{args.model_path}_metadata.pickle", "rb") as f:
         meta = pickle.load(f)
@@ -96,4 +95,4 @@ if __name__ == "__main__":
     
     pred_features["Predicted Log SSC (mg/L)"] = y_pred
 
-    pred_features.to_csv(f"az://predictions/{args.data_src}-data/")
+    pred_features.to_csv(f"az://predictions/{args.data_src}-predictions/feature_data_buffer{buffer_distance}m_daytol0_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv", storage_options=storage_options)

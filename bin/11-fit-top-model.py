@@ -1,4 +1,4 @@
-import os, sys, pandas as pd, pickle, copy, argparse
+import os, sys, pandas as pd, pickle, copy, argparse, json
 sys.path.append("/content")
 from src.utils import fit_mlp_full, MultipleRegression
 
@@ -12,13 +12,8 @@ for var in env_vars:
 storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
                    "account_key":os.environ["BLOB_KEY"]}
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--use_metadata_features',
-        default=True,
-        type=bool,
-        help="Consider models that use metadata as features? (e.g. solar azimuth)")
     parser.add_argument('--mse_to_minimize',
         default="mean_mse",
         choices=["mean_mse", "val_site_mse", "val_pooled_mse"],
@@ -26,7 +21,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    results = pd.read_csv("output/mlp/grid_search_metadata.csv")
+    results = pd.read_csv("output/mlp/grid_search_metadata_v2.csv")
 
     if not args.use_metadata_features:
         no_azimuth = ["mean_viewing_azimuth" not in results["features"][i] for i in range(0, (results.shape[0]))]
@@ -37,7 +32,7 @@ if __name__ == "__main__":
     # Eventually need to load this from blob storage, but pickle gives errors
     # Need to try switching to dill once we do the next grid search
     with open(results.iloc[results[args.mse_to_minimize].argmin(), :]["path"], "rb") as f:
-        top_model = pickle.load(f)
+        top_model = json.load(f)
 
     
     model_out = fit_mlp_full(
@@ -53,8 +48,7 @@ if __name__ == "__main__":
         mask_method2="mndwi",
         min_water_pixels=20,
         layer_out_neurons=top_model["layer_out_neurons"],
-        learn_sched_step_size=top_model["learn_sched_step_size"],
-        learn_sched_gamma=top_model["learn_sched_gamma"],
+        weight_decay=top_model["weight_decay"],
         verbose=True,
-        model_out=f"mlp/top_model_metadata_{str(args.use_metadata_features)}_{args.mse_to_minimize}"
+        model_out=f"mlp/top_model_metadata_{args.mse_to_minimize}"
     )

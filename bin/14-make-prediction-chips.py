@@ -1,0 +1,161 @@
+import os, sys
+sys.path.append("/content")
+import pickle, argparse
+from src.utils import MultipleRegression, predict_chip, RGB_MIN, RGB_MAX, GAMMA
+from sklearn.preprocessing import MinMaxScaler
+import torch, pickle, torch.nn as nn
+import pandas as pd, numpy as np, rasterio as rio
+from PIL import Image
+import fsspec
+
+with open("/content/credentials") as f:
+    env_vars = f.read().split("\n")
+
+for var in env_vars:
+    key, value = var.split(" = ")
+    os.environ[key] = value
+
+storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
+                   "account_key":os.environ["BLOB_KEY"]}
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model_path',
+        type=str,
+        help="The path to the model state file (.pt file) without the subscript.")
+    parser.add_argument('--data_src',
+        type=str,
+        choices=["itv", "ana", "usgs", "usgsi"],
+        help="name of data source")
+    parser.add_argument('--cloud_thr',
+        default=80,
+        type=int,
+        help="percent of cloud cover acceptable")
+    parser.add_argument('--buffer_distance',
+        default=500,
+        type=int,
+        help="search radius used for reflectance data aggregation")
+    parser.add_argument('--mask_method1',
+        default="lulc",
+        choices=["lulc", "scl"],
+        type=str,
+        help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
+    parser.add_argument('--mask_method2',
+        default="mndwi",
+        choices=["ndvi", "mndwi", ""],
+        type=str,
+        help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\")")
+    args = parser.parse_args()
+    args.model_path = "/content/output/mlp/top_model"
+    args.data_src = "itv"
+    mm1 = args.mask_method1
+    mm2 = args.mask_method2
+
+    # Create filesystem
+    fs = fsspec.filesystem("az", **storage_options)
+
+    # Load in the top model metadata
+    with open(f"{args.model_path}_metadata.pickle", "rb") as f:
+        meta = pickle.load(f)
+
+    model = MultipleRegression(len(meta["features"]), len(meta["layer_out_neurons"]), meta["layer_out_neurons"], activation_function=eval(f'nn.{meta["activation"]}'))
+    with open(f"{args.model_path}.pt", "rb") as f:
+        model.load_state_dict(torch.load(f))
+    
+    # Wrangle the training data to recreate the scaler and get info on features
+    fp = meta["training_data"]
+    data = pd.read_csv(fp)
+
+    features = meta["features"]
+
+    not_enough_water = data["n_water_pixels"] <= meta["min_water_pixels"]
+    data.drop(not_enough_water[not_enough_water].index, inplace=True)
+    data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
+    data["is_brazil"] = [float(x) for x in data["is_brazil"]]
+    lnssc_0 = data["Log SSC (mg/L)"] == 0
+    data.drop(lnssc_0[lnssc_0].index, inplace=True)
+
+    scaler = MinMaxScaler()
+    X_train_scaled = scaler.fit_transform(data[meta["features"]])
+
+    sentinel_features = [x for x in features if "sentinel" in x]
+    non_sentinel_features = [x for x in features if "sentinel" not in x]
+
+    # Load feature data for making extrapolations, add hrefs as columns
+    fp_pred = f"az://predictions/{args.data_src}-predictions/feature_data_buffer{args.buffer_distance}m_daytol0_cloudthr{args.cloud_thr}percent_{mm1}{mm2}_masking.csv"
+
+    pred_df = pd.read_csv(fp_pred, storage_options=storage_options).dropna()
+    if args.data_src in ["itv", "ana"]:
+        pred_df["is_brazil"] = 1
+    else:
+        pred_df["is_brazil"] = 0
+
+    # Keep only prediction site chips that have 20 or more water pixels
+    # Only keep prediction site chips that have < 50% clouds unless they have a corresponding observation in the training data
+    pred_df["has_obs"] = [pred_df["Date-Time"].iloc[i] in list(data.loc[data["site_no"] == pred_df["sample_id"].iloc[i][0:8], ]["Date-Time_Remote"]) for i in range(0, len(pred_df))]
+    pred_df = pred_df.loc[(pred_df["n_water_pixels"] >= 20) & ((pred_df["has_obs"] == True) | (pred_df["Chip Cloud Pct"] <= 50)), ]
+
+    # Generate hrefs for the image chips for prediction sites
+    raw_img_hrefs = []
+    raw_water_hrefs = []
+
+    href_base = f"https://fluviusdata.blob.core.windows.net/prediction-data/chips/{args.buffer_distance}m_cloudthr{args.cloud_thr}_{mm1}{mm2}_masking/{args.data_src}/"
+    for _, row in pred_df.iterrows():
+        fn_root = f"{row['sample_id']}_{row['Date-Time']}"
+        raw_img_hrefs.append(f"{href_base}{fn_root}.tif")
+        raw_water_hrefs.append(f"{href_base}{fn_root}_water.tif")
+        
+    pred_df["raw_img_chip_href"] = raw_img_hrefs
+    pred_df["water_chip_href"] = raw_water_hrefs
+
+    # Using the new DataFrame, create chips of pixel-wise SSC
+    app_chip_hrefs = []
+    app_chip_fn_base = f"app/img/prediction_chips_{args.buffer_distance}m_cloudthr{args.cloud_thr}_{mm1}{mm2}_masking/"
+    for _, row in pred_df.reset_index().iterrows():
+        pred_chip = predict_chip(features, sentinel_features, non_sentinel_features, row, model, scaler)
+
+        ## Create merged image for app display
+        with rio.Env(
+            AZURE_STORAGE_ACCOUNT=os.environ["ACCOUNT_NAME"],
+            AZURE_STORAGE_ACCESS_KEY=os.environ["BLOB_KEY"]
+        ):
+            print(row['raw_img_chip_href'][42:])
+            with rio.open(f"az://{row['raw_img_chip_href'][42:]}") as chip:
+                rgb_raw = chip.read((4, 3, 2))
+
+        rgb = np.moveaxis(
+            np.interp(
+                np.clip(
+                    rgb_raw,
+                    RGB_MIN,
+                    RGB_MAX
+                ), 
+                (RGB_MIN, RGB_MAX),
+                (0, 1)
+            ) ** GAMMA * 255,
+            0,
+            2
+        ).astype(np.uint8)
+        
+        app_chip = np.concatenate([rgb, np.full((rgb.shape[0], 5, rgb.shape[2]), 0).astype(np.uint8), pred_chip], axis = (1))
+        app_fn = f"{app_chip_fn_base}{args.data_src}_{row['sample_id']}_{row['Date-Time']}_chip.png"
+        with fs.open(app_fn, "wb") as fn:
+            Image.fromarray(app_chip).save(fn, "PNG")
+
+        app_chip_hrefs.append(f"https://fluviusdata.blob.core.windows.net/{app_fn}")
+
+    pred_df["app_chip_href"] = app_chip_hrefs
+
+    # save final prediction data with hrefs to Azure
+    cols = ['sample_id', 'Longitude', 'Latitude', 'Date-Time', 'Date-Time_Remote', 
+       'Tile Cloud Cover', 'InSitu_Satellite_Diff',
+       'Chip Cloud Pct', 'sentinel-2-l2a_AOT', 'sentinel-2-l2a_B02',
+       'sentinel-2-l2a_B03', 'sentinel-2-l2a_B04', 'sentinel-2-l2a_B08',
+       'sentinel-2-l2a_WVP', 'sentinel-2-l2a_B05', 'sentinel-2-l2a_B06',
+       'sentinel-2-l2a_B07', 'sentinel-2-l2a_B8A', 'sentinel-2-l2a_B11',
+       'sentinel-2-l2a_B12', 'n_water_pixels', 'mean_viewing_azimuth',
+       'mean_viewing_zenith', 'mean_solar_azimuth', 'mean_solar_zenith',
+       'sensing_time', 'is_brazil', 'Predicted Log SSC (mg/L)', 'has_obs',
+       'raw_img_chip_href', 'water_chip_href', 'app_chip_href']
+
+    pred_df.reset_index()[cols].to_csv(f"az://predictions/{args.data_src}-predictions/prediction_data_buffer{args.buffer_distance}m_daytol0_cloudthr{args.cloud_thr}percent_{mm1}{mm2}_masking.csv", storage_options=storage_options)

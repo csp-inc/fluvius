@@ -125,7 +125,7 @@ if __name__ == "__main__":
                             water_rgb[water==0, 1] = 184
                             water_rgb[water==0, 2] = 255
 
-                        qa_array = np.concatenate([rgb, water_rgb], axis = (1))^2
+                        qa_array = np.concatenate([rgb, water_rgb], axis = (1))
                         qa_img = Image.fromarray(qa_array, "RGB")
 
                     out_name = f"modeling-data/chips/qa/{composite}_{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{data_src}_{os.path.basename(path[:-4])}.png"

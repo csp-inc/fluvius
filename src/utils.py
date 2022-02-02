@@ -813,6 +813,10 @@ RIO_BANDS_ORDERED = {
     "sentinel-2-l2a_B12":12
 }
 
+RGB_MIN = 0
+RGB_MAX = 6000
+GAMMA = 0.6
+
 def predict_pixel_ssc(sentinel_values, sentinel_features, non_sentinel_values, non_sentinel_features, all_features, scaler, model):
     obs_dict = dict.fromkeys(all_features)
     obs_dict.update(zip(sentinel_features, sentinel_values))
@@ -839,13 +843,13 @@ def overlay_ssc_img(img, water, ssc_pixel_predictions, cramp="hot"):
     img2 =  np.moveaxis(
         np.interp(
             np.clip(
-                img[[3,2,1], :, :], 
-                0,
-                6000
+                img[[3,2,1], :, :], # Models always included RGB bands, which are always positioned a 3,2,1 in the list of features for each model -- beware, this is hard coded
+                RGB_MIN,
+                RGB_MAX
             ), 
-            (0, 6000),
+            (RGB_MIN, RGB_MAX),
             (0, 1)
-        ) ** 0.6 * 255,
+        ) ** GAMMA * 255,
         0,
         2
     ).astype(np.uint8)

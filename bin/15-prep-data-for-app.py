@@ -26,7 +26,7 @@ if __name__ == "__main__":
         type=str,
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
     parser.add_argument('--mask_method2',
-        default="",
+        default="mndwi",
         type=str,
         help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\")")
     args = parser.parse_args()
@@ -48,39 +48,8 @@ if __name__ == "__main__":
     storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
                        "account_key":os.environ["BLOB_KEY"]}
 
-    composites = [
-        'rgb',
-        'cir',
-        'swir'
-    ]
 
     fs = fsspec.filesystem("az", **storage_options)
-
-    # Remove old app image chips if they exist
-    for composite in composites:
-        try:
-            fs.rm(
-                f"app/img/{composite}_and_{mm1}{mm2}_water", recursive=True
-            )
-        except FileNotFoundError:
-            print(
-                f"No directory exists at az://app/img/{composite}_" + \
-                    f"and_{mm1}{mm2}_water, continuing..."
-            )
-
-        # Copy over new image chips -- need for-loop to avoid error
-        paths_full = fs.ls(
-            f"modeling-data/chips/qa/{composite}_{chip_size}m_" + \
-                f"cloudthr{cloud_thr}_{mm1}{mm2}_masking/"
-        )
-        paths = [os.path.basename(x) for x in paths_full]
-
-        for path in paths:
-            fs.copy(
-                f"modeling-data/chips/qa/{composite}_{chip_size}m_" + \
-                    f"cloudthr{cloud_thr}_{mm1}{mm2}_masking/{path}",
-                f"app/img/{composite}_and_{mm1}{mm2}_water/{path}"
-            )
 
     # Read in metadata and prep JSON data for app
     site_metadata = pd.read_csv(
@@ -92,11 +61,12 @@ if __name__ == "__main__":
         storage_options=storage_options
     )
 
-    prediction_data = pd.read_csv(
-        f"az://predictions/itv-predictions/feature_data_buffer500m_daytol0_cloudthr80percent_lulcmndwi_masking.csv", 
-        storage_options=storage_options
-    ).dropna()
-    pred_sites = [x.split("_")[0].lstrip("0") for x in prediction_data["sample_id"]]
+    all_data = all_data.loc[all_data.region.isin(["itv", "ana"]), ]
+    
+    itv_predictions = pd.read_csv(f"az://predictions/itv-predictions/prediction_data_buffer{args.buffer_distance}m_daytol0_cloudthr{args.cloud_thr}percent_{mm1}{mm2}_masking.csv", storage_options=storage_options)
+    ana_predictions = pd.read_csv(f"az://predictions/ana-predictions/prediction_data_buffer{args.buffer_distance}m_daytol0_cloudthr{args.cloud_thr}percent_{mm1}{mm2}_masking.csv", storage_options=storage_options)
+    prediction_data = pd.concat([itv_predictions, ana_predictions])
+    pred_sites = [x.split("_")[0] for x in prediction_data["sample_id"]]
     prediction_data["site_no"] = pred_sites
     sites = all_data.site_no.unique()
 
@@ -123,37 +93,23 @@ if __name__ == "__main__":
                 # "sentinel.2.l2a_G": str(round(row["sentinel-2-l2a_B03"])),
                 # "sentinel.2.l2a_B": str(round(row["sentinel-2-l2a_B02"])),
                 # "sentinel.2.l2a_NIR": str(round(row["sentinel-2-l2a_B08"])),
-                # "Chip.Cloud.Pct": str(round(row["Chip Cloud Pct"])),
-                "rgb_water_chip_href":
-                    f'{url_base}/rgb_and_{mm1}{mm2}_water/' + \
-                        f'{os.path.basename(row["rgb_and_water_png_href"])}',
-                "cir_water_chip_href":
-                    f'{url_base}/cir_and_{mm1}{mm2}_water/' + \
-                        f'{os.path.basename(row["cir_and_water_png_href"])}',
-                "swir_water_chip_href":
-                    f'{url_base}/swir_and_{mm1}{mm2}_water/' + \
-                        f'{os.path.basename(row["swir_and_water_png_href"])}',
+                # "Chip.Cloud.Pct": str(round(row["Chip Cloud Pct"]))
                 #"raw_img_chip": row["raw_img_chip_href"]
             })
         
-        site_pred_df = prediction_data[prediction_data["site_no"] == site].reset_index()
+        site_pred_df = prediction_data.loc[prediction_data["site_no"] == site, ].reset_index()
         predictions = []
         for i, row in site_pred_df.iterrows():
             predictions.append({
-                "sample_id": row["sample_id"],
+                "prediction_id": row["sample_id"],
                 "SSC.mg.L": str(row["Predicted Log SSC (mg/L)"]),
-                "sample_date": row["Date"],
-                "sample_timestamp": round(time.mktime(dt.date.fromisoformat(row["Date"]).timetuple()))*1000,
-                "rgb_water_chip_href":
-                    f'placeholder...',
-                "cir_water_chip_href":
-                    f'placeholder...',
-                "swir_water_chip_href":
-                    f'placeholder...'
+                "prediction_date": row["Date-Time"],
+                "prediction_timestamp": round(time.mktime(dt.date.fromisoformat(row["Date-Time"]).timetuple()))*1000,
+                "pred_chip": row["app_chip_href"]
             })
 
         out_dicts.append({
-            "region": row["region"],
+            "region": region,
             "site_no": site,
             "site_name": [x["site_name"] for i,x in site_metadata.iterrows() if x["site_no"].zfill(8) == site][0],
             "Longitude": lon,
@@ -163,5 +119,5 @@ if __name__ == "__main__":
         })
 
     # Push to final JSON data that app reads in
-    with fs.open('app/all_data_v3.json', 'w') as fn:
+    with fs.open('app/all_data_v4.json', 'w') as fn:
         json.dump(out_dicts, fn)

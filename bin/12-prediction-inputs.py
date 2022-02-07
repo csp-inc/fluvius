@@ -95,7 +95,7 @@ if __name__ == "__main__":
     day_tol = day_tolerance
 
     for station in stations:
-        if (station in ["ITV1", "ITV2"]) and (mm1 == "lulc"): # lulc has no water pixels for these sties
+        if (station in ["ITV1", "ITV2"]) and (mm1 == "lulc"): # lulc has no water pixels for these sites
             continue
 
         try:

@@ -25,7 +25,7 @@ if __name__ == "__main__":
         help="The path to the model state file (.pt file) without the subscript.")
     parser.add_argument('--data_src',
         type=str,
-        choices=["itv", "ana", "usgs", "usgsi"],
+        choices=["itv", "ana"],
         help="name of data source")
     parser.add_argument('--cloud_thr',
         default=80,
@@ -46,8 +46,7 @@ if __name__ == "__main__":
         type=str,
         help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\")")
     args = parser.parse_args()
-    args.model_path = "/content/output/mlp/top_model"
-    args.data_src = "itv"
+
     mm1 = args.mask_method1
     mm2 = args.mask_method2
 
@@ -119,7 +118,6 @@ if __name__ == "__main__":
             AZURE_STORAGE_ACCOUNT=os.environ["ACCOUNT_NAME"],
             AZURE_STORAGE_ACCESS_KEY=os.environ["BLOB_KEY"]
         ):
-            print(row['raw_img_chip_href'][42:])
             with rio.open(f"az://{row['raw_img_chip_href'][42:]}") as chip:
                 rgb_raw = chip.read((4, 3, 2))
 

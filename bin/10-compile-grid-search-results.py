@@ -14,11 +14,11 @@ if __name__ == "__main__":
     ############### Parse commnd line args ###################
     parser = argparse.ArgumentParser()
     parser.add_argument('--path_to_models',
-        default="output/mlp/500m_cloudthr80_lulcmndwi_masking_5fold_v2",
+        default="output/mlp/500m_cloudthr80_lulcmndwi_masking_5fold_v3",
         type=str,
         help="Path to the model outputs")
     parser.add_argument('--results_output',
-        default="mlp/grid_search_metadata_v2.csv",
+        default="mlp/grid_search_metadata_v3.csv",
         type=str,
         help="Where shoul results be saved? Path should be relative to the output folder locally and the model-output container on blob storage.")
     args = parser.parse_args()

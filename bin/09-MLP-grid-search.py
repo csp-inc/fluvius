@@ -158,8 +158,8 @@ if __name__ == "__main__":
         )
     )
     print(f"Fitting {len(permutations)} models...")
-    if not os.path.exists(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold_v2"):
-        os.makedirs(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold_v2")
+    if not os.path.exists(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold_v3"):
+        os.makedirs(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold_v3")
     
     
     def fit_model(args):

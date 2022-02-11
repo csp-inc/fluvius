@@ -21,7 +21,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    results = pd.read_csv("output/mlp/grid_search_metadata_v2.csv")
+    results = pd.read_csv("output/mlp/grid_search_metadata_v3.csv")
 
     if not args.use_metadata_features:
         no_azimuth = ["mean_viewing_azimuth" not in results["features"][i] for i in range(0, (results.shape[0]))]

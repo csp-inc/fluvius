@@ -144,6 +144,7 @@ def fit_mlp_cv(
     n_layers = len(layer_out_neurons)
     torch.set_num_threads(1)
     # Read the data
+    # TODO update these filepaths once python version of data partitioning is done, will need to be defined based on mask_method2 and mask_method2 args to function, as well as buffer, day tol, etc.
     if mask_method2 == "ndvi":
         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
     elif mask_method2 == "mndwi":
@@ -212,7 +213,12 @@ def fit_mlp_cv(
         model.to(device)
 
         criterion = nn.MSELoss()
-        optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+        optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=0.9)
+        scheduler = optim.lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=[7500, 10000, 12500, 14000],
+            gamma=0.1
+        )
 
         loss_stats = {
             "train": [],
@@ -273,6 +279,8 @@ def fit_mlp_cv(
 
             # calculate R^2 for this epoch
             val_R2.append(r2_score(val_pred, y_val))
+
+            scheduler.step()
 
             if (e % 50 == 0) and verbose:
                 print(f"Epoch {e}/{epochs} | Train Loss: {train_epoch_loss/len(train_loader):.5f} | Val Loss (mean of sites): {val_loss_site:.5f} | Val Loss (pooled mean): {val_loss:.5f}")
@@ -370,6 +378,7 @@ def fit_mlp_full(
     n_layers = len(layer_out_neurons)
 
     # Read the data
+    # TODO update these filepaths once python version of data partitioning is done, will need to be defined based on mask_method2 and mask_method2 args to function, as well as buffer, day tol, etc.
     if mask_method2 == "ndvi":
         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
     elif mask_method2 == "mndwi":
@@ -424,7 +433,12 @@ def fit_mlp_full(
     model.to(device)
 
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=0.9)
+    scheduler = optim.lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=[7500, 10000, 12500, 14000],
+            gamma=0.1
+        )
 
     train_loss_list = []
 
@@ -459,6 +473,8 @@ def fit_mlp_full(
         
         train_loss_list.append(train_epoch_loss/len(train_loader))
 
+        scheduler.step()
+        
         if (e % 50 == 0) and verbose:
             print(f"Epoch {e}/{epochs} | Train Loss: {train_epoch_loss/len(train_loader):.5f}", end="\r")
     
@@ -524,7 +540,6 @@ def fit_mlp_full(
     fs.put_file(f"/content/output/{model_out}_metadata.pickle", f"model-output/{model_out}_metadata.pickle", overwrite=True)
     
     return output
-
 
 
 def fit_mlp_full_nolog(
@@ -603,7 +618,7 @@ def fit_mlp_full_nolog(
     model.to(device)
 
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate)
     scheduler = optim.lr_scheduler.StepLR(
         optimizer,
         step_size=learn_sched_step_size,

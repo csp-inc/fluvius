@@ -132,21 +132,20 @@ if __name__ == "__main__":
         ]
     ]
 
-    epochs = [1500, 2000]
-    batch_size = [32, 64]
-    learning_rate = [0.005, 0.01]
+    epochs = [15000]
+    batch_size = [16, 32]
+    learning_rate = [0.0001, 0.0005]
 
     layer_out_neurons = [
-        [4, 4, 4],
-        [2, 4, 2],
+        [5, 3, 2],
         [4, 4, 2],
         [4, 2, 2],
-        [8, 4],
-        [4, 4]
+        [6, 5],
+        [6, 3]
     ]
 
-    activation = nn.PReLU(num_parameters=1)
-    weight_decay = [1e-2, 2e-2]
+    activation = [nn.PReLU(num_parameters=1), nn.SELU()]
+    weight_decay = [1e-3, 1e-2]
     permutations = list(
         itertools.product(
             features,
@@ -154,7 +153,8 @@ if __name__ == "__main__":
             batch_size,
             epochs,
             layer_out_neurons,
-            weight_decay
+            weight_decay,
+            activation,
         )
     )
     print(f"Fitting {len(permutations)} models...")
@@ -173,7 +173,7 @@ if __name__ == "__main__":
                 batch_size=args[2],
                 epochs=args[3],
                 storage_options=storage_options,
-                activation_function=activation,
+                activation_function=args[6],
                 day_tolerance=8,
                 cloud_thr=cloud_thr,
                 mask_method1=mm1,

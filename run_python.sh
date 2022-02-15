@@ -11,7 +11,7 @@ if [[ "$(docker images -q $IMAGENAME 2> /dev/null)" == "" ]]; then
 fi
 
 docker run --rm -td --ipc "host"  \
-	-v $('pwd'):/content \
+	-v $(pwd):/content \
 	-v /home/$USER/.vscode-server/:/root/.vscode-server/ \
 	-w /content \
 	$IMAGENAME

@@ -5,34 +5,36 @@ from pandas.core.algorithms import diff
 if __name__ == "__main__":
     ############### Parse commnd line args ###################
     parser = argparse.ArgumentParser()
-    parser.add_argument('--qa_chip_list_name',\
-        default="good_chips.csv",\
-        type=str,\
-        help="The Azure filename for the list of good chips. " +\
-             "Assumed to be in the \"modeling-data/chips/post-qa/{chip_size}" +\
-             "m_cloudthr{cloud_thr}_{mm1}{mm2}_masking` directory\". " +\
-             "This will be used to determine which samples in the feature " +\
+    parser.add_argument('--qa_chip_list_name',
+        default="good_chips.csv",
+        type=str,
+        help="The Azure filename for the list of good chips. " +
+             "Assumed to be in the \"modeling-data/chips/post-qa/{chip_size}" +
+             "m_cloudthr{cloud_thr}_{mm1}{mm2}_masking` directory\". " +
+             "This will be used to determine which samples in the feature " +
              "dataframe to keep.")
-    parser.add_argument('--day_tolerance',\
-        default=8,\
-        type=int,\
+    parser.add_argument('--day_tolerance',
+        default=8,
+        type=int,
         help="accetable deviance (in days) around sample date for USGSI, ITV, and ANA sites")
-    parser.add_argument('--cloud_thr',\
-        default=80,\
-        type=int,\
+    parser.add_argument('--cloud_tr',
+        default=80,
+        type=int,
         help="percent of cloud cover acceptable")
-    parser.add_argument('--buffer_distance',\
-        default=500,\
-        type=int,\
+    parser.add_argument('--buffer_distance',
+        default=500,
+        type=int,
         help="search radius used for reflectance data aggregation")
-    parser.add_argument('--mask_method1',\
-        default="lulc",\
-        type=str,\
+    parser.add_argument('--mask_method1',
+        default="lulc",
+        choices=["lulc", "scl"],
+        type=str,
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
-    parser.add_argument('--mask_method2',\
-        default="",\
-        type=str,\
-        help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\")")
+    parser.add_argument('--mask_method2',
+        default="mndwi",
+        choices=["ndvi", "mndwi", ""],
+        type=str,
+        help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\"), or \"\" to use no second mask")
     args = parser.parse_args()
 
     chip_size = args.buffer_distance

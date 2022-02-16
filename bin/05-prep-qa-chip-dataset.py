@@ -20,49 +20,51 @@ storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
 if __name__ == "__main__":
     ############### Parse commnd line args ###################
     parser = argparse.ArgumentParser()
-    parser.add_argument('--day_tolerance',\
-        default=8,\
-        type=int,\
+    parser.add_argument('--day_tolerance',
+        default=8,
+        type=int,
         help="accetable deviance (in days) around sample date for USGSI, ITV, and ANA sites")
-    parser.add_argument('--cloud_thr',\
-        default=80,\
-        type=int,\
+    parser.add_argument('--cloud_thr',
+        default=80,
+        type=int,
         help="percent of cloud cover acceptable")
-    parser.add_argument('--buffer_distance',\
-        default=500,\
-        type=int,\
+    parser.add_argument('--buffer_distance',
+        default=500,
+        type=int,
         help="search radius used for reflectance data aggregation")
-    parser.add_argument('--out_filetype',\
-        default="csv",\
-        type=str,\
+    parser.add_argument('--out_filetype',
+        default="csv",
+        type=str,
         help="filetype for saved merged dataframe (csv or json)")
-    parser.add_argument('--mask_method1',\
-        default="lulc",\
-        type=str,\
+    parser.add_argument('--mask_method1',
+        default="lulc",
+        choices=["lulc", "scl"],
+        type=str,
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
-    parser.add_argument('--mask_method2',\
-        default="",\
-        type=str,\
-        help="Which additional index to use, if any, to update the mask, (\"ndvi\") or (\"mndwi\")")
-    parser.add_argument('--write_chips_blob',\
-        default=True,\
-        type=bool,\
+    parser.add_argument('--mask_method2',
+        default="mndwi",
+        choices=["ndvi", "mndwi", ""],
+        type=str,
+        help="Which additional index to use, if any, to update the mask, (\"ndvi\") or (\"mndwi\"), or \"\" to use no second mask")
+    parser.add_argument('--write_chips_blob',
+        default=True,
+        type=bool,
         help="Should QA chips be written to blob storage?")
-    parser.add_argument('--rgb_min',\
-        default=100,\
-        type=int,\
+    parser.add_argument('--rgb_min',
+        default=100,
+        type=int,
         help="Minimum reflectance value (corresponding to zero saturation of R, G, and B)")
-    parser.add_argument('--rgb_max',\
-        default=4000,\
-        type=int,\
+    parser.add_argument('--rgb_max',
+        default=4000,
+        type=int,
         help="Maximum reflectance value (corresponding to full saturation of R, G, and B)")
-    parser.add_argument('--gamma',\
-        default=0.7,\
-        type=float,\
+    parser.add_argument('--gamma',
+        default=0.7,
+        type=float,
         help="Gamma correction to use when generating the image chip")
-    parser.add_argument('--local_outpath',\
-        default=None,\
-        type=str,\
+    parser.add_argument('--local_outpath',
+        default=None,
+        type=str,
         help="If desired, the local directory to which QA chips will be saved. If \"None\", the default, chips are not written locally")
     args = parser.parse_args()
 

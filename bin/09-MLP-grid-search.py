@@ -164,7 +164,7 @@ if __name__ == "__main__":
     
     def fit_model(args):
         args_hash = hashlib.sha224("_".join([str(x) for x in args]).encode("utf-8")).hexdigest()[0:20]
-        fn = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold_v2/{args_hash}.json"
+        fn = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold_v3/{args_hash}.json"
 
         if not os.path.exists(fn):
             model_out = fit_mlp_cv(

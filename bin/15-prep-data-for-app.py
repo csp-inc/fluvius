@@ -29,6 +29,14 @@ if __name__ == "__main__":
         default="mndwi",
         type=str,
         help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\")")
+    parser.add_argument('--n_folds',
+        default=5,
+        type=int,
+        help="The number of folds to create for the training / validation set")
+    parser.add_argument('--seed',
+        default=123,
+        type=int,
+        help="The seed (an integer) used to initialize the pseudorandom number generator")
     args = parser.parse_args()
 
     chip_size = args.buffer_distance
@@ -36,6 +44,8 @@ if __name__ == "__main__":
     day_tol = args.day_tolerance
     mm1 = args.mask_method1
     mm2 = args.mask_method2
+    n_folds = args.n_folds
+    seed = args.seed
 
     ### Prep JSON for app and cop chips to app storage container
     with open("/content/credentials") as f:
@@ -62,9 +72,8 @@ if __name__ == "__main__":
     )
 
     all_data = all_data.loc[all_data.region.isin(["itv", "ana"]), ]
-    
-    itv_predictions = pd.read_csv(f"az://predictions/itv-predictions/prediction_data_buffer{args.buffer_distance}m_daytol0_cloudthr{args.cloud_thr}percent_{mm1}{mm2}_masking.csv", storage_options=storage_options)
-    ana_predictions = pd.read_csv(f"az://predictions/ana-predictions/prediction_data_buffer{args.buffer_distance}m_daytol0_cloudthr{args.cloud_thr}percent_{mm1}{mm2}_masking.csv", storage_options=storage_options)
+    itv_predictions = pd.read_csv(f"az://predictions/itv-predictions/prediction_data_buffer{chip_size}m_daytol0_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv", storage_options=storage_options)
+    ana_predictions = pd.read_csv(f"az://predictions/ana-predictions/prediction_data_buffer{chip_size}m_daytol0_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv", storage_options=storage_options)
     prediction_data = pd.concat([itv_predictions, ana_predictions])
     pred_sites = [x.split("_")[0] for x in prediction_data["sample_id"]]
     prediction_data["site_no"] = pred_sites

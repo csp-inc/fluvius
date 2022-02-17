@@ -51,6 +51,14 @@ if __name__ == "__main__":
         choices=["ndvi", "mndwi", ""],
         type=str,
         help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\")")
+    parser.add_argument('--n_folds',
+        default=5,
+        type=int,
+        help="The number of folds to create for the training / validation set")
+    parser.add_argument('--seed',
+        default=123,
+        type=int,
+        help="The seed (an integer) used to initialize the pseudorandom number generator")
     args = parser.parse_args()
     day_tolerance = 0
 
@@ -58,14 +66,17 @@ if __name__ == "__main__":
     buffer_distance = args.buffer_distance
     mm1 = args.mask_method1
     mm2 = args.mask_method2
+    n_folds = args.n_folds
+    seed = args.seed
 
+    model_path = f"mlp/top_model_metadata_{args.mse_to_minimize}_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1"
     # Load in the top model metadata
-    with open(f"{args.model_path}_metadata.pickle", "rb") as f:
+    with open(f"{model_path}_metadata.pickle", "rb") as f:
         meta = pickle.load(f)
 
     model = MultipleRegression(len(meta["features"]), len(meta["layer_out_neurons"]), meta["layer_out_neurons"], activation_function=eval(f'nn.{meta["activation"]}'))
 
-    with open(f"{args.model_path}.pt", "rb") as f:
+    with open(f"{model_path}.pt", "rb") as f:
         model.load_state_dict(torch.load(f))
 
     pred_fileprefix = f"az://prediction-data/{args.data_src}-data/feature_data_buffer{buffer_distance}m_daytol0_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking"
@@ -95,4 +106,4 @@ if __name__ == "__main__":
     
     pred_features["Predicted Log SSC (mg/L)"] = y_pred
 
-    pred_features.to_csv(f"az://predictions/{args.data_src}-predictions/feature_data_buffer{buffer_distance}m_daytol0_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv", storage_options=storage_options)
+    pred_features.to_csv(f"az://predictions/{args.data_src}-predictions/feature_data_buffer{buffer_distance}m_daytol0_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv", storage_options=storage_options)

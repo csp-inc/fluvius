@@ -185,7 +185,7 @@ if __name__ == "__main__":
     # out.drop(["fold"], axis = 1, inplace=True)
     out["partition"] = ["testing" if np.isnan(x) else "training" for x in out["fold"]]
 
-    out_filepath = f"az://modeling-data/partitioned_feature_data_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}_folds_seed{seed}.{out_filetype}"
+    out_filepath = f"az://modeling-data/partitioned_feature_data_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.{out_filetype}"
     if out_filetype == "csv":
         # out.to_csv(out_filepath)
         out.to_csv(out_filepath, storage_options=storage_options)

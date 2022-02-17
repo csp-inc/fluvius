@@ -10,38 +10,40 @@ import argparse
 if __name__ == "__main__":
     ############### Parse commnd line args ###################
     parser = argparse.ArgumentParser()
-    parser.add_argument('--day_tolerance',\
-        default=8,\
-        type=int,\
+    parser.add_argument('--day_tolerance',
+        default=8,
+        type=int,
         help="accetable deviance (in days) around sample date for USGSI, ITV, and ANA sites")
-    parser.add_argument('--cloud_thr',\
-        default=80,\
-        type=int,\
+    parser.add_argument('--cloud_thr',
+        default=80,
+        type=int,
         help="percent of cloud cover acceptable")
-    parser.add_argument('--buffer_distance',\
-        default=500,\
-        type=int,\
+    parser.add_argument('--buffer_distance',
+        default=500,
+        type=int,
         help="search radius used for reflectance data aggregation")
-    parser.add_argument('--out_filetype',\
-        default="csv",\
-        type=str,\
+    parser.add_argument('--out_filetype',
+        default="csv",
+        type=str,
         help="filetype for saved merged dataframe (csv or json)")
-    parser.add_argument('--mask_method1',\
-        default="lulc",\
-        type=str,\
+    parser.add_argument('--mask_method1',
+        default="lulc",
+        choices=["lulc", "scl"],
+        type=str,
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
     parser.add_argument('--mask_method2',
-        default="ndvi",
+        default="mndwi",
+        choices=["ndvi", "mndwi", ""],
         type=str,
-        help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\")")
-    parser.add_argument('--n_folds',\
-        default=5,\
-        type=int,\
+        help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\"), or \"\" to use no second mask")
+    parser.add_argument('--n_folds',
+        default=5,
+        type=int,
         help="The number of folds to create for the training / validation set")
-    parser.add_argument('--seed',\
-        default=123,\
-        type=int,\
-        help="The seed (a number) used to initialize the pseudorandom number generator")
+    parser.add_argument('--seed',
+        default=123,
+        type=int,
+        help="The seed (an integer) used to initialize the pseudorandom number generator")
     args = parser.parse_args()
 
     ############### Setup ####################

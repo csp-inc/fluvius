@@ -15,14 +15,16 @@ if __name__ == "__main__":
         default=500,
         type=int,
         help="search radius used for reflectance data aggregation")
-    parser.add_argument('--mask_method1',\
-        default="lulc",\
-        type=str,\
+    parser.add_argument('--mask_method1',
+        default="lulc",
+        choices=["lulc", "scl"],
+        type=str,
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
-    parser.add_argument('--mask_method2',\
-        default="",\
-        type=str,\
-        help="Which additional index to use, if any, to update the mask, (\"ndvi\") or (\"mndwi\")")
+    parser.add_argument('--mask_method2',
+        default="mndwi",
+        choices=["ndvi", "mndwi", ""],
+        type=str,
+        help="Which additional index to use, if any, to update the mask, (\"ndvi\") or (\"mndwi\"), or \"\" to use no second mask")
     parser.add_argument("--composite",
         default="rgb",
         type=str,

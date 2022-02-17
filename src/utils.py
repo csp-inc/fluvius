@@ -369,7 +369,7 @@ def fit_mlp_full(
         cloud_thr=80,
         mask_method1="lulc",
         mask_method2="mndwi",
-        min_water_pixels=10,
+        min_water_pixels=20,
         layer_out_neurons=[24, 12, 6],
         weight_decay=1e-2,
         verbose=True,
@@ -386,15 +386,15 @@ def fit_mlp_full(
 
     data = pd.read_csv(fp)
     data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
-
-    test = data[data["partition"] == "testing"]
-    data = data[data["partition"] != "testing"]
     
     response = "Log SSC (mg/L)"
     not_enough_water = data["n_water_pixels"] < min_water_pixels
     data.drop(not_enough_water[not_enough_water].index, inplace=True)
     lnssc_0 = data["Log SSC (mg/L)"] == 0
     data.drop(lnssc_0[lnssc_0].index, inplace=True)
+
+    test = data[data["partition"] == "testing"]
+    data = data[data["partition"] != "testing"]
 
     scaler = MinMaxScaler()
     X_train_scaled = scaler.fit_transform(data[features])
@@ -556,18 +556,18 @@ def fit_mlp_full_nolog(
         mask_method2="mndwi",
         min_water_pixels=10,
         layer_out_neurons=[24, 12, 6],
-        learn_sched_step_size=200, 
-        learn_sched_gamma=0.2,
+        weight_decay=1e-2,
         verbose=True,
         model_out = "output/top_model"
     ):    
     n_layers = len(layer_out_neurons)
 
     # Read the data
+    # TODO update these filepaths once python version of data partitioning is done, will need to be defined based on mask_method2 and mask_method2 args to function, as well as buffer, day tol, etc.
     if mask_method2 == "ndvi":
         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
     elif mask_method2 == "mndwi":
-        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_tmp.csv"
+        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_5folds.csv"
 
     data = pd.read_csv(fp)
     data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
@@ -585,8 +585,8 @@ def fit_mlp_full_nolog(
     X_train_scaled = scaler.fit_transform(data[features])
     X_test_scaled = scaler.transform(test[features])
 
-    y_train = data[response]
-    y_test = test[response]
+    y_train = data[response] / 100
+    y_test = test[response] / 100
 
     X_train_scaled, y_train = np.array(X_train_scaled), np.array(y_train)
     X_test_scaled, y_test = np.array(X_test_scaled), np.array(y_test)
@@ -618,12 +618,12 @@ def fit_mlp_full_nolog(
     model.to(device)
 
     criterion = nn.MSELoss()
-    optimizer = optim.SGD(model.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.StepLR(
-        optimizer,
-        step_size=learn_sched_step_size,
-        gamma=learn_sched_gamma
-    )
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=0.9)
+    scheduler = optim.lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=[7500, 10000, 12500, 14000],
+            gamma=0.1
+        )
 
     train_loss_list = []
 
@@ -657,8 +657,9 @@ def fit_mlp_full_nolog(
             train_epoch_loss += train_loss.item()
         
         train_loss_list.append(train_epoch_loss/len(train_loader))
-        scheduler.step()
 
+        scheduler.step()
+        
         if (e % 50 == 0) and verbose:
             print(f"Epoch {e}/{epochs} | Train Loss: {train_epoch_loss/len(train_loader):.5f}", end="\r")
     
@@ -667,7 +668,7 @@ def fit_mlp_full_nolog(
         model.eval()
         for X_batch, _ in train_loader_all:
             X_batch = X_batch.to(device)
-            y_pred = torch.exp(model(X_batch)).cpu().squeeze().tolist()
+            y_pred = (torch.exp(model(X_batch)).cpu().squeeze()).tolist()
             train_pred_list.append(y_pred)
 
     test_pred_list = []
@@ -675,7 +676,7 @@ def fit_mlp_full_nolog(
         model.eval()
         for X_batch, _ in test_loader:
             X_batch = X_batch.to(device)
-            test_pred = torch.exp(model(X_batch)).cpu().squeeze().tolist()
+            test_pred = (torch.exp(model(X_batch)).cpu().squeeze()).tolist()
             test_pred_list.append(test_pred)
 
     test_pred = np.array(test_pred_list)
@@ -695,11 +696,10 @@ def fit_mlp_full_nolog(
         "min_water_pixels": min_water_pixels,
         "features": features,
         "learning_rate": learning_rate,
-        "learn_sched_step_size": learn_sched_step_size,
-        "learn_sched_gamma": learn_sched_gamma,
         "batch_size": batch_size,
         "layer_out_neurons": layer_out_neurons,
         "epochs": epochs,
+        "weight_decay": weight_decay,
         "activation": f"{activation_function}",
         "train_loss": train_loss_list,
         "train_pooled_mse": train_loss_list[-1],
@@ -727,12 +727,13 @@ def fit_mlp_full_nolog(
     return output
 
 
-def plot_obs_predict(obs_pred, title, savefig=False, outfn=""):
+def plot_obs_predict(obs_pred, title, units = "log(SSC)", savefig=False, outfn=""):
     plt.figure(figsize=(8,8))
-    plt.plot(list(range(0,8)),list(range(0,8)), color="black", label="One-to-one 1 line")
-    plt.scatter(obs_pred.iloc[:,0], obs_pred.iloc[:,1])
-    plt.xlabel("ln(SSC) Predicted")
-    plt.ylabel("ln(SSC) Observed")
+    max_val = np.maximum(np.max(obs_pred.iloc[:,0]), np.max(obs_pred.iloc[:,1]))
+    plt.plot(list(range(0, round(max_val) + 1)), list(range(0,round(max_val) + 1)), color="black", label="One-to-one 1 line")
+    plt.scatter(obs_pred["pred"], obs_pred["obs"])
+    plt.xlabel(f"{units} Predicted")
+    plt.ylabel(f"{units} Observed")
     plt.title(title)
     plt.legend()
     if savefig:

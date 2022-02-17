@@ -51,10 +51,10 @@ if __name__ == "__main__":
         type=str,
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
     parser.add_argument('--mask_method2',
-        default="",
+        default="mndwi",
         choices=["ndvi", "mndwi", ""],
         type=str,
-        help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\")")
+        help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\"), or \"\" to use no second mask")
     args = parser.parse_args()
 
     #################  set up ####################

@@ -369,7 +369,7 @@ def fit_mlp_full(
         cloud_thr=80,
         mask_method1="lulc",
         mask_method2="mndwi",
-        min_water_pixels=10,
+        min_water_pixels=20,
         layer_out_neurons=[24, 12, 6],
         weight_decay=1e-2,
         verbose=True,
@@ -386,15 +386,15 @@ def fit_mlp_full(
 
     data = pd.read_csv(fp)
     data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
-
-    test = data[data["partition"] == "testing"]
-    data = data[data["partition"] != "testing"]
     
     response = "Log SSC (mg/L)"
     not_enough_water = data["n_water_pixels"] < min_water_pixels
     data.drop(not_enough_water[not_enough_water].index, inplace=True)
     lnssc_0 = data["Log SSC (mg/L)"] == 0
     data.drop(lnssc_0[lnssc_0].index, inplace=True)
+
+    test = data[data["partition"] == "testing"]
+    data = data[data["partition"] != "testing"]
 
     scaler = MinMaxScaler()
     X_train_scaled = scaler.fit_transform(data[features])

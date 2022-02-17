@@ -41,7 +41,7 @@ if __name__ == "__main__":
         default="mndwi",
         choices=["ndvi", "mndwi", ""],
         type=str,
-        help="Which additional index to use, if any, to update the mask, (\"ndvi\") or (\"mndwi\")")
+        help="Which additional index to use, if any, to update the mask, (\"ndvi\") or (\"mndwi\"), or \"\" to use no second mask")
     args = parser.parse_args()
     ############### Setup ####################
     # arguments

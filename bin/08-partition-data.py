@@ -64,22 +64,22 @@ if __name__ == "__main__":
         "p_test": [0, 0.2, 0.9] # [0, 0.1, 1]
         }
 
-    # # Set storage options for Azure blob storage
-    # with open("credentials") as f:
-    #     env_vars = f.read().split("\n")
+    # Set storage options for Azure blob storage
+    with open("credentials") as f:
+        env_vars = f.read().split("\n")
 
-    # for var in env_vars:
-    #     key, value = var.split(' = ')
-    #     os.environ[key] = value
+    for var in env_vars:
+        key, value = var.split(' = ')
+        os.environ[key] = value
 
-    # storage_options = {'account_name':os.environ['ACCOUNT_NAME'],
-    #                 'account_key':os.environ['BLOB_KEY']}
+    storage_options = {'account_name':os.environ['ACCOUNT_NAME'],
+                    'account_key':os.environ['BLOB_KEY']}
 
     try:
-        filepath = f"data/fluvius_data_post_qa_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv"
-        data = pd.read_csv(filepath)
-        #filepath = f"az://modeling-data/fluvius_data_post_qa_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv"
-        # data = pd.read_csv(filepath, storage_options=storage_options)
+        # filepath = f"data/fluvius_data_post_qa_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv"
+        # data = pd.read_csv(filepath)
+        filepath = f"az://modeling-data/fluvius_data_post_qa_unpartitioned_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv"
+        data = pd.read_csv(filepath, storage_options=storage_options)
     except:
         print(f"Error: no file at {filepath}")
     
@@ -99,6 +99,7 @@ if __name__ == "__main__":
     data["julian"] = julian
     data["SSC Quantile"] = ssc_quantile_bin
     data["Year"] = year
+    
     data["Season"] = np.digitize(np.array(data["julian"]), 366/2 * np.array([0, 1]))
     data["sine_julian"] = np.sin(2*np.pi*data["julian"]/365)
     data["is_brazil"] = 0
@@ -137,8 +138,10 @@ if __name__ == "__main__":
             "n_obs": x["sample_id"].nunique()
         })) # does not include explicit zeros (e.g., the zero count for the usgs test partition)
     # print(partitions_summary.reset_index())
-    ps_path = f"data/partitions_summary_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}_folds_seed{seed}.csv"
-    partitions_summary.to_csv(ps_path)
+    # ps_path = f"data/partitions_summary_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv"
+    ps_filepath = f"az://modeling-data/partitions_summary_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv"
+    partitions_summary.to_csv(ps_filepath)
+    # partitions_summary.to_csv(ps_path, storage_options=storage_options)
 
     # create folds
     validation_info = pd.DataFrame()
@@ -148,8 +151,9 @@ if __name__ == "__main__":
             & (partition_info["is_brazil"] == is_brazil)].copy()
         n_validation = len(validation_is_brazil.index)
         validation_indices = rng.choice(n_validation, size = n_validation, replace = False)
-        validation_is_brazil[["partition", "fold"]] = \
-            ["validate", pd.cut(validation_indices, bins = n_folds, labels = range(n_folds))]
+        validation_is_brazil["partition"] = "validate"
+        validation_is_brazil["fold"] = \
+            pd.cut(validation_indices, bins = n_folds, labels = range(n_folds))
         validation_info = pd.concat([validation_info, validation_is_brazil], axis=0)
         for fold in range(n_folds):
             site_no_in_fold = validation_is_brazil["site_no"][validation_is_brazil["fold"] == fold]
@@ -164,7 +168,7 @@ if __name__ == "__main__":
         .join(training_data.set_index(partition_by), on = partition_by).reset_index()
 
     validation_data = data_all_parts[data_all_parts["partition"] == "validate"]
-    test_data = data_partitioned[data_partitioned["partition"] == "test"]
+    test_data = data_partitioned[data_partitioned["partition"] == "test"].copy()
     test_data["fold"] = nan
     partition_by.extend(["sample_id", "fold"])
     lookup = pd.concat([ \
@@ -174,35 +178,15 @@ if __name__ == "__main__":
     lookup_indices = ["data_src", "site_no", "is_brazil", "sample_id"]
     out = data.set_index(lookup_indices) \
         .join(lookup.set_index(lookup_indices), on = lookup_indices).reset_index()
+    out["fold_idx"] = [x + 1 for x in out["fold"]]
     out["partition"] = ["testing" if np.isnan(x) else "training" for x in out["fold"]]
-    out_path = f"data/partitioned_feature_data_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}_folds_seed{seed}.csv"
-    out.to_csv(out_path)
-    print(out.info())
-    
 
-    # print(training_data.groupby("fold")["fold"].count())
-    # print(training_data)
-    # print(pd.cut(training_data["site_no"], n_folds))
+    out_filepath = f"az://modeling-data/partitioned_feature_data_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}_folds_seed{seed}.{out_filetype}"
+    if out_filetype == "csv":
+        # out.to_csv(out_filepath)
+        out.to_csv(out_filepath, storage_options=storage_options)
+    elif out_filetype == "json":
+        # "Okay"
+        out.to_json(out_filepath, storage_options=storage_options)
 
-
-    # def f(x, rng): return rng.random(x)#Intialise a random number generator
-    # rng = np.random.default_rng(2021)#pass the rng to functions which you would like to use it
-    # random_number = f(4, rng)
-    # print(random_number)
-
-    # print(data.groupby('data_src1')['data_src1'].count())
-    # print(data.groupby('data_src')['data_src'].sum())
-    # ## Partition the data into train, test, validate
-    # # First split data into groups to ensure stratified
-    # grouped = data.groupby(by = ["SSC Quantile", "data_src"], group_keys=False)
-    # # now apply the train_test_validate_split function to each group
-    # partitioned = grouped.apply(lambda x: train_test_validate_split(x, [0.7, 0.15, 0.15]))
-
-    # out_filepath = f"az://modeling-data/partitioned_feature_data_buffer{chip_size}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.{out_filetype}"
-
-    # if out_filetype == "csv":
-    #     partitioned.to_csv(out_filepath, storage_options=storage_options)
-    # elif out_filetype == "json":
-    #     partitioned.to_json(out_filepath, storage_options=storage_options)
-
-    # print(f"Done. Outputs written to {out_filepath}")
+    print(f"Done. Outputs written to {out_filepath}")

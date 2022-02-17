@@ -13,17 +13,25 @@ storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
 if __name__ == "__main__":
     ############### Parse commnd line args ###################
     parser = argparse.ArgumentParser()
-    parser.add_argument('--path_to_models',
-        default="output/mlp/500m_cloudthr80_lulcmndwi_masking_5fold_v3",
-        type=str,
-        help="Path to the model outputs")
+    # parser.add_argument('--path_to_models',
+    #     default="output/mlp/500m_cloudthr80_lulcmndwi_masking_{n_folds}_folds_seed{seed}_v1",
+    #     type=str,
+    #     help="Path to the model outputs")
     parser.add_argument('--results_output',
-        default="mlp/grid_search_metadata_v3.csv",
+        default="mlp/grid_search_metadata_v1.csv",
         type=str,
         help="Where shoul results be saved? Path should be relative to the output folder locally and the model-output container on blob storage.")
+    parser.add_argument('--n_folds',
+        default=5,
+        type=int,
+        help="The number of folds to create for the training / validation set")
+    parser.add_argument('--seed',
+        default=123,
+        type=int,
+        help="The seed (an integer) used to initialize the pseudorandom number generator")
     args = parser.parse_args()
 
-    directory = args.path_to_models
+    directory = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}_folds_seed{seed}_v1" # was: args.path_to_models
     
     paths = [f"{directory}/{x}" for x in os.listdir(directory)]
 

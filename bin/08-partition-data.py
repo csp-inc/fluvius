@@ -142,8 +142,8 @@ if __name__ == "__main__":
     # print(partitions_summary.reset_index())
     # ps_path = f"data/partitions_summary_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv"
     ps_filepath = f"az://modeling-data/partitions_summary_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv"
-    partitions_summary.to_csv(ps_filepath)
-    # partitions_summary.to_csv(ps_path, storage_options=storage_options)
+    # partitions_summary.to_csv(ps_filepath)
+    partitions_summary.to_csv(ps_filepath, storage_options=storage_options)
 
     # create folds
     validation_info = pd.DataFrame()
@@ -181,6 +181,8 @@ if __name__ == "__main__":
     out = data.set_index(lookup_indices) \
         .join(lookup.set_index(lookup_indices), on = lookup_indices).reset_index()
     out["fold_idx"] = [x + 1 for x in out["fold"]]
+    # print(out.keys())
+    # out.drop(["fold"], axis = 1, inplace=True)
     out["partition"] = ["testing" if np.isnan(x) else "training" for x in out["fold"]]
 
     out_filepath = f"az://modeling-data/partitioned_feature_data_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}_folds_seed{seed}.{out_filetype}"

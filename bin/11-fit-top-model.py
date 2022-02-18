@@ -19,9 +19,41 @@ if __name__ == "__main__":
         choices=["mean_mse", "val_site_mse", "val_pooled_mse"],
         help="Which MSE to use, mean of sites, pooled, or the mean of the pooled and mean site MSE?"
     )
+    parser.add_argument('--cloud_thr',
+        default=80,
+        type=int,
+        help="percent of cloud cover acceptable")
+    parser.add_argument('--buffer_distance',
+        default=500,
+        type=int,
+        help="search radius to use for reflectance data aggregation")
+    parser.add_argument('--mask_method1',
+        default="lulc",
+        choices=["lulc", "scl"],
+        type=str,
+        help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
+    parser.add_argument('--mask_method2',
+        default="mndwi",
+        choices=["ndvi", "mndwi", ""],
+        type=str,
+        help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\"), or \"\" to use no second mask")
+    parser.add_argument('--n_folds',
+        default=5,
+        type=int,
+        help="The number of folds to create for the training / validation set")
+    parser.add_argument('--seed',
+        default=123,
+        type=int,
+        help="The seed (an integer) used to initialize the pseudorandom number generator")
     args = parser.parse_args()
+    cloud_thr = args.cloud_thr
+    buffer_distance = args.buffer_distance
+    mm1 = args.mask_method1
+    mm2 = args.mask_method2
+    n_folds = args.n_folds
+    seed = args.seed
 
-    results = pd.read_csv("output/mlp/grid_search_metadata_v3.csv")
+    results = pd.read_csv(f"az://model-output/mlp/grid_search_metadata_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1.csv", storage_options=storage_options)
 
     if not args.use_metadata_features:
         no_azimuth = ["mean_viewing_azimuth" not in results["features"][i] for i in range(0, (results.shape[0]))]
@@ -50,5 +82,5 @@ if __name__ == "__main__":
         layer_out_neurons=top_model["layer_out_neurons"],
         weight_decay=top_model["weight_decay"],
         verbose=True,
-        model_out=f"mlp/top_model_metadata_{args.mse_to_minimize}"
+        model_out=f"mlp/top_model_metadata_{args.mse_to_minimize}_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1"
     )

@@ -33,12 +33,22 @@ if __name__ == "__main__":
         choices=["ndvi", "mndwi", ""],
         type=str,
         help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\"), or \"\" to use no second mask")
+    parser.add_argument('--n_folds',
+        default=5,
+        type=int,
+        help="The number of folds to create for the training / validation set")
+    parser.add_argument('--seed',
+        default=123,
+        type=int,
+        help="The seed (an integer) used to initialize the pseudorandom number generator")
 
     args = parser.parse_args()
     cloud_thr = args.cloud_thr
     buffer_distance = args.buffer_distance
     mm1 = args.mask_method1
     mm2 = args.mask_method2
+    n_folds = args.n_folds
+    seed = args.seed
 
     with open("/content/credentials") as f:
         env_vars = f.read().split("\n")
@@ -158,13 +168,13 @@ if __name__ == "__main__":
         )
     )
     print(f"Fitting {len(permutations)} models...")
-    if not os.path.exists(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold_v3"):
-        os.makedirs(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold_v3")
+    if not os.path.exists(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1"):
+        os.makedirs(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1")
     
     
     def fit_model(args):
         args_hash = hashlib.sha224("_".join([str(x) for x in args]).encode("utf-8")).hexdigest()[0:20]
-        fn = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_5fold_v3/{args_hash}.json"
+        fn = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1/{args_hash}.json"
 
         if not os.path.exists(fn):
             model_out = fit_mlp_cv(

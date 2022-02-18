@@ -20,9 +20,6 @@ storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path',
-        type=str,
-        help="The path to the model state file (.pt file) without the subscript.")
     parser.add_argument('--data_src',
         type=str,
         choices=["itv", "ana"],
@@ -45,7 +42,22 @@ if __name__ == "__main__":
         choices=["ndvi", "mndwi", ""],
         type=str,
         help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\")")
+    parser.add_argument('--n_folds',
+        default=5,
+        type=int,
+        help="The number of folds to create for the training / validation set")
+    parser.add_argument('--seed',
+        default=123,
+        type=int,
+        help="The seed (an integer) used to initialize the pseudorandom number generator")
     args = parser.parse_args()
+    day_tolerance = 0
+    cloud_thr = args.cloud_thr
+    buffer_distance = args.buffer_distance
+    mm1 = args.mask_method1
+    mm2 = args.mask_method2
+    n_folds = args.n_folds
+    seed = args.seed
 
     mm1 = args.mask_method1
     mm2 = args.mask_method2
@@ -53,12 +65,14 @@ if __name__ == "__main__":
     # Create filesystem
     fs = fsspec.filesystem("az", **storage_options)
 
+    model_path = f"mlp/top_model_metadata_{args.mse_to_minimize}_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1"
+
     # Load in the top model metadata
-    with open(f"{args.model_path}_metadata.pickle", "rb") as f:
+    with open(f"{model_path}_metadata.pickle", "rb") as f:
         meta = pickle.load(f)
 
     model = MultipleRegression(len(meta["features"]), len(meta["layer_out_neurons"]), meta["layer_out_neurons"], activation_function=eval(f'nn.{meta["activation"]}'))
-    with open(f"{args.model_path}.pt", "rb") as f:
+    with open(f"{model_path}.pt", "rb") as f:
         model.load_state_dict(torch.load(f))
     
     # Wrangle the training data to recreate the scaler and get info on features
@@ -81,7 +95,7 @@ if __name__ == "__main__":
     non_sentinel_features = [x for x in features if "sentinel" not in x]
 
     # Load feature data for making extrapolations, add hrefs as columns
-    fp_pred = f"az://predictions/{args.data_src}-predictions/feature_data_buffer{args.buffer_distance}m_daytol0_cloudthr{args.cloud_thr}percent_{mm1}{mm2}_masking.csv"
+    fp_pred = f"az://predictions/{args.data_src}-predictions/feature_data_buffer{buffer_distance}m_daytol0_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv"
 
     pred_df = pd.read_csv(fp_pred, storage_options=storage_options).dropna()
     if args.data_src in ["itv", "ana"]:
@@ -109,7 +123,7 @@ if __name__ == "__main__":
 
     # Using the new DataFrame, create chips of pixel-wise SSC
     app_chip_hrefs = []
-    app_chip_fn_base = f"app/img/prediction_chips_{args.buffer_distance}m_cloudthr{args.cloud_thr}_{mm1}{mm2}_masking/"
+    app_chip_fn_base = f"app/img/prediction_chips_{args.buffer_distance}m_cloudthr{args.cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}/"
     for _, row in pred_df.reset_index().iterrows():
         pred_chip = predict_chip(features, sentinel_features, non_sentinel_features, row, model, scaler)
 
@@ -156,4 +170,4 @@ if __name__ == "__main__":
        'sensing_time', 'is_brazil', 'Predicted Log SSC (mg/L)', 'has_obs',
        'raw_img_chip_href', 'water_chip_href', 'app_chip_href']
 
-    pred_df.reset_index()[cols].to_csv(f"az://predictions/{args.data_src}-predictions/prediction_data_buffer{args.buffer_distance}m_daytol0_cloudthr{args.cloud_thr}percent_{mm1}{mm2}_masking.csv", storage_options=storage_options)
+    pred_df.reset_index()[cols].to_csv(f"az://predictions/{args.data_src}-predictions/prediction_data_buffer{args.buffer_distance}m_daytol0_cloudthr{args.cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv", storage_options=storage_options)

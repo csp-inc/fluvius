@@ -13,17 +13,42 @@ storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
 if __name__ == "__main__":
     ############### Parse commnd line args ###################
     parser = argparse.ArgumentParser()
-    parser.add_argument('--path_to_models',
-        default="output/mlp/500m_cloudthr80_lulcmndwi_masking_5fold_v3",
+    parser.add_argument('--cloud_thr',
+        default=80,
+        type=int,
+        help="percent of cloud cover acceptable")
+    parser.add_argument('--buffer_distance',
+        default=500,
+        type=int,
+        help="search radius to use for reflectance data aggregation")
+    parser.add_argument('--mask_method1',
+        default="lulc",
+        choices=["lulc", "scl"],
         type=str,
-        help="Path to the model outputs")
-    parser.add_argument('--results_output',
-        default="mlp/grid_search_metadata_v3.csv",
+        help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
+    parser.add_argument('--mask_method2',
+        default="mndwi",
+        choices=["ndvi", "mndwi", ""],
         type=str,
-        help="Where shoul results be saved? Path should be relative to the output folder locally and the model-output container on blob storage.")
+        help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\"), or \"\" to use no second mask")
+    parser.add_argument('--n_folds',
+        default=5,
+        type=int,
+        help="The number of folds to create for the training / validation set")
+    parser.add_argument('--seed',
+        default=123,
+        type=int,
+        help="The seed (an integer) used to initialize the pseudorandom number generator")
+    
     args = parser.parse_args()
+    cloud_thr = args.cloud_thr
+    buffer_distance = args.buffer_distance
+    mm1 = args.mask_method1
+    mm2 = args.mask_method2
+    n_folds = args.n_folds
+    seed = args.seed
 
-    directory = args.path_to_models
+    directory = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1" # was: args.path_to_models
     
     paths = [f"{directory}/{x}" for x in os.listdir(directory)]
 
@@ -54,4 +79,4 @@ if __name__ == "__main__":
         metadata = metadata.append(row_dict, ignore_index=True)
     
     metadata.to_csv(f"output/{args.results_output}", index=False)
-    metadata.to_csv(f"az://model-output/{args.results_output}", index=False, storage_options=storage_options)
+    metadata.to_csv(f"az://model-output/mlp/grid_search_metadata_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1.csv", index=False, storage_options=storage_options)

@@ -139,16 +139,20 @@ def fit_mlp_cv(
         min_water_pixels=10,
         layer_out_neurons=[4, 4, 2],
         weight_decay=1e-2,
+        n_folds=5,
+        seed=123,
         verbose=True
     ):    
     n_layers = len(layer_out_neurons)
     torch.set_num_threads(1)
     # Read the data
     # TODO update these filepaths once python version of data partitioning is done, will need to be defined based on mask_method2 and mask_method2 args to function, as well as buffer, day tol, etc.
-    if mask_method2 == "ndvi":
-        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
-    elif mask_method2 == "mndwi":
-         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_5folds.csv"
+    fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
+
+    # if mask_method2 == "ndvi":
+    #     fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
+    # elif mask_method2 == "mndwi":
+    #      fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_5folds.csv"
 
     data = pd.read_csv(fp)
 

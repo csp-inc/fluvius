@@ -1,5 +1,5 @@
 from numpy import integer
-import pandas as pd
+import pandas as pd, numpy as np
 import os
 import fsspec
 import datetime as dt, time
@@ -82,10 +82,10 @@ if __name__ == "__main__":
         for i, row in site_df.iterrows():
             samples.append({
                 "sample_id": row["sample_id"],
-                "SSC.mg.L": str(row["SSC (mg/L)"]),
-                "Q.m3.s": str(row["Q (m3/s)"]),
+                "SSC.mg.L": str(round(row["SSC (mg/L)"], 2)),
+                #"Q.m3.s": str(row["Q (m3/s)"]),
                 "sample_date": row["Date-Time"],
-                "sample_timestamp": round(time.mktime(dt.date.fromisoformat(row["Date-Time_Remote"]).timetuple()))*1000,
+                "timestamp": round(time.mktime(dt.date.fromisoformat(row["Date-Time_Remote"]).timetuple()))*1000,
                 # "sample_julian": str(dt.date.fromisoformat(row["Date-Time"]).timetuple().tm_yday),
                 # "acquisition_date": row["Date-Time_Remote"],
                 # "acquisition_julian": str(dt.date.fromisoformat(row["Date-Time_Remote"]).timetuple().tm_yday),
@@ -102,9 +102,9 @@ if __name__ == "__main__":
         for i, row in site_pred_df.iterrows():
             predictions.append({
                 "prediction_id": row["sample_id"],
-                "SSC.mg.L": str(row["Predicted Log SSC (mg/L)"]),
+                "SSC.mg.L": str(round(np.exp(row["Predicted Log SSC (mg/L)"]), 2)),
                 "prediction_date": row["Date-Time"],
-                "prediction_timestamp": round(time.mktime(dt.date.fromisoformat(row["Date-Time"]).timetuple()))*1000,
+                "timestamp": round(time.mktime(dt.date.fromisoformat(row["Date-Time"]).timetuple()))*1000,
                 "pred_chip": row["app_chip_href"]
             })
 

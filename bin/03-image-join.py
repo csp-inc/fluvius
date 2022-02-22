@@ -19,7 +19,7 @@ for var in env_vars[:-1]:
     key, value = var.split(' = ')
     os.environ[key] = value
 
-if __name__ == "__main__":
+def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_src',
         type=str,
@@ -55,7 +55,11 @@ if __name__ == "__main__":
         choices=["ndvi", "mndwi", ""],
         type=str,
         help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\"), or \"\" to use no second mask")
-    args = parser.parse_args()
+    return parser
+
+if __name__ == "__main__":
+    
+    args = return_parser().parse_args()
 
     #################  set up ####################
     data_source = args.data_src

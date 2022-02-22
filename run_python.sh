@@ -10,7 +10,7 @@ if [[ "$(docker images -q $IMAGENAME 2> /dev/null)" == "" ]]; then
   docker build --rm -t $IMAGENAME - < $DPATH
 fi
 
-docker run --rm -td --ipc "host"  \
+docker run --rm -td --ipc "host" \
 	-v $(pwd):/content \
 	-v /home/$USER/.vscode-server/:/root/.vscode-server/ \
 	-w /content \

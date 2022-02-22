@@ -14,7 +14,7 @@ from src.fluvius import USGS_Water_DB, USGS_Station
 from concurrent.futures import ProcessPoolExecutor
 import argparse
 
-if __name__ == "__main__":
+def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--get-instantaneous',\
             default=False,\
@@ -28,8 +28,11 @@ if __name__ == "__main__":
             default=0,\
             type=int,\
             help="Write out csvs to ./data")
-    args = parser.parse_args()
+    return parser
 
+
+if __name__ == "__main__":
+    args = return_parser().parse_args()
     def collect_write_data(site_no):
         #this function is defined by the global arguments
         water_data = USGS_Station(site_no, instantaneous=args.get_instantaneous) 

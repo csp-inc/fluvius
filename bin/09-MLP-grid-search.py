@@ -74,14 +74,6 @@ if __name__ == "__main__":
             "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
             # Near infrared
             "sentinel-2-l2a_B08",
-        ],
-        [
-            # Aerosol optical thickness
-            "sentinel-2-l2a_AOT", 
-            # RGB
-            "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
-            # Near infrared
-            "sentinel-2-l2a_B08",
             # Red edge bands
             "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
             "sentinel-2-l2a_B05", "sentinel-2-l2a_B06"
@@ -155,7 +147,7 @@ if __name__ == "__main__":
     ]
 
     activation = [nn.PReLU(num_parameters=1), nn.SELU()]
-    weight_decay = [1e-3, 1e-2]
+    weight_decay = [0, 1e-2]
     permutations = list(
         itertools.product(
             features,
@@ -168,13 +160,13 @@ if __name__ == "__main__":
         )
     )
     print(f"Fitting {len(permutations)} models...")
-    if not os.path.exists(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1"):
-        os.makedirs(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1")
+    if not os.path.exists(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}"):
+        os.makedirs(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}")
     
     
     def fit_model(args):
         args_hash = hashlib.sha224("_".join([str(x) for x in args]).encode("utf-8")).hexdigest()[0:20]
-        fn = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1/{args_hash}.json"
+        fn = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}/{args_hash}.json"
 
         if not os.path.exists(fn):
             model_out = fit_mlp_cv(

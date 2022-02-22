@@ -65,7 +65,7 @@ if __name__ == "__main__":
     # Create filesystem
     fs = fsspec.filesystem("az", **storage_options)
 
-    model_path = f"mlp/top_model_metadata_{args.mse_to_minimize}_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1"
+    model_path = f"mlp/top_model_metadata_{args.mse_to_minimize}_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}"
 
     # Load in the top model metadata
     with open(f"{model_path}_metadata.pickle", "rb") as f:

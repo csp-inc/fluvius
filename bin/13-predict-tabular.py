@@ -2,7 +2,7 @@
 import sys, os
 sys.path.append('/content')
 from src.fluvius import WaterData
-import fsspec
+import json
 import pandas as pd
 import argparse
 import numpy as np
@@ -69,10 +69,10 @@ if __name__ == "__main__":
     n_folds = args.n_folds
     seed = args.seed
 
-    model_path = f"mlp/top_model_metadata_{args.mse_to_minimize}_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1"
+    model_path = f"mlp/top_model_metadata_{args.mse_to_minimize}_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}"
     # Load in the top model metadata
-    with open(f"{model_path}_metadata.pickle", "rb") as f:
-        meta = pickle.load(f)
+    with open(f"{model_path}_metadata.json", "r") as f:
+        meta = json.load(f)
 
     model = MultipleRegression(len(meta["features"]), len(meta["layer_out_neurons"]), meta["layer_out_neurons"], activation_function=eval(f'nn.{meta["activation"]}'))
 

@@ -26,7 +26,7 @@ jobs: # =======================================================================
         #   fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
 
       - name: Build
-        uses: ./.github/actions/make-docs
+        uses: ./.github/actions/build-docs
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3

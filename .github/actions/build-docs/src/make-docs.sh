@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+ls -l .
 cd docs
 make html
 cd ..

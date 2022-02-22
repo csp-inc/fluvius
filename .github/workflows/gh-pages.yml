@@ -1,0 +1,38 @@
+# GitHub Pages workflow code
+
+name: GitHub Pages # ==========================================================
+
+on:
+  push:
+    branches: [ 'ljz/dev' ]
+    paths:
+      - "docs/source/**"
+      - ".github/workflows/gh-pages.yml"
+      - "!README.md" # don't rebuild on changes to the project README
+  pull_request:
+
+jobs: # =======================================================================
+
+  # ---------------------------------------------------------------------------
+  deploy: # deploy the Read the Docs website we are using for documentation
+  # ---------------------------------------------------------------------------
+    runs-on: ubuntu-latest # [self-hosted, ubuntu-20.04]
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    steps:
+      - uses: actions/checkout@v2
+        # with:
+        #   submodules: recursive  # Fetch Hugo themes (true OR recursive)
+        #   fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+
+      - name: Build
+        uses: ./.github/actions/make-docs
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        # if: ${{ github.ref == 'refs/heads/main' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/build
+          publish_branch: gh-pages
+

@@ -55,7 +55,7 @@ jobs: # =======================================================================
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
-        uses: ${{ github.workspace }}/content/.github/actions/build-docs
+        uses: ./content/.github/actions/build-docs
 
       # # Enable tmate debugging of manually-triggered workflows if the input
       # # option was provided (i.e., debug_enabled=true)

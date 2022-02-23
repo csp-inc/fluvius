@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>03-image-join.py &mdash; fluvius 0.1 documentation</title>
+  <title>08-partition-data.py &mdash; fluvius 0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -18,8 +18,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="08-partition-data.py" href="08-partition-data.html" />
-    <link rel="prev" title="02-preprocess-data.py" href="02-preprocess-data.html" /> 
+    <link rel="prev" title="03-image-join.py" href="03-image-join.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -46,11 +45,11 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="01-usgs-station-acquire.html">01-usgs-station-acquire.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="02-preprocess-data.html">02-preprocess-data.py</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">03-image-join.py</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="03-image-join.html">03-image-join.py</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">08-partition-data.py</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#Named Arguments">Named Arguments</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="08-partition-data.html">08-partition-data.py</a></li>
 </ul>
 
         </div>
@@ -67,9 +66,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>03-image-join.py</li>
+      <li>08-partition-data.py</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/03-image-join.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/08-partition-data.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -77,28 +76,23 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="image-join-py">
-<h1>03-image-join.py<a class="headerlink" href="#image-join-py" title="Permalink to this headline"></a></h1>
-<p>This script queries the STAC API (the catalog of all remote sensing URLs that exist on Azure) for field based observations of suspended sediment concentration, and returns a list of image URLs that match the observations with respect to space and time.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="mi">03</span><span class="o">-</span><span class="n">image</span><span class="o">-</span><span class="n">join</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">data_src</span> <span class="p">{</span><span class="n">itv</span><span class="p">,</span><span class="n">ana</span><span class="p">,</span><span class="n">usgs</span><span class="p">,</span><span class="n">usgsi</span><span class="p">}]</span>
-                        <span class="p">[</span><span class="o">--</span><span class="n">day_tolerance</span> <span class="n">DAY_TOLERANCE</span><span class="p">]</span>
-                        <span class="p">[</span><span class="o">--</span><span class="n">cloud_thr</span> <span class="n">CLOUD_THR</span><span class="p">]</span>
-                        <span class="p">[</span><span class="o">--</span><span class="n">buffer_distance</span> <span class="n">BUFFER_DISTANCE</span><span class="p">]</span>
-                        <span class="p">[</span><span class="o">--</span><span class="n">write_to_csv</span> <span class="n">WRITE_TO_CSV</span><span class="p">]</span>
-                        <span class="p">[</span><span class="o">--</span><span class="n">write_chips</span> <span class="n">WRITE_CHIPS</span><span class="p">]</span>
-                        <span class="p">[</span><span class="o">--</span><span class="n">mask_method1</span> <span class="p">{</span><span class="n">lulc</span><span class="p">,</span><span class="n">scl</span><span class="p">}]</span>
-                        <span class="p">[</span><span class="o">--</span><span class="n">mask_method2</span> <span class="p">{</span><span class="n">ndvi</span><span class="p">,</span><span class="n">mndwi</span><span class="p">,}]</span>
+  <section id="partition-data-py">
+<h1>08-partition-data.py<a class="headerlink" href="#partition-data-py" title="Permalink to this headline"></a></h1>
+<p>This script develops the partitions used to train and evaluate fluvius models. A first-phase partition divides the sites into either a training or a test set. Sites in the test set are never seen by the model during training, including the hyperparameter grid search used to identify the top-performing model. Sites that appear in the training set are further partitioned into train and validation sets over k-folds. Several important parameters involved in the partition are currently hard-coded.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="mi">08</span><span class="o">-</span><span class="n">partition</span><span class="o">-</span><span class="n">data</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">day_tolerance</span> <span class="n">DAY_TOLERANCE</span><span class="p">]</span>
+                            <span class="p">[</span><span class="o">--</span><span class="n">cloud_thr</span> <span class="n">CLOUD_THR</span><span class="p">]</span>
+                            <span class="p">[</span><span class="o">--</span><span class="n">buffer_distance</span> <span class="n">BUFFER_DISTANCE</span><span class="p">]</span>
+                            <span class="p">[</span><span class="o">--</span><span class="n">out_filetype</span> <span class="n">OUT_FILETYPE</span><span class="p">]</span>
+                            <span class="p">[</span><span class="o">--</span><span class="n">mask_method1</span> <span class="p">{</span><span class="n">lulc</span><span class="p">,</span><span class="n">scl</span><span class="p">}]</span>
+                            <span class="p">[</span><span class="o">--</span><span class="n">mask_method2</span> <span class="p">{</span><span class="n">ndvi</span><span class="p">,</span><span class="n">mndwi</span><span class="p">,}]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_folds</span> <span class="n">N_FOLDS</span><span class="p">]</span>
+                            <span class="p">[</span><span class="o">--</span><span class="n">seed</span> <span class="n">SEED</span><span class="p">]</span>
 </pre></div>
 </div>
 <section id="Named Arguments">
 <h2>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline"></a></h2>
 <dl class="option-list">
-<dt><kbd>--data_src</kbd></dt>
-<dd><p>Possible choices: itv, ana, usgs, usgsi</p>
-<p>name of data source</p>
-</dd>
 <dt><kbd>--day_tolerance</kbd></dt>
-<dd><p>days of search around sample date</p>
+<dd><p>accetable deviance (in days) around sample date for USGSI, ITV, and ANA sites</p>
 <p>Default: 8</p>
 </dd>
 <dt><kbd>--cloud_thr</kbd></dt>
@@ -106,16 +100,12 @@
 <p>Default: 80</p>
 </dd>
 <dt><kbd>--buffer_distance</kbd></dt>
-<dd><p>search radius to use for reflectance data aggregation</p>
+<dd><p>search radius used for reflectance data aggregation</p>
 <p>Default: 500</p>
 </dd>
-<dt><kbd>--write_to_csv</kbd></dt>
-<dd><p>Write out csvs to ./data?</p>
-<p>Default: False</p>
-</dd>
-<dt><kbd>--write_chips</kbd></dt>
-<dd><p>Write chips to blob storage?</p>
-<p>Default: False</p>
+<dt><kbd>--out_filetype</kbd></dt>
+<dd><p>filetype for saved merged dataframe (csv or json)</p>
+<p>Default: “csv”</p>
 </dd>
 <dt><kbd>--mask_method1</kbd></dt>
 <dd><p>Possible choices: lulc, scl</p>
@@ -124,8 +114,16 @@
 </dd>
 <dt><kbd>--mask_method2</kbd></dt>
 <dd><p>Possible choices: ndvi, mndwi,</p>
-<p>Which additional index, if any, to use to update the mask, (“ndvi”) or (“mndwi”), or “” to use no second mask</p>
+<p>Which additional index to use to update the mask, (“ndvi”) or (“mndwi”), or “” to use no second mask</p>
 <p>Default: “mndwi”</p>
+</dd>
+<dt><kbd>--n_folds</kbd></dt>
+<dd><p>The number of folds to create for the training / validation set</p>
+<p>Default: 5</p>
+</dd>
+<dt><kbd>--seed</kbd></dt>
+<dd><p>The seed (an integer) used to initialize the pseudorandom number generator</p>
+<p>Default: 123</p>
 </dd>
 </dl>
 </section>
@@ -135,8 +133,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="02-preprocess-data.html" class="btn btn-neutral float-left" title="02-preprocess-data.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="08-partition-data.html" class="btn btn-neutral float-right" title="08-partition-data.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="03-image-join.html" class="btn btn-neutral float-left" title="03-image-join.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

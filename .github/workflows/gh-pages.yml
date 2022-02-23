@@ -32,12 +32,13 @@ jobs: # =======================================================================
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - run: sudo mkdir -p /content
+      - run: ls ${{ github.workspace }}
+      - run: pwd ${{ github.workspace }}
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
           ref: "ljz/dev"
-          path: "/content"
+          path: "${{ github.workspace }}/content"
       
       - run: |
           ls -la .

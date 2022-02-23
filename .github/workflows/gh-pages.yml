@@ -11,6 +11,9 @@ on:
       - "!README.md" # don't rebuild on changes to the project README
   pull_request:
 
+env:
+  REGISTRY: ghcr.io
+
 jobs: # =======================================================================
 
   # ---------------------------------------------------------------------------
@@ -24,6 +27,13 @@ jobs: # =======================================================================
         with:
           fetch-depth: 0
           ref: "ljz/dev"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
         uses: ./.github/actions/build-docs

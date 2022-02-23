@@ -1,7 +1,7 @@
 FROM ghcr.io/csp-inc/fluvius:data
 
 # Copies the code to the filesystem path `/` of the container
-COPY content /content
+COPY ../../../. /content
 COPY src/sphinx-build.sh /src/sphinx-build.sh
 # COPY . .
 

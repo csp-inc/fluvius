@@ -7,6 +7,7 @@ import torch, pickle, torch.nn as nn
 import pandas as pd, numpy as np, rasterio as rio
 from PIL import Image
 import fsspec
+from src.defaults import args_info
 
 with open("/content/credentials") as f:
     env_vars = f.read().split("\n")
@@ -18,7 +19,7 @@ for var in env_vars:
 storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
                    "account_key":os.environ["BLOB_KEY"]}
 
-if __name__ == "__main__":
+def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-src',
         type=str,
@@ -50,7 +51,11 @@ if __name__ == "__main__":
         default=123,
         type=int,
         help="The seed (an integer) used to initialize the pseudorandom number generator")
-    args = parser.parse_args()
+    return parser
+
+if __name__ == "__main__":
+    
+    args = return_parser().parse_args()
     day_tolerance = 0
     cloud_thr = args.cloud_thr
     buffer_distance = args.buffer_distance

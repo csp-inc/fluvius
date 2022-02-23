@@ -6,6 +6,7 @@ import numpy as np
 import copy
 import fsspec
 import argparse
+from src.defaults import args_info
 
 with open("/content/credentials") as f:
     env_vars = f.read().split("\n")
@@ -17,8 +18,7 @@ for var in env_vars:
 storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
                    "account_key":os.environ["BLOB_KEY"]}
 
-if __name__ == "__main__":
-    ############### Parse commnd line args ###################
+def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--day-tolerance',
         default=8,
@@ -66,7 +66,11 @@ if __name__ == "__main__":
         default=None,
         type=str,
         help="If desired, the local directory to which QA chips will be saved. If \"None\", the default, chips are not written locally")
-    args = parser.parse_args()
+    return parser
+
+if __name__ == "__main__":
+
+    args = return_parser().parse_args()
 
     chip_size = args.buffer_distance
     cloud_thr = args.cloud_thr

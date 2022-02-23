@@ -1,14 +1,13 @@
-if __name__ == "__main__":
-    import os, sys, itertools
-    sys.path.append("/content")
-    from src.utils import fit_mlp_cv
-    import multiprocessing as mp
-    import pickle, hashlib, argparse, psutil
-    import torch.nn as nn
-    import json
-
-
-    ############### Parse commnd line args ###################
+import os, sys, itertools
+sys.path.append("/content")
+from src.utils import fit_mlp_cv
+import multiprocessing as mp
+import pickle, hashlib, argparse, psutil
+import torch.nn as nn
+import json
+from src.defaults import args_info
+    
+def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--n_workers',
         default=psutil.cpu_count(logical = False),
@@ -41,8 +40,11 @@ if __name__ == "__main__":
         default=123,
         type=int,
         help="The seed (an integer) used to initialize the pseudorandom number generator")
+    return parser
 
-    args = parser.parse_args()
+if __name__ == "__main__":
+
+    args = return_parser().parse_args()
     cloud_thr = args.cloud_thr
     buffer_distance = args.buffer_distance
     mm1 = args.mask_method1

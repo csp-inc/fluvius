@@ -2,6 +2,7 @@
 import os
 import pandas as pd
 import argparse
+from src.defaults import args_info
 
 COLUMNS = ["data_src", "sample_id", "Longitude", "Latitude", "Date-Time",
            "Date", "Date-Time_Remote", "SSC (mg/L)", "Q (m3/s)",
@@ -13,8 +14,7 @@ COLUMNS = ["data_src", "sample_id", "Longitude", "Latitude", "Date-Time",
            "mean_viewing_azimuth", "mean_viewing_zenith", "mean_solar_azimuth",
            "mean_solar_zenith", "sensing_time"]
 
-if __name__ == "__main__":
-    ############### Parse commnd line args ###################
+def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--day-tolerance',
         default=8,
@@ -42,7 +42,12 @@ if __name__ == "__main__":
         choices=["ndvi", "mndwi", ""],
         type=str,
         help="Which additional index to use, if any, to update the mask, (\"ndvi\") or (\"mndwi\"), or \"\" to use no second mask")
-    args = parser.parse_args()
+    return parser
+
+if __name__ == "__main__":
+    ############### Parse commnd line args ###################
+
+    args = return_parser().parse_args()
     ############### Setup ####################
     # arguments
     buffer_distance = args.buffer_distance

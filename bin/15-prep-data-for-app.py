@@ -5,9 +5,9 @@ import fsspec
 import datetime as dt, time
 import json
 import argparse
+from src.defaults import args_info
 
-if __name__ == "__main__":
-    ############### Parse commnd line args ###################
+def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--day-tolerance',
         default=8,
@@ -37,7 +37,11 @@ if __name__ == "__main__":
         default=123,
         type=int,
         help="The seed (an integer) used to initialize the pseudorandom number generator")
-    args = parser.parse_args()
+    return parser
+
+if __name__ == "__main__":
+    
+    args = return_parser().parse_args()
 
     chip_size = args.buffer_distance
     cloud_thr = args.cloud_thr

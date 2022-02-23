@@ -1,9 +1,9 @@
 import os, pandas as pd, argparse, fsspec
 
 from pandas.core.algorithms import diff
+from src.defaults import args_info
 
-if __name__ == "__main__":
-    ############### Parse commnd line args ###################
+def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--qa_chip_list_name',
         default="good_chips.csv",
@@ -31,8 +31,11 @@ if __name__ == "__main__":
         choices=["ndvi", "mndwi", ""],
         type=str,
         help="Which additional index to use, if any, to update the mask, (\"ndvi\") or (\"mndwi\"), or \"\" to use no second mask")
+    return parser
 
-    args = parser.parse_args()
+if __name__ == "__main__":
+    
+    args = return_parser().parse_args()
 
     chip_size = args.buffer_distance
     cloud_thr = args.cloud_thr

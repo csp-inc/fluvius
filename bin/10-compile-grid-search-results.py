@@ -1,4 +1,5 @@
 import os, pandas as pd, argparse, pickle, fsspec, json
+from src.defaults import args_info
 
 with open("/content/credentials") as f:
     env_vars = f.read().split("\n")
@@ -10,8 +11,7 @@ for var in env_vars:
 storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
                    "account_key":os.environ["BLOB_KEY"]}
 
-if __name__ == "__main__":
-    ############### Parse commnd line args ###################
+def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--cloud-thr',
         default=80,
@@ -39,8 +39,11 @@ if __name__ == "__main__":
         default=123,
         type=int,
         help="The seed (an integer) used to initialize the pseudorandom number generator")
+    return parser
+
+if __name__ == "__main__":
     
-    args = parser.parse_args()
+    args = return_parser().parse_args()
     cloud_thr = args.cloud_thr
     buffer_distance = args.buffer_distance
     mm1 = args.mask_method1

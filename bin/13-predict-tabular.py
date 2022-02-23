@@ -11,6 +11,7 @@ from src.utils import MultipleRegression
 from sklearn.preprocessing import MinMaxScaler
 import faulthandler
 faulthandler.enable()
+from src.defaults import args_info
 
 # Set the environment variable PC_SDK_SUBSCRIPTION_KEY, or set it here.
 # The Hub sets PC_SDK_SUBSCRIPTION_KEY automatically.
@@ -24,7 +25,7 @@ for var in env_vars[:-1]:
 storage_options= {'account_name':os.environ['ACCOUNT_NAME'],
                   'account_key':os.environ['BLOB_KEY']}
 
-if __name__ == "__main__":
+def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path',
         type=str,
@@ -59,7 +60,11 @@ if __name__ == "__main__":
         default=123,
         type=int,
         help="The seed (an integer) used to initialize the pseudorandom number generator")
-    args = parser.parse_args()
+    return parser
+
+if __name__ == "__main__":
+    
+    args = return_parser().parse_args()
     day_tolerance = 0
 
     cloud_thr = args.cloud_thr

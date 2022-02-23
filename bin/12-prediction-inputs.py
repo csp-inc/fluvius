@@ -9,6 +9,7 @@ import shutil
 import datetime
 import faulthandler
 faulthandler.enable()
+from src.defaults import args_info
 
 # Set the environment variable PC_SDK_SUBSCRIPTION_KEY, or set it here.
 # The Hub sets PC_SDK_SUBSCRIPTION_KEY automatically.
@@ -19,7 +20,7 @@ for var in env_vars[:-1]:
     key, value = var.split(' = ')
     os.environ[key] = value
 
-if __name__ == "__main__":
+def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-src',
         type=str,
@@ -55,7 +56,11 @@ if __name__ == "__main__":
         default="2021-12-31",
         type=str,
         help="The latest date for which to generate prediction inputs")
-    args = parser.parse_args()
+    return parser
+
+if __name__ == "__main__":
+    
+    args = return_parser().parse_args()
 
     #################  set up ####################
     data_source = args.data_src

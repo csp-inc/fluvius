@@ -1,7 +1,7 @@
 import fsspec, os, argparse, pandas as pd, shutil
+from src.defaults import args_info
 
-if __name__ == "__main__":
-    ############### Parse commnd line args ###################
+def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--day-tolerance',
         default=8,
@@ -29,7 +29,11 @@ if __name__ == "__main__":
         default="rgb",
         type=str,
         help="Which color composite to download. \"rgb\", color infrared (\"cir\"), or short-wave infrared (\"swir\")")
-    args = parser.parse_args()
+    return parser
+
+if __name__ == "__main__":
+
+    args = return_parser().parse_args()
 
     chip_size = args.buffer_distance
     cloud_thr = args.cloud_thr

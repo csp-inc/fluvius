@@ -45,7 +45,7 @@ args_info = {
      "mask_method2": {
         "default": "mndwi",
         "type": str,
-        "choices": ["ndvi", "mndwi", ""],
+        "choices": ["mndwi", "ndvi", ""],
         "help": "Which additional normalized index to use, if any, to update the mask"
     },
     "out_filetype": {

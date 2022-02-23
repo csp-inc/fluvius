@@ -14,9 +14,11 @@ Project Fluvius uses satellite images and AI to monitor the health of Amazon and
 
 .. toctree::
    :caption: Getting started
-   :maxdepth: 2
+   :maxdepth: 1
 
-   getting-started
+   00a-background
+   00b-project-goals
+   00c-requirements
 
 .. toctree::
    :caption: Command line scripts
@@ -26,10 +28,3 @@ Project Fluvius uses satellite images and AI to monitor the health of Amazon and
    02-preprocess-data
    03-image-join
    08-partition-data
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

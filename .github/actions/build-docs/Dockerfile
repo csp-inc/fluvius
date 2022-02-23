@@ -4,4 +4,4 @@ FROM ghcr.io/csp-inc/fluvius:data
 COPY . /content
 
 # Code file to execute when the docker container starts up
-ENTRYPOINT ["/src/make-docs.sh"]
+ENTRYPOINT ["/content/src/make-docs.sh"]

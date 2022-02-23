@@ -2,11 +2,9 @@
 
 pwd
 ls -la .
-cd /content
-ls -la .
-ls -la docs
-ls -la src
-cd docs
+ls /content
+cd /content/docs
+ls -la /content/docs/src
 make html
 cd ..
 

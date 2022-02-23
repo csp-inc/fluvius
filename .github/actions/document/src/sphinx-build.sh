@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
 
-echo "pwd"
+# debugging
+echo "Evaluating: pwd"
 pwd
-echo "ls -a /src"
+echo "Evaluating: ls -a /src"
 ls -a /src
-echo "ls -a content"
+echo "Evaluating: ls -a content"
 ls -a content
-echo "ls -a"
+echo "Evaluating: ls -a"
 ls -a
-# cd content/docs
-# echo "ls -a content/src"
-# ls -a content/src
-# make html
+echo "Evaluating: ls -a content/src"
+ls -a content/src
+
+mv content /content
+cd /content/docs
+make html
 
 EXIT_STATUS=$?
 echo "::set-output name=code::$EXIT_STATUS"

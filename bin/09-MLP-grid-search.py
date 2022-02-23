@@ -68,19 +68,6 @@ if __name__ == "__main__":
 
     features = [
         [
-            # Aerosol optical thickness
-            "sentinel-2-l2a_AOT", 
-            # RGB
-            "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
-            # Near infrared
-            "sentinel-2-l2a_B08",
-            # Red edge bands
-            "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
-            "sentinel-2-l2a_B05", "sentinel-2-l2a_B06"
-        ],
-        [
-            # Aerosol optical thickness
-            "sentinel-2-l2a_AOT", 
             # RGB
             "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", "sentinel-2-l2a_B04",
             # Near infrared
@@ -101,8 +88,8 @@ if __name__ == "__main__":
             # Red edge bands
             "sentinel-2-l2a_B07", "sentinel-2-l2a_B8A",
             "sentinel-2-l2a_B05", "sentinel-2-l2a_B06",
-            # Short-wave infrared
-            "sentinel-2-l2a_B11", "sentinel-2-l2a_B12"
+            # Site/time variables
+            "is_brazil"
         ],
         [
             # RGB

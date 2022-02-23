@@ -14,11 +14,6 @@ storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mse_to_minimize',
-        default="mean_mse",
-        choices=["mean_mse", "val_site_mse", "val_pooled_mse"],
-        help="Which MSE to use, mean of sites, pooled, or the mean of the pooled and mean site MSE?"
-    )
     parser.add_argument('--cloud_thr',
         default=80,
         type=int,
@@ -63,7 +58,7 @@ if __name__ == "__main__":
 
     # Eventually need to load this from blob storage, but pickle gives errors
     # Need to try switching to dill once we do the next grid search
-    with open(results.iloc[results[args.mse_to_minimize].argmin(), :]["path"], "rb") as f:
+    with open(results.iloc[results["mean_mse"].argmin(), :]["path"], "rb") as f:
         top_model = json.load(f)
 
     

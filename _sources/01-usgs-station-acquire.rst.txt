@@ -1,7 +1,7 @@
 01-usgs-station-acquire.py
 ==========================
 
-This script does XYZ.
+Creates CSV files for all USGS water quality stations.
 
 .. argparse::
    :filename: ../bin/01-usgs-station-acquire.py

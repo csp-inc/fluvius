@@ -79,45 +79,46 @@
   <section id="partition-data-py">
 <h1>08-partition-data.py<a class="headerlink" href="#partition-data-py" title="Permalink to this headline"></a></h1>
 <p>This script develops the partitions used to train and evaluate fluvius models. A first-phase partition divides the sites into either a training or a test set. Sites in the test set are never seen by the model during training, including the hyperparameter grid search used to identify the top-performing model. Sites that appear in the training set are further partitioned into train and validation sets over k-folds. Several important parameters involved in the partition are currently hard-coded.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="mi">08</span><span class="o">-</span><span class="n">partition</span><span class="o">-</span><span class="n">data</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">day_tolerance</span> <span class="n">DAY_TOLERANCE</span><span class="p">]</span>
-                            <span class="p">[</span><span class="o">--</span><span class="n">cloud_thr</span> <span class="n">CLOUD_THR</span><span class="p">]</span>
-                            <span class="p">[</span><span class="o">--</span><span class="n">buffer_distance</span> <span class="n">BUFFER_DISTANCE</span><span class="p">]</span>
-                            <span class="p">[</span><span class="o">--</span><span class="n">out_filetype</span> <span class="n">OUT_FILETYPE</span><span class="p">]</span>
-                            <span class="p">[</span><span class="o">--</span><span class="n">mask_method1</span> <span class="p">{</span><span class="n">lulc</span><span class="p">,</span><span class="n">scl</span><span class="p">}]</span>
-                            <span class="p">[</span><span class="o">--</span><span class="n">mask_method2</span> <span class="p">{</span><span class="n">ndvi</span><span class="p">,</span><span class="n">mndwi</span><span class="p">,}]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_folds</span> <span class="n">N_FOLDS</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="mi">08</span><span class="o">-</span><span class="n">partition</span><span class="o">-</span><span class="n">data</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">day</span><span class="o">-</span><span class="n">tolerance</span> <span class="n">DAY_TOLERANCE</span><span class="p">]</span>
+                            <span class="p">[</span><span class="o">--</span><span class="n">cloud</span><span class="o">-</span><span class="n">thr</span> <span class="n">CLOUD_THR</span><span class="p">]</span>
+                            <span class="p">[</span><span class="o">--</span><span class="n">buffer</span><span class="o">-</span><span class="n">distance</span> <span class="n">BUFFER_DISTANCE</span><span class="p">]</span>
+                            <span class="p">[</span><span class="o">--</span><span class="n">out</span><span class="o">-</span><span class="n">filetype</span> <span class="p">{</span><span class="n">csv</span><span class="p">,</span><span class="n">json</span><span class="p">}]</span>
+                            <span class="p">[</span><span class="o">--</span><span class="n">mask</span><span class="o">-</span><span class="n">method1</span> <span class="p">{</span><span class="n">lulc</span><span class="p">,</span><span class="n">scl</span><span class="p">}]</span>
+                            <span class="p">[</span><span class="o">--</span><span class="n">mask</span><span class="o">-</span><span class="n">method2</span> <span class="p">{</span><span class="n">ndvi</span><span class="p">,</span><span class="n">mndwi</span><span class="p">,}]</span> <span class="p">[</span><span class="o">--</span><span class="n">n</span><span class="o">-</span><span class="n">folds</span> <span class="n">N_FOLDS</span><span class="p">]</span>
                             <span class="p">[</span><span class="o">--</span><span class="n">seed</span> <span class="n">SEED</span><span class="p">]</span>
 </pre></div>
 </div>
 <section id="Named Arguments">
 <h2>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline"></a></h2>
 <dl class="option-list">
-<dt><kbd>--day_tolerance</kbd></dt>
-<dd><p>accetable deviance (in days) around sample date for USGSI, ITV, and ANA sites</p>
+<dt><kbd>--day-tolerance</kbd></dt>
+<dd><p>Days of search around sample date</p>
 <p>Default: 8</p>
 </dd>
-<dt><kbd>--cloud_thr</kbd></dt>
-<dd><p>percent of cloud cover acceptable</p>
+<dt><kbd>--cloud-thr</kbd></dt>
+<dd><p>Percent of cloud cover acceptable</p>
 <p>Default: 80</p>
 </dd>
-<dt><kbd>--buffer_distance</kbd></dt>
-<dd><p>search radius used for reflectance data aggregation</p>
+<dt><kbd>--buffer-distance</kbd></dt>
+<dd><p>Search radius to use for reflectance data aggregation</p>
 <p>Default: 500</p>
 </dd>
-<dt><kbd>--out_filetype</kbd></dt>
-<dd><p>filetype for saved merged dataframe (csv or json)</p>
+<dt><kbd>--out-filetype</kbd></dt>
+<dd><p>Possible choices: csv, json</p>
+<p>Filetype for saved merged dataframe (csv or json)</p>
 <p>Default: “csv”</p>
 </dd>
-<dt><kbd>--mask_method1</kbd></dt>
+<dt><kbd>--mask-method1</kbd></dt>
 <dd><p>Possible choices: lulc, scl</p>
 <p>Which data to use for masking non-water, scl only (“scl”), or io_lulc plus scl (“lulc”)</p>
 <p>Default: “lulc”</p>
 </dd>
-<dt><kbd>--mask_method2</kbd></dt>
+<dt><kbd>--mask-method2</kbd></dt>
 <dd><p>Possible choices: ndvi, mndwi,</p>
-<p>Which additional index to use to update the mask, (“ndvi”) or (“mndwi”), or “” to use no second mask</p>
+<p>Which additional normalized index to use, if any, to update the mask</p>
 <p>Default: “mndwi”</p>
 </dd>
-<dt><kbd>--n_folds</kbd></dt>
+<dt><kbd>--n-folds</kbd></dt>
 <dd><p>The number of folds to create for the training / validation set</p>
 <p>Default: 5</p>
 </dd>

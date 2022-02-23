@@ -79,9 +79,8 @@
              
   <section id="usgs-station-acquire-py">
 <h1>01-usgs-station-acquire.py<a class="headerlink" href="#usgs-station-acquire-py" title="Permalink to this headline"></a></h1>
-<p>This script does XYZ.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="mi">01</span><span class="o">-</span><span class="n">usgs</span><span class="o">-</span><span class="n">station</span><span class="o">-</span><span class="n">acquire</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">get</span><span class="o">-</span><span class="n">instantaneous</span> <span class="n">GET_INSTANTANEOUS</span><span class="p">]</span>
-                                  <span class="p">[</span><span class="o">--</span><span class="n">write</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">csv</span> <span class="n">WRITE_TO_CSV</span><span class="p">]</span>
+<p>Creates CSV files for all USGS water quality stations.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="mi">01</span><span class="o">-</span><span class="n">usgs</span><span class="o">-</span><span class="n">station</span><span class="o">-</span><span class="n">acquire</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">get</span><span class="o">-</span><span class="n">instantaneous</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">write</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">csv</span><span class="p">]</span>
                                   <span class="p">[</span><span class="o">--</span><span class="n">index</span><span class="o">-</span><span class="n">start</span> <span class="n">INDEX_START</span><span class="p">]</span>
 </pre></div>
 </div>
@@ -93,11 +92,11 @@
 <p>Default: False</p>
 </dd>
 <dt><kbd>--write-to-csv</kbd></dt>
-<dd><p>Write out csvs to ./data</p>
+<dd><p>Write out CSVs to ./data</p>
 <p>Default: False</p>
 </dd>
 <dt><kbd>--index-start</kbd></dt>
-<dd><p>Write out csvs to ./data</p>
+<dd><p>Array indexing (0-based or 1-based)</p>
 <p>Default: 0</p>
 </dd>
 </dl>

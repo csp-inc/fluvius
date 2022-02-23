@@ -32,7 +32,7 @@ jobs: # =======================================================================
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - run: mkdir -p /content
+      - run: sudo mkdir -p /content
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0

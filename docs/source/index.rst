@@ -10,9 +10,10 @@ Project Fluvius uses satellite images and AI to monitor the health of Amazon and
 
 .. important::
 
-    This sample documentation was generated on |today|, and is rebuilt weekly.
+    This sample documentation was generated on |today|, and is rebuilt on push events to the main branch.
 
 .. toctree::
+   :caption: Getting started
    :maxdepth: 2
 
    getting-started

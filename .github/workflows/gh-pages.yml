@@ -4,12 +4,20 @@ name: GitHub Pages # ==========================================================
 
 on:
   push:
-    branches: [ 'ljz/dev' ]
+    branches: [ "ljz/dev" ]
     paths:
       - "docs/source/**"
       - ".github/workflows/gh-pages.yml"
       - "!README.md" # don't rebuild on changes to the project README
-  pull_request:
+  pull_request: # triggers workflow on pull request events
+    branches: [ "ljz/dev" ] # ensures changes are "mergeable"
+
+  workflow_dispatch: # permits manual triggers from the Actions tab
+  # inputs:
+  #   debug_enabled:
+  #     description: 'Run the build with tmate debugging enabled'
+  #     required: false
+  #     default: false
 
 env:
   REGISTRY: ghcr.io
@@ -37,6 +45,12 @@ jobs: # =======================================================================
 
       - name: Build
         uses: ./.github/actions/build-docs
+
+      # # Enable tmate debugging of manually-triggered workflows if the input
+      # # option was provided (i.e., debug_enabled=true)
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+      #   # if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3

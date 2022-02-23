@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
-ls -l .
+pwd
+ls -la .
+cd /content
+ls -la .
+ls -la docs
+ls -la src
 cd docs
 make html
 cd ..

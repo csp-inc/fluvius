@@ -2,11 +2,11 @@
 
 pwd
 ls -la .
-ls /content
-cd /content/docs
-ls -la /content/docs/src
+ls content
+cd content/docs
+ls -la content/docs/src
 make html
-cd ..
+cd ../..
 
 EXIT_STATUS=$?
 echo "::set-output name=code::$EXIT_STATUS"

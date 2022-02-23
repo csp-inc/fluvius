@@ -68,6 +68,6 @@ jobs: # =======================================================================
         # if: ${{ github.ref == 'refs/heads/main' }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/build/html
+          publish_dir: ./content/docs/build/html
           publish_branch: gh-pages
 

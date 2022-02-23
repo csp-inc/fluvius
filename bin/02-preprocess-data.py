@@ -6,6 +6,7 @@ import fsspec
 import numpy as np
 import geopandas as gpd
 import argparse
+from src.defaults import args_info
 
 env_vars = open("/content/credentials","r").read().split('\n')
 
@@ -21,13 +22,12 @@ fs = fsspec.filesystem('az', account_name=storage_options['account_name'], accou
 
 def return_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_src',\
-        type=str,\
-        help="name of data type")
-    parser.add_argument('--write-to-csv',\
-        default=False,\
-        type=bool,\
-        help="Write out csvs to ./data")
+    parser.add_argument('--data-src',
+        type=args_info["data_src"]["type"],
+        help=args_info["data_src"]["help"])
+    parser.add_argument('--write-to-csv',
+        action=args_info["write_to_csv"]["action"],
+        help=args_info["write_to_csv"]["help"])
     return parser
 
 if __name__ == "__main__":

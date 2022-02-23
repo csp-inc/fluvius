@@ -9,24 +9,24 @@ if __name__ == "__main__":
         default="good_chips.csv",
         type=str,
         help="The file name for the list of good chips")
-    parser.add_argument('--day_tolerance',
+    parser.add_argument('--day-tolerance',
         default=8,
         type=int,
         help="accetable deviance (in days) around sample date for USGSI, ITV, and ANA sites")
-    parser.add_argument('--cloud_thr',
+    parser.add_argument('--cloud-thr',
         default=80,
         type=int,
         help="percent of cloud cover acceptable")
-    parser.add_argument('--buffer_distance',
+    parser.add_argument('--buffer-distance',
         default=500,
         type=int,
         help="search radius used for reflectance data aggregation")
-    parser.add_argument('--mask_method1',
+    parser.add_argument('--mask-method1',
         default="lulc",
         choices=["lulc", "scl"],
         type=str,
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
-    parser.add_argument('--mask_method2',
+    parser.add_argument('--mask-method2',
         default="mndwi",
         choices=["ndvi", "mndwi", ""],
         type=str,

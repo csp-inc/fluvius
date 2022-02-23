@@ -13,7 +13,7 @@ if __name__ == "__main__":
              "m_cloudthr{cloud_thr}_{mm1}{mm2}_masking` directory\". " +
              "This will be used to determine which samples in the feature " +
              "dataframe to keep.")
-    parser.add_argument('--day_tolerance',
+    parser.add_argument('--day-tolerance',
         default=8,
         type=int,
         help="accetable deviance (in days) around sample date for USGSI, ITV, and ANA sites")
@@ -21,16 +21,16 @@ if __name__ == "__main__":
         default=80,
         type=int,
         help="percent of cloud cover acceptable")
-    parser.add_argument('--buffer_distance',
+    parser.add_argument('--buffer-distance',
         default=500,
         type=int,
         help="search radius used for reflectance data aggregation")
-    parser.add_argument('--mask_method1',
+    parser.add_argument('--mask-method1',
         default="lulc",
         choices=["lulc", "scl"],
         type=str,
         help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
-    parser.add_argument('--mask_method2',
+    parser.add_argument('--mask-method2',
         default="mndwi",
         choices=["ndvi", "mndwi", ""],
         type=str,

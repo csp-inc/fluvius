@@ -8,12 +8,10 @@ None.
 
 ## Outputs
 
-## `status`
-
-Exit status.
+Exit status (`EXIT_STATUS`).
 
 ## Example usage
 
 ```yml
-uses: ./.github/actions/make-docs
+uses: ./.github/actions/build-docs
 ```

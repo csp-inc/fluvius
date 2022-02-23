@@ -6,8 +6,8 @@ description: "Use sphinx to build fluvius documentation pages"
 
 outputs:
   code: # id of output
-    description: 'Process exit code'
+    description: "Process exit code"
 
 runs:
-  using: "docker"
+  using: docker
   image: Dockerfile

@@ -21,9 +21,10 @@ jobs: # =======================================================================
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
       - uses: actions/checkout@v2
-        # with:
-        #   submodules: recursive  # Fetch Hugo themes (true OR recursive)
-        #   fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+        with:
+          ref: "ljz/dev"
+          # submodules: recursive  # Fetch Hugo themes (true OR recursive)
+          # fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
 
       - name: Build
         uses: ./.github/actions/build-docs

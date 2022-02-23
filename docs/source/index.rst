@@ -28,4 +28,16 @@ Project Fluvius uses satellite images and AI to monitor the health of Amazon and
    01-usgs-station-acquire
    02-preprocess-data
    03-image-join
+   04-data-merge
+   05-prep-qa-chip-dataset
+   06a-download-chips-for-qa
+   06b-upload-good-chips-list
+   07-remove-bad-obs
    08-partition-data
+   09-MLP-grid-search
+   10-compile-grid-search-results
+   11-fit-top-model
+   12-prediction-inputs
+   13-predict-tabular
+   14-make-prediction-chips
+   15-prep-data-for-app

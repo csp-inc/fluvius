@@ -10,33 +10,35 @@ from src.defaults import args_info
 def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--day-tolerance',
-        default=8,
-        type=int,
-        help="accetable deviance (in days) around sample date for USGSI, ITV, and ANA sites")
+        default=args_info["day_tolerance"]["default"],
+        type=args_info["day_tolerance"]["type"],
+        help=args_info["day_tolerance"]["help"])
     parser.add_argument('--cloud-thr',
-        default=80,
-        type=int,
-        help="percent of cloud cover acceptable")
+        default=args_info["cloud_thr"]["default"],
+        type=args_info["cloud_thr"]["type"],
+        help=args_info["cloud_thr"]["help"])
     parser.add_argument('--buffer-distance',
-        default=500,
-        type=int,
-        help="search radius used for reflectance data aggregation")
+        default=args_info["buffer_distance"]["default"],
+        type=args_info["buffer_distance"]["type"],
+        help=args_info["buffer_distance"]["help"])
     parser.add_argument('--mask-method1',
-        default="lulc",
-        type=str,
-        help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
+        default=args_info["mask_method1"]["default"],
+        type=args_info["mask_method1"]["type"],
+        choices=args_info["mask_method1"]["choices"],
+        help=args_info["mask_method1"]["help"])
     parser.add_argument('--mask-method2',
-        default="mndwi",
-        type=str,
-        help="Which additional index to use to update the mask, (\"ndvi\") or (\"mndwi\")")
+        default=args_info["mask_method2"]["default"],
+        type=args_info["mask_method2"]["type"],
+        choices=args_info["mask_method2"]["choices"],
+        help=args_info["mask_method2"]["help"])
     parser.add_argument('--n-folds',
-        default=5,
-        type=int,
-        help="The number of folds to create for the training / validation set")
+        default=args_info["n_folds"]["default"],
+        type=args_info["n_folds"]["type"],
+        help=args_info["n_folds"]["help"])
     parser.add_argument('--seed',
-        default=123,
-        type=int,
-        help="The seed (an integer) used to initialize the pseudorandom number generator")
+        default=args_info["seed"]["default"],
+        type=args_info["seed"]["type"],
+        help=args_info["seed"]["help"])
     return parser
 
 if __name__ == "__main__":

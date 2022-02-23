@@ -23,39 +23,38 @@ for var in env_vars[:-1]:
 def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-src',
-        type=str,
-        choices=["itv", "ana", "usgs", "usgsi"],
-        help="name of data source")
+        type=args_info["data_src"]["type"],
+        choices=args_info["data_src"]["choices"],
+        help=args_info["data_src"]["help"])
     parser.add_argument('--cloud-thr',
-        default=80,
-        type=int,
-        help="percent of cloud cover acceptable")
+        default=args_info["cloud_thr"]["default"],
+        type=args_info["cloud_thr"]["type"],
+        help=args_info["cloud_thr"]["help"])
     parser.add_argument('--buffer-distance',
-        default=500,
-        type=int,
-        help="search radius to use for reflectance data aggregation")
+        default=args_info["buffer_distance"]["default"],
+        type=args_info["buffer_distance"]["type"],
+        help=args_info["buffer_distance"]["help"])
     parser.add_argument('--write-chips',
-        default=False,
-        type=bool,
-        help="Write chips to blob storage?")
+        action=args_info["write_chips"]["action"],
+        help=args_info["write_chips"]["help"])
     parser.add_argument('--mask-method1',
-        default="lulc",
-        choices=["lulc", "scl"],
-        type=str,
-        help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
+        default=args_info["mask_method1"]["default"],
+        type=args_info["mask_method1"]["type"],
+        choices=args_info["mask_method1"]["choices"],
+        help=args_info["mask_method1"]["help"])
     parser.add_argument('--mask-method2',
-        default="",
-        choices=["ndvi", "mndwi", ""],
-        type=str,
-        help="Which additional index, if any, to use to update the mask, (\"ndvi\") or (\"mndwi\")")
-    parser.add_argument('--start_date',
-        default="2015-01-01",
-        type=str,
-        help="The earliest date for which to generate prediction inputs")
-    parser.add_argument('--end_date',
-        default="2021-12-31",
-        type=str,
-        help="The latest date for which to generate prediction inputs")
+        default=args_info["mask_method2"]["default"],
+        type=args_info["mask_method2"]["type"],
+        choices=args_info["mask_method2"]["choices"],
+        help=args_info["mask_method2"]["help"])
+    parser.add_argument('--start-date',
+        default=args_info["start_date"]["default"],
+        type=args_info["start_date"]["type"],
+        help=args_info["start_date"]["help"])
+    parser.add_argument('--end-date',
+        default=args_info["end_date"]["default"],
+        type=args_info["end_date"]["type"],
+        help=args_info["end_date"]["help"])
     return parser
 
 if __name__ == "__main__":

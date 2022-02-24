@@ -1,4 +1,4 @@
-import psutil
+# import psutil
 
 args_info = {
     "get_instantaneous": {
@@ -107,7 +107,7 @@ args_info = {
         #      "dataframe to keep.
     },
     "n_workers": {
-        "default": psutil.cpu_count(logical = False),
+        "default": 2, #psutil.cpu_count(logical = False),
         "type": int,
         "help": "How many workers to use for fitting models in parallel (recommended not to go over number of physical cores)"
     },

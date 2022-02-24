@@ -6,7 +6,7 @@
 Welcome to fluvius's documentation!
 ===================================
 
-Project Fluvius uses satellite images and AI to monitor the health of Amazon and U.S. rivers by enabling near real-time prediction of suspended sediment concentration. The web app is visible `here <https://fluviuswebapp.z22.web.core.windows.net>`_.
+Project Fluvius uses satellite images and AI to monitor the health of rivers in the Amazon and the U.S. by enabling near real-time prediction of suspended sediment concentration. The web app is visible `here <https://fluviuswebapp.z22.web.core.windows.net>`_.
 
 .. important::
 

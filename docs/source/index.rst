@@ -6,11 +6,13 @@
 Welcome to fluvius's documentation!
 ===================================
 
-Project Fluvius uses satellite images and AI to monitor the health of rivers in the Amazon and the U.S. by enabling near real-time prediction of suspended sediment concentration. The web app is visible `here <https://fluviuswebapp.z22.web.core.windows.net>`_.
-
 .. important::
 
-    This sample documentation was generated on |today|, and is rebuilt on push events to the main branch.
+    This documentation was generated on |today|, and is rebuilt on push events to the main branch.
+
+Project Fluvius uses satellite imagery and AI to monitor the health of rivers in the Amazon and the U.S. by enabling near real-time prediction of suspended sediment concentration. The web app is visible `here <https://fluviuswebapp.z22.web.core.windows.net>`_.
+
+In the following sections, we provide an introduction to the project, and setup information.
 
 .. toctree::
    :caption: Getting started
@@ -20,6 +22,8 @@ Project Fluvius uses satellite images and AI to monitor the health of rivers in 
    00b-project-goals
    00c-requirements
    00d-quickstart
+
+The following command line scripts represent the building blocks of the fluvius workflow. These scripts are meant to be run in the order specified by the numeric prefix in the filenames. All of these files can be found in 'bin/'.
 
 .. toctree::
    :caption: Command line scripts

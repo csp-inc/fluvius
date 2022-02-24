@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'fluvius'
-copyright = '2022, CSP'
-author = 'CSP'
+copyright = '2022, Conservation Science Partners'
+author = 'Conservation Science Partners'
 
 # The full version, including alpha/beta/rc tags
 release = '0.1'
@@ -55,3 +55,6 @@ html_logo = "_static/logo.jpg"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+## Don't do syntax highlighting in code
+highlight_language = 'none'

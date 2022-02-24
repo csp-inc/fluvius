@@ -14,4 +14,5 @@ docker run --rm -td --ipc "host" \
 	-v $(pwd):/content \
 	-v /home/$USER/.vscode-server/:/root/.vscode-server/ \
 	-w /content \
+	-p 8675:8000 \
 	$IMAGENAME

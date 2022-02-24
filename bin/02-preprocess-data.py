@@ -1,6 +1,12 @@
 from pystac_client import Client
 import planetary_computer as pc
 import os
+import pandas as pd
+import fsspec
+import numpy as np
+import geopandas as gpd
+import argparse
+from src.defaults import args_info
 
 env_vars = open("/content/credentials","r").read().split('\n')
 
@@ -13,23 +19,20 @@ storage_options={'account_name':os.environ['ACCOUNT_NAME'],\
 fs = fsspec.filesystem('az', account_name=storage_options['account_name'], account_key=storage_options['account_key'])
 
 ##env data acquired
-import pandas as pd
-import fsspec
-import numpy as np
-import geopandas as gpd
 
-import argparse
+def return_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data-src',
+        type=args_info["data_src"]["type"],
+        help=args_info["data_src"]["help"])
+    parser.add_argument('--write-to-csv',
+        action=args_info["write_to_csv"]["action"],
+        help=args_info["write_to_csv"]["help"])
+    return parser
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--data_src',\
-        type=str,\
-        help="name of data type")
-    parser.add_argument('--write-to-csv',\
-        default=False,\
-        type=bool,\
-        help="Write out csvs to ./data")
-    args = parser.parse_args()
+
+    args = return_parser().parse_args()
 
     if args.data_src == 'usgs':
         #USGS DATA PROCESS
@@ -109,4 +112,3 @@ if __name__ == "__main__":
                 write_filename = f'az://{container}/stations/{site_no}.csv'
                 site_df.to_csv(write_filename, storage_options=storage_options,\
                                     index=False)
-

@@ -2,7 +2,8 @@
 credentials
 
 # remove data folder for now
-data
+data/*
+!data/ana_translations.csv
 figs
 local
 output
@@ -150,3 +151,4 @@ rstudio/
 # Misc
 core
 .DS_Store
+_run_python.sh

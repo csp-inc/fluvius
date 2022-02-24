@@ -1,0 +1,57 @@
+# GitHub Pages workflow code
+
+name: GitHub Pages # ==========================================================
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "docs/source/**"
+      - ".github/actions/document/**"
+      - ".github/workflows/gh-pages.yml"
+      - "!README.md" # don't rebuild on changes to the project README
+  # pull_request: # triggers workflow on pull request events
+  #   branches: [ "main" ] # ensures changes are "mergeable"
+
+  workflow_dispatch: # permits manual triggers from the Actions tab
+
+env:
+  REGISTRY: ghcr.io
+
+jobs: # =======================================================================
+
+  # ---------------------------------------------------------------------------
+  deploy: # deploy the Read the Docs website we are using for documentation
+  # ---------------------------------------------------------------------------
+    runs-on: ubuntu-latest # [self-hosted, ubuntu-20.04]
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    steps:
+      - run: ls ${{ github.workspace }}
+      - run: pwd ${{ github.workspace }}
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: "main"
+          path: "${{ github.workspace }}/content"
+      - run: |
+          ls -la ${{ github.workspace }}/content
+          ls -la ${{ github.workspace }}/content/src
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build
+        uses: ./content/.github/actions/document
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        # if: ${{ github.ref == 'refs/heads/main' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./content/docs/build/html
+          publish_branch: gh-pages

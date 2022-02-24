@@ -6,6 +6,7 @@ import numpy as np
 import copy
 import fsspec
 import argparse
+from src.defaults import args_info
 
 with open("/content/credentials") as f:
     env_vars = f.read().split("\n")
@@ -17,59 +18,64 @@ for var in env_vars:
 storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
                    "account_key":os.environ["BLOB_KEY"]}
 
-if __name__ == "__main__":
-    ############### Parse commnd line args ###################
+def return_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--day_tolerance',\
-        default=8,\
-        type=int,\
-        help="accetable deviance (in days) around sample date for USGSI, ITV, and ANA sites")
-    parser.add_argument('--cloud_thr',\
-        default=80,\
-        type=int,\
-        help="percent of cloud cover acceptable")
-    parser.add_argument('--buffer_distance',\
-        default=500,\
-        type=int,\
-        help="search radius used for reflectance data aggregation")
-    parser.add_argument('--out_filetype',\
-        default="csv",\
-        type=str,\
-        help="filetype for saved merged dataframe (csv or json)")
-    parser.add_argument('--mask_method1',\
-        default="lulc",\
-        type=str,\
-        help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
-    parser.add_argument('--mask_method2',\
-        default="",\
-        type=str,\
-        help="Which additional index to use, if any, to update the mask, (\"ndvi\") or (\"mndwi\")")
-    parser.add_argument('--write_chips_blob',\
-        default=True,\
-        type=bool,\
-        help="Should QA chips be written to blob storage?")
-    parser.add_argument('--rgb_min',\
-        default=100,\
-        type=int,\
-        help="Minimum reflectance value (corresponding to zero saturation of R, G, and B)")
-    parser.add_argument('--rgb_max',\
-        default=4000,\
-        type=int,\
-        help="Maximum reflectance value (corresponding to full saturation of R, G, and B)")
-    parser.add_argument('--gamma',\
-        default=0.7,\
-        type=float,\
-        help="Gamma correction to use when generating the image chip")
-    parser.add_argument('--local_outpath',\
-        default=None,\
-        type=str,\
-        help="If desired, the local directory to which QA chips will be saved. If \"None\", the default, chips are not written locally")
-    args = parser.parse_args()
+    parser.add_argument('--day-tolerance',
+        default=args_info["day_tolerance"]["default"],
+        type=args_info["day_tolerance"]["type"],
+        help=args_info["day_tolerance"]["help"])
+    parser.add_argument('--cloud-thr',
+        default=args_info["cloud_thr"]["default"],
+        type=args_info["cloud_thr"]["type"],
+        help=args_info["cloud_thr"]["help"])
+    parser.add_argument('--buffer-distance',
+        default=args_info["buffer_distance"]["default"],
+        type=args_info["buffer_distance"]["type"],
+        help=args_info["buffer_distance"]["help"])
+    parser.add_argument('--out-filetype',
+        default=args_info["out_filetype"]["default"],
+        type=args_info["out_filetype"]["type"],
+        choices=args_info["out_filetype"]["choices"],
+        help=args_info["out_filetype"]["help"])
+    parser.add_argument('--mask-method1',
+        default=args_info["mask_method1"]["default"],
+        type=args_info["mask_method1"]["type"],
+        choices=args_info["mask_method1"]["choices"],
+        help=args_info["mask_method1"]["help"])
+    parser.add_argument('--mask-method2',
+        default=args_info["mask_method2"]["default"],
+        type=args_info["mask_method2"]["type"],
+        choices=args_info["mask_method2"]["choices"],
+        help=args_info["mask_method2"]["help"])
+    parser.add_argument('--write-qa-chips',
+        action=args_info["write_qa_chips"]["action"],
+        help=args_info["write_qa_chips"]["help"])
+    parser.add_argument('--rgb-min',
+        default=args_info["rgb_min"]["default"],
+        type=args_info["rgb_min"]["type"],
+        help=args_info["rgb_min"]["help"])
+    parser.add_argument('--rgb-max',
+        default=args_info["rgb_max"]["default"],
+        type=args_info["rgb_max"]["type"],
+        help=args_info["rgb_max"]["help"])
+    parser.add_argument('--gamma',
+        default=args_info["gamma"]["default"],
+        type=args_info["gamma"]["type"],
+        help=args_info["gamma"]["help"])
+    parser.add_argument('--local-outpath',
+        default=args_info["local_outpath"]["default"],
+        type=args_info["local_outpath"]["type"],
+        help=args_info["local_outpath"]["help"])
+    return parser
+
+if __name__ == "__main__":
+
+    args = return_parser().parse_args()
 
     chip_size = args.buffer_distance
     cloud_thr = args.cloud_thr
     day_tol = args.day_tolerance
-    write_chips_blob = args.write_chips_blob
+    write_qa_chips = args.write_qa_chips
 
     mm1 = args.mask_method1
     mm2 = args.mask_method2
@@ -100,7 +106,7 @@ if __name__ == "__main__":
             n_chip += len(chip_obs)
             for path in chip_obs:
                 for composite in composites:
-                    if (args.local_outpath != None) or write_chips_blob:
+                    if (args.local_outpath != None) or write_qa_chips:
                         with rio.open(f"az://{path}") as chip:
                             rgb_raw = np.moveaxis(chip.read(band_combos[composite]), 0, -1)
                             with rio.open(f"az://{path[:-4]}_water.tif") as mask:
@@ -125,7 +131,7 @@ if __name__ == "__main__":
                             water_rgb[water==0, 1] = 184
                             water_rgb[water==0, 2] = 255
 
-                        qa_array = np.concatenate([rgb, water_rgb], axis = (1))^2
+                        qa_array = np.concatenate([rgb, water_rgb], axis = (1))
                         qa_img = Image.fromarray(qa_array, "RGB")
 
                     out_name = f"modeling-data/chips/qa/{composite}_{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
@@ -135,7 +141,7 @@ if __name__ == "__main__":
                             os.makedirs(f'{args.local_outpath}')
                         qa_img.save(f"{args.local_outpath}/{composite}_{data_src}_{os.path.basename(path[:-4])}.png")
 
-                    if write_chips_blob:
+                    if write_qa_chips:
                         with fs.open(out_name, "wb") as fn:
                             qa_img.save(fn, "PNG")
 

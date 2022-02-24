@@ -6,6 +6,8 @@ import numpy as np
 import datetime
 import pandas as pd
 import sys
+import json
+import fsspec
 import pickle
 import torch
 import torch.nn as nn
@@ -43,9 +45,6 @@ class MultipleRegression(nn.Module):
             x = self.activate(self.layer_1(inputs))
             for i in range(2, self.n_layers + 1):
                 x = self.activate(getattr(self, f"layer_{i}")(x))
-
-            # bias = torch.full((x.shape[0], 1), 1.)
-            # x = self.layer_out(torch.cat((bias, x), 1))
             x = self.layer_out(x)
 
             return (x)
@@ -139,20 +138,18 @@ def fit_mlp_cv(
         mask_method1="lulc",
         mask_method2="mndwi",
         min_water_pixels=10,
-        layer_out_neurons=[24, 12, 6],
-        learn_sched_step_size=200, 
-        learn_sched_gamma=0.2,
+        layer_out_neurons=[4, 4, 2],
+        weight_decay=1e-2,
+        n_folds=5,
+        seed=123,
         verbose=True
     ):    
     n_layers = len(layer_out_neurons)
     torch.set_num_threads(1)
     # Read the data
-    if mask_method2 == "ndvi":
-        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
-    elif mask_method2 == "mndwi":
-         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_tmp.csv"
+    fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
 
-    data = pd.read_csv(fp)
+    data = pd.read_csv(fp, storage_options=storage_options)
 
     data = data[data["partition"] != "testing"]
     data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
@@ -215,11 +212,11 @@ def fit_mlp_cv(
         model.to(device)
 
         criterion = nn.MSELoss()
-        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-        scheduler = optim.lr_scheduler.StepLR(
+        optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=0.9)
+        scheduler = optim.lr_scheduler.MultiStepLR(
             optimizer,
-            step_size=learn_sched_step_size,
-            gamma=learn_sched_gamma
+            milestones=[7500, 10000, 12500, 14000],
+            gamma=0.1
         )
 
         loss_stats = {
@@ -278,11 +275,11 @@ def fit_mlp_cv(
             loss_stats["val"].append(val_loss_site)
             loss_stats["val_pooled"].append(val_loss)
             loss_stats["train"].append(train_epoch_loss/len(train_loader))
-            
-            scheduler.step()
 
             # calculate R^2 for this epoch
             val_R2.append(r2_score(val_pred, y_val))
+
+            scheduler.step()
 
             if (e % 50 == 0) and verbose:
                 print(f"Epoch {e}/{epochs} | Train Loss: {train_epoch_loss/len(train_loader):.5f} | Val Loss (mean of sites): {val_loss_site:.5f} | Val Loss (pooled mean): {val_loss:.5f}")
@@ -339,11 +336,10 @@ def fit_mlp_cv(
         "min_water_pixels": min_water_pixels,
         "features": features,
         "learning_rate": learning_rate,
-        "learn_sched_step_size": learn_sched_step_size,
-        "learn_sched_gamma": learn_sched_gamma,
         "batch_size": batch_size,
         "layer_out_neurons": layer_out_neurons,
         "epochs": epochs,
+        "weight_decay": weight_decay,
         "activation": f"{activation_function}",
         "train_loss_fold": train_loss_fold,
         "val_site_loss_fold": val_loss_fold,
@@ -372,32 +368,29 @@ def fit_mlp_full(
         cloud_thr=80,
         mask_method1="lulc",
         mask_method2="mndwi",
-        min_water_pixels=10,
+        min_water_pixels=20,
         layer_out_neurons=[24, 12, 6],
-        learn_sched_step_size=200, 
-        learn_sched_gamma=0.2,
-        verbose=True,
-        model_out = "output/top_model"
+        weight_decay=1e-2,
+        n_folds=5,
+        seed=123,
+        verbose=True
     ):    
     n_layers = len(layer_out_neurons)
 
     # Read the data
-    if mask_method2 == "ndvi":
-        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
-    elif mask_method2 == "mndwi":
-         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_tmp.csv"
+    fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
 
-    data = pd.read_csv(fp)
+    data = pd.read_csv(fp, storage_options=storage_options)
     data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
-
-    test = data[data["partition"] == "testing"]
-    data = data[data["partition"] != "testing"]
     
     response = "Log SSC (mg/L)"
     not_enough_water = data["n_water_pixels"] < min_water_pixels
     data.drop(not_enough_water[not_enough_water].index, inplace=True)
-    lnssc_0 = data["Log SSC (mg/L)"] == 0
-    data.drop(lnssc_0[lnssc_0].index, inplace=True)
+    ssc_0 = data["SSC (mg/L)"] == 0
+    data.drop(ssc_0[ssc_0].index, inplace=True)
+
+    test = data[data["partition"] == "testing"]
+    data = data[data["partition"] != "testing"]
 
     scaler = MinMaxScaler()
     X_train_scaled = scaler.fit_transform(data[features])
@@ -436,12 +429,12 @@ def fit_mlp_full(
     model.to(device)
 
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.StepLR(
-        optimizer,
-        step_size=learn_sched_step_size,
-        gamma=learn_sched_gamma
-    )
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=0.9)
+    scheduler = optim.lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=[7500, 10000, 12500, 14000],
+            gamma=0.1
+        )
 
     train_loss_list = []
 
@@ -475,8 +468,9 @@ def fit_mlp_full(
             train_epoch_loss += train_loss.item()
         
         train_loss_list.append(train_epoch_loss/len(train_loader))
-        scheduler.step()
 
+        scheduler.step()
+        
         if (e % 50 == 0) and verbose:
             print(f"Epoch {e}/{epochs} | Train Loss: {train_epoch_loss/len(train_loader):.5f}", end="\r")
     
@@ -513,11 +507,196 @@ def fit_mlp_full(
         "min_water_pixels": min_water_pixels,
         "features": features,
         "learning_rate": learning_rate,
-        "learn_sched_step_size": learn_sched_step_size,
-        "learn_sched_gamma": learn_sched_gamma,
         "batch_size": batch_size,
         "layer_out_neurons": layer_out_neurons,
         "epochs": epochs,
+        "weight_decay": weight_decay,
+        "activation": f"{activation_function}",
+        "train_loss": train_loss_list,
+        "train_pooled_mse": train_loss_list[-1],
+        "test_site_mse": test_site_mse,
+        "test_pooled_mse": test_pooled_mse,
+        "y_train_sample_id": list(data["sample_id"]),
+        "y_test_sample_id": list(test["sample_id"]),
+        #"X_test_scaled": X_test_scaled,
+        "y_obs_train": list(y_train),
+        "y_pred_train": train_pred_list,
+        "y_obs_test": list(y_test),
+        "y_pred_test": test_pred_list
+    }
+
+    # save the model!
+    model_out_fn_prefix = f"top_model_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}"
+    torch.save(model.state_dict(), f"/content/output/mlp/{model_out_fn_prefix}.pt")
+
+    with open(f"/content/output/mlp/{model_out_fn_prefix}_metadata.json", 'w') as f:
+        json.dump(output, f)
+
+    fs = fsspec.filesystem("az", **storage_options)
+    fs.put_file(f"/content/output/mlp/{model_out_fn_prefix}.pt", f"model-output/{model_out_fn_prefix}.pt", overwrite=True)
+    fs.put_file(f"/content/output/mlp/{model_out_fn_prefix}_metadata.json", f"model-output/{model_out_fn_prefix}_metadata.json", overwrite=True)
+    
+    return output
+
+
+def fit_mlp_full_nolog(
+        features,
+        learning_rate,
+        batch_size,
+        epochs,
+        storage_options,
+        activation_function=nn.SELU(),
+        buffer_distance=500,
+        day_tolerance=8,
+        cloud_thr=80,
+        mask_method1="lulc",
+        mask_method2="mndwi",
+        min_water_pixels=10,
+        layer_out_neurons=[24, 12, 6],
+        weight_decay=1e-2,
+        verbose=True,
+        model_out = "output/top_model"
+    ):    
+    n_layers = len(layer_out_neurons)
+
+    # Read the data
+    # TODO update these filepaths once python version of data partitioning is done, will need to be defined based on mask_method2 and mask_method2 args to function, as well as buffer, day tol, etc.
+    if mask_method2 == "ndvi":
+        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
+    elif mask_method2 == "mndwi":
+        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_5folds.csv"
+
+    data = pd.read_csv(fp)
+    data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
+
+    test = data[data["partition"] == "testing"]
+    data = data[data["partition"] != "testing"]
+    
+    response = "SSC (mg/L)"
+    not_enough_water = data["n_water_pixels"] < min_water_pixels
+    data.drop(not_enough_water[not_enough_water].index, inplace=True)
+    lnssc_0 = data["Log SSC (mg/L)"] == 0
+    data.drop(lnssc_0[lnssc_0].index, inplace=True)
+
+    scaler = MinMaxScaler()
+    X_train_scaled = scaler.fit_transform(data[features])
+    X_test_scaled = scaler.transform(test[features])
+
+    y_train = data[response] / 100
+    y_test = test[response] / 100
+
+    X_train_scaled, y_train = np.array(X_train_scaled), np.array(y_train)
+    X_test_scaled, y_test = np.array(X_test_scaled), np.array(y_test)
+
+    class RegressionDataset(Dataset):
+
+        def __init__(self, X_data, y_data):
+            self.X_data = X_data
+            self.y_data = y_data
+
+        def __getitem__(self, index):
+            return self.X_data[index], self.y_data[index]
+
+        def __len__ (self):
+            return len(self.X_data)
+
+    train_dataset = RegressionDataset(torch.from_numpy(X_train_scaled).float(), torch.from_numpy(y_train).float())
+    test_dataset = RegressionDataset(torch.from_numpy(X_test_scaled).float(), torch.from_numpy(y_test).float())
+
+    num_features = X_train_scaled.shape[1]
+
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
+    train_loader_all = DataLoader(dataset=train_dataset, batch_size=1)
+    test_loader = DataLoader(dataset=test_dataset, batch_size=1)
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    model = MultipleRegression(num_features, n_layers, layer_out_neurons, activation_function)
+    model.to(device)
+
+    criterion = nn.MSELoss()
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=0.9)
+    scheduler = optim.lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=[7500, 10000, 12500, 14000],
+            gamma=0.1
+        )
+
+    train_loss_list = []
+
+    # Train the model
+    for e in range(1, epochs+1):
+        # TRAINING
+        train_epoch_loss = 0
+        model.train()
+
+        for X_train_batch, y_train_batch in train_loader:
+            # grab data to iteration and send to CPU
+            X_train_batch, y_train_batch = X_train_batch.to(device), y_train_batch.to(device)
+
+            def closure():
+                # Zero gradients
+                optimizer.zero_grad()
+                # Forward pass
+                y_train_pred = torch.exp(model(X_train_batch))
+                # Compute loss
+                train_loss = criterion(y_train_pred, y_train_batch.unsqueeze(1))
+                # Backward pass
+                train_loss.backward()
+
+                return train_loss
+
+            # Update weights
+            optimizer.step(closure)
+
+            # Update the running loss
+            train_loss = closure()
+            train_epoch_loss += train_loss.item()
+        
+        train_loss_list.append(train_epoch_loss/len(train_loader))
+
+        scheduler.step()
+        
+        if (e % 50 == 0) and verbose:
+            print(f"Epoch {e}/{epochs} | Train Loss: {train_epoch_loss/len(train_loader):.5f}", end="\r")
+    
+    train_pred_list = []
+    with torch.no_grad():
+        model.eval()
+        for X_batch, _ in train_loader_all:
+            X_batch = X_batch.to(device)
+            y_pred = (torch.exp(model(X_batch)).cpu().squeeze()).tolist()
+            train_pred_list.append(y_pred)
+
+    test_pred_list = []
+    with torch.no_grad():
+        model.eval()
+        for X_batch, _ in test_loader:
+            X_batch = X_batch.to(device)
+            test_pred = (torch.exp(model(X_batch)).cpu().squeeze()).tolist()
+            test_pred_list.append(test_pred)
+
+    test_pred = np.array(test_pred_list)
+    test_se = list((test_pred - y_test)**2)
+
+    site_test = list(test["site_no"])
+
+    group_means = [np.mean(test_se[site_test == a]) for a in np.unique(site_test)]
+    test_site_mse = np.mean(group_means)
+    test_pooled_mse = np.mean(test_se)
+
+    output = {
+        "training_data": fp,
+        "buffer_distance": buffer_distance,
+        "day_tolerance": day_tolerance,
+        "cloud_thr": cloud_thr,
+        "min_water_pixels": min_water_pixels,
+        "features": features,
+        "learning_rate": learning_rate,
+        "batch_size": batch_size,
+        "layer_out_neurons": layer_out_neurons,
+        "epochs": epochs,
+        "weight_decay": weight_decay,
         "activation": f"{activation_function}",
         "train_loss": train_loss_list,
         "train_pooled_mse": train_loss_list[-1],
@@ -533,20 +712,25 @@ def fit_mlp_full(
     }
 
     # save the model!
-    torch.save(model.state_dict(), f"{model_out}.pt")
+    torch.save(model.state_dict(), f"/content/output/{model_out}.pt")
 
-    with open(f"{model_out}_metadata.pickle", 'wb') as f:
-        pickle.dump(model_out, f, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(f"/content/output/{model_out}_metadata.pickle", 'wb') as f:
+        pickle.dump(output, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    fs = fsspec.filesystem("az", **storage_options)
+    fs.put_file(f"/content/output/{model_out}.pt", f"model-output/{model_out}.pt", overwrite=True)
+    fs.put_file(f"/content/output/{model_out}_metadata.pickle", f"model-output/{model_out}_metadata.pickle", overwrite=True)
     
     return output
 
 
-def plot_obs_predict(obs_pred, title, savefig=False, outfn=""):
+def plot_obs_predict(obs_pred, title, units = "log(SSC)", savefig=False, outfn=""):
     plt.figure(figsize=(8,8))
-    plt.plot(list(range(0,8)),list(range(0,8)), color="black", label="One-to-one 1 line")
-    plt.scatter(obs_pred.iloc[:,0], obs_pred.iloc[:,1])
-    plt.xlabel("ln(SSC) Predicted")
-    plt.ylabel("ln(SSC) Observed")
+    max_val = np.maximum(np.max(obs_pred.iloc[:,0]), np.max(obs_pred.iloc[:,1]))
+    plt.plot(list(range(0, round(max_val) + 1)), list(range(0,round(max_val) + 1)), color="black", label="One-to-one 1 line")
+    plt.scatter(obs_pred["pred"], obs_pred["obs"])
+    plt.xlabel(f"{units} Predicted")
+    plt.ylabel(f"{units} Observed")
     plt.title(title)
     plt.legend()
     if savefig:
@@ -620,4 +804,106 @@ def tensor_to_rgb(a, rgb, clip_bounds=[0,0.5], gamma=1):
 def plot_image(img, figsize=(8,8)):
     fig, ax = plt.subplots(figsize=figsize)
     ax.imshow(img, interpolation='nearest')
+
+
+##### Pixel-level ssc prediction
+import rasterio as rio, numpy as np, os, torch
+from matplotlib import pyplot as plt
+from PIL import Image
+
+RIO_BANDS_ORDERED = {
+    "sentinel-2-l2a_AOT":1, 
+    "sentinel-2-l2a_B02":2, 
+    "sentinel-2-l2a_B03":3, 
+    "sentinel-2-l2a_B04":4, 
+    "sentinel-2-l2a_B08":5, 
+    "sentinel-2-l2a_WVP":6,
+    "sentinel-2-l2a_B05":7, 
+    "sentinel-2-l2a_B06":8, 
+    "sentinel-2-l2a_B07":9, 
+    "sentinel-2-l2a_B8A":10, 
+    "sentinel-2-l2a_B11":11, 
+    "sentinel-2-l2a_B12":12
+}
+
+RGB_MIN = 0
+RGB_MAX = 6000
+GAMMA = 0.6
+
+def predict_pixel_ssc(sentinel_values, sentinel_features, non_sentinel_values, non_sentinel_features, all_features, scaler, model):
+    obs_dict = dict.fromkeys(all_features)
+    obs_dict.update(zip(sentinel_features, sentinel_values))
+    obs_dict.update(zip(non_sentinel_features, non_sentinel_values))
+    feature_values = torch.Tensor(
+        list(
+            scaler.transform(
+                np.array(
+                    list(obs_dict.values()), ndmin=2
+                    )
+                )[0, :]
+            )
+        )
+    with torch.no_grad():
+        model.eval()
+        y_pred = model(feature_values).squeeze().numpy()
+
+    return np.exp(y_pred.item())
+
+
+def overlay_ssc_img(img, water, ssc_pixel_predictions, cramp="hot"):
+    cm = plt.get_cmap(cramp)
+    ssc = (cm(np.interp(ssc_pixel_predictions, (5, 100), (0, 1))) * 255).astype(np.uint8)[:, :, 0:3]
+    img2 =  np.moveaxis(
+        np.interp(
+            np.clip(
+                img[[3,2,1], :, :], # Models always included RGB bands, which are always positioned a 3,2,1 in the list of features for each model -- beware, this is hard coded
+                RGB_MIN,
+                RGB_MAX
+            ), 
+            (RGB_MIN, RGB_MAX),
+            (0, 1)
+        ) ** GAMMA * 255,
+        0,
+        2
+    ).astype(np.uint8)
+
+    img2[(water == True), :] = ssc[(water == True), :]
+
+    return img2
+
+# # The following will need to be run at the top-level scope prior to using this
+# # function in order for it to work
+# with open("/content/credentials") as f:
+#     env_vars = f.read().split("\n")
+
+# for var in env_vars:
+#     key, value = var.split(" = ")
+#     os.environ[key] = value
+def predict_chip(features, sentinel_features, non_sentinel_features, observation, model, scaler):
+    non_sentinel_values = list(observation[non_sentinel_features[0:]])
+
+    with rio.Env(
+        AZURE_STORAGE_ACCOUNT=os.environ["ACCOUNT_NAME"], 
+        AZURE_STORAGE_ACCESS_KEY=os.environ["BLOB_KEY"]
+    ):
+        with rio.open(observation["raw_img_chip_href"]) as ds:
+            img = ds.read([RIO_BANDS_ORDERED[x] for x in sentinel_features])
+        with rio.open(observation["water_chip_href"]) as ds:
+            water = ds.read(1)
+        
+    predictions = np.empty(water.shape)
+    predictions[(water == False)] = np.NaN
+    predictions[(water == True)] = np.apply_along_axis(
+        predict_pixel_ssc, 0,
+        img[:, (water == True)],
+        sentinel_features,
+        non_sentinel_values,
+        non_sentinel_features,
+        features,
+        scaler,
+        model)
     
+    predictions = np.clip(predictions, a_min=0, a_max=np.nanquantile(predictions, 0.95))
+    pred_chip = overlay_ssc_img(img, water, predictions, cramp="inferno")
+
+    return pred_chip 

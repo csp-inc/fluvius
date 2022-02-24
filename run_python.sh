@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 TAG=${1:-data}
-IMAGE=cspinc/fluvius
+IMAGE=cspinc/fluvius # TODO: get ghcr.io/csp-inc/fluvius working!
 IMAGENAME=$IMAGE:$TAG
 DPATH=docker/Dockerfile
 
@@ -10,8 +10,8 @@ if [[ "$(docker images -q $IMAGENAME 2> /dev/null)" == "" ]]; then
   docker build --rm -t $IMAGENAME - < $DPATH
 fi
 
-docker run --rm -td --ipc "host"  \
-	-v $('pwd'):/content \
+docker run --rm -td --ipc "host" \
+	-v $(pwd):/content \
 	-v /home/$USER/.vscode-server/:/root/.vscode-server/ \
 	-w /content \
 	$IMAGENAME

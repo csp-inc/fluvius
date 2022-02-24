@@ -1,0 +1,13 @@
+# Action metadata
+
+name: "Build docs"
+
+description: "Use sphinx to build fluvius documentation pages"
+
+outputs:
+  code: # id of output
+    description: "Process exit code"
+
+runs:
+  using: docker
+  image: Dockerfile

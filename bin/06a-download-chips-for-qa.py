@@ -1,33 +1,40 @@
 import fsspec, os, argparse, pandas as pd, shutil
+from src.defaults import args_info
+
+def return_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--day-tolerance',
+        default=args_info["day_tolerance"]["default"],
+        type=args_info["day_tolerance"]["type"],
+        help=args_info["day_tolerance"]["help"])
+    parser.add_argument('--cloud-thr',
+        default=args_info["cloud_thr"]["default"],
+        type=args_info["cloud_thr"]["type"],
+        help=args_info["cloud_thr"]["help"])
+    parser.add_argument('--buffer-distance',
+        default=args_info["buffer_distance"]["default"],
+        type=args_info["buffer_distance"]["type"],
+        help=args_info["buffer_distance"]["help"])
+    parser.add_argument('--mask-method1',
+        default=args_info["mask_method1"]["default"],
+        type=args_info["mask_method1"]["type"],
+        choices=args_info["mask_method1"]["choices"],
+        help=args_info["mask_method1"]["help"])
+    parser.add_argument('--mask-method2',
+        default=args_info["mask_method2"]["default"],
+        type=args_info["mask_method2"]["type"],
+        choices=args_info["mask_method2"]["choices"],
+        help=args_info["mask_method2"]["help"])
+    parser.add_argument("--composite",
+        default=args_info["composite"]["default"],
+        type=args_info["composite"]["type"],
+        choices=args_info["composite"]["choices"],
+        help=args_info["composite"]["help"])
+    return parser
 
 if __name__ == "__main__":
-    ############### Parse commnd line args ###################
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--day_tolerance',
-        default=8,
-        type=int,
-        help="accetable deviance (in days) around sample date for USGSI, ITV, and ANA sites")
-    parser.add_argument('--cloud_thr',
-        default=80,
-        type=int,
-        help="percent of cloud cover acceptable")
-    parser.add_argument('--buffer_distance',
-        default=500,
-        type=int,
-        help="search radius used for reflectance data aggregation")
-    parser.add_argument('--mask_method1',\
-        default="lulc",\
-        type=str,\
-        help="Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")")
-    parser.add_argument('--mask_method2',\
-        default="",\
-        type=str,\
-        help="Which additional index to use, if any, to update the mask, (\"ndvi\") or (\"mndwi\")")
-    parser.add_argument("--composite",
-        default="rgb",
-        type=str,
-        help="Which color composite to download. \"rgb\", color infrared (\"cir\"), or short-wave infrared (\"swir\")")
-    args = parser.parse_args()
+
+    args = return_parser().parse_args()
 
     chip_size = args.buffer_distance
     cloud_thr = args.cloud_thr

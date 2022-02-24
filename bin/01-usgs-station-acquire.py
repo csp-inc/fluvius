@@ -11,24 +11,26 @@ python 01-usgs-station-acquire.py \
 import sys
 sys.path.append('/content')
 from src.fluvius import USGS_Water_DB, USGS_Station
+from src.defaults import args_info
 from concurrent.futures import ProcessPoolExecutor
 import argparse
 
-if __name__ == "__main__":
+def return_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--get-instantaneous',\
-            default=False,\
-            type=bool,\
-            help="Get instantaneous flow data or modeled continuous data")
-    parser.add_argument('--write-to-csv',\
-            default=False,\
-            type=bool,\
-            help="Write out csvs to ./data")
+    parser.add_argument('--get-instantaneous',
+            action=args_info["get_instantaneous"]["action"],
+            help=args_info["get_instantaneous"]["help"])
+    parser.add_argument('--write-to-csv',
+            action=args_info["write_to_csv"]["action"],
+            help=args_info["write_to_csv"]["help"])
     parser.add_argument('--index-start',\
-            default=0,\
-            type=int,\
-            help="Write out csvs to ./data")
-    args = parser.parse_args()
+            default=args_info["index_start"]["default"],
+            type=args_info["index_start"]["type"],
+            help=args_info["index_start"]["help"])
+    return parser
+
+if __name__ == "__main__":
+    args = return_parser().parse_args()
 
     def collect_write_data(site_no):
         #this function is defined by the global arguments

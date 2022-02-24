@@ -38,14 +38,14 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="00a-background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00b-project-goals.html">Project goals</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00c-requirements.html">Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00d-quickstart.html">Quickstart</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Command line scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Command Line Scripts (bin)</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="01-usgs-station-acquire.html">01-usgs-station-acquire.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="02-preprocess-data.html">02-preprocess-data.py</a></li>
@@ -94,16 +94,19 @@
              
   <section id="prep-qa-chip-dataset-py">
 <h1>05-prep-qa-chip-dataset.py<a class="headerlink" href="#prep-qa-chip-dataset-py" title="Permalink to this headline"></a></h1>
-<p>This script does ABC.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="mi">05</span><span class="o">-</span><span class="n">prep</span><span class="o">-</span><span class="n">qa</span><span class="o">-</span><span class="n">chip</span><span class="o">-</span><span class="n">dataset</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">day</span><span class="o">-</span><span class="n">tolerance</span> <span class="n">DAY_TOLERANCE</span><span class="p">]</span>
-                                  <span class="p">[</span><span class="o">--</span><span class="n">cloud</span><span class="o">-</span><span class="n">thr</span> <span class="n">CLOUD_THR</span><span class="p">]</span>
-                                  <span class="p">[</span><span class="o">--</span><span class="n">buffer</span><span class="o">-</span><span class="n">distance</span> <span class="n">BUFFER_DISTANCE</span><span class="p">]</span>
-                                  <span class="p">[</span><span class="o">--</span><span class="n">out</span><span class="o">-</span><span class="n">filetype</span> <span class="p">{</span><span class="n">csv</span><span class="p">,</span><span class="n">json</span><span class="p">}]</span>
-                                  <span class="p">[</span><span class="o">--</span><span class="n">mask</span><span class="o">-</span><span class="n">method1</span> <span class="p">{</span><span class="n">lulc</span><span class="p">,</span><span class="n">scl</span><span class="p">}]</span>
-                                  <span class="p">[</span><span class="o">--</span><span class="n">mask</span><span class="o">-</span><span class="n">method2</span> <span class="p">{</span><span class="n">mndwi</span><span class="p">,</span><span class="n">ndvi</span><span class="p">,}]</span>
-                                  <span class="p">[</span><span class="o">--</span><span class="n">write</span><span class="o">-</span><span class="n">qa</span><span class="o">-</span><span class="n">chips</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">rgb</span><span class="o">-</span><span class="nb">min</span> <span class="n">RGB_MIN</span><span class="p">]</span>
-                                  <span class="p">[</span><span class="o">--</span><span class="n">rgb</span><span class="o">-</span><span class="nb">max</span> <span class="n">RGB_MAX</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">gamma</span> <span class="n">GAMMA</span><span class="p">]</span>
-                                  <span class="p">[</span><span class="o">--</span><span class="n">local</span><span class="o">-</span><span class="n">outpath</span> <span class="n">LOCAL_OUTPATH</span><span class="p">]</span>
+<p>This script is used to prepare image chips that can be used by the data
+scientist to perform QA/QC and remove poor-quality observations from the
+training data in later steps. Assumes and requires that <code class="code docutils literal notranslate"><span class="pre">--write-chips</span></code>
+was supplied as a flag when running bin/03-image-join.py.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: 05-prep-qa-chip-dataset.py [-h] [--day-tolerance DAY_TOLERANCE]
+                                  [--cloud-thr CLOUD_THR]
+                                  [--buffer-distance BUFFER_DISTANCE]
+                                  [--out-filetype {csv,json}]
+                                  [--mask-method1 {lulc,scl}]
+                                  [--mask-method2 {mndwi,ndvi,}]
+                                  [--write-qa-chips] [--rgb-min RGB_MIN]
+                                  [--rgb-max RGB_MAX] [--gamma GAMMA]
+                                  [--local-outpath LOCAL_OUTPATH]
 </pre></div>
 </div>
 <section id="Named Arguments">
@@ -170,7 +173,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, CSP.</p>
+    <p>&#169; Copyright 2022, Conservation Science Partners.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

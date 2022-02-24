@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to fluvius's documentation!
-===================================
+Welcome to the fluvius documentation!
+=====================================
 
 .. important::
 
@@ -15,7 +15,7 @@ Project Fluvius uses satellite imagery and AI to monitor the health of rivers in
 In the following sections, we provide an introduction to the project, and setup information.
 
 .. toctree::
-   :caption: Getting started
+   :caption: Getting Started
    :maxdepth: 1
 
    00a-background
@@ -26,7 +26,7 @@ In the following sections, we provide an introduction to the project, and setup 
 The following command line scripts represent the building blocks of the fluvius workflow. These scripts are meant to be run in the order specified by the numeric prefix in the filenames. All of these files can be found in 'bin/'.
 
 .. toctree::
-   :caption: Command line scripts
+   :caption: Command Line Scripts (bin)
    :maxdepth: 1
 
    01-usgs-station-acquire

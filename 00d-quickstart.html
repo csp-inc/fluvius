@@ -38,7 +38,7 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="00a-background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00b-project-goals.html">Project goals</a></li>
@@ -50,7 +50,7 @@
 </ul>
 </li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Command line scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Command Line Scripts (bin)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="01-usgs-station-acquire.html">01-usgs-station-acquire.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="02-preprocess-data.html">02-preprocess-data.py</a></li>
@@ -104,7 +104,7 @@
 <section id="ssh-key-gen">
 <h2>SSH key gen<a class="headerlink" href="#ssh-key-gen" title="Permalink to this headline"></a></h2>
 <p>First one needs to create a key pair for the local machine to connect the VM. This can be done by opening a terminal and typing:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ssh</span><span class="o">-</span><span class="n">keygen</span> <span class="o">-</span><span class="n">t</span> <span class="n">rsa</span> <span class="o">-</span><span class="n">b</span> <span class="mi">4096</span> <span class="o">-</span><span class="n">f</span> <span class="n">key</span><span class="o">-</span><span class="n">filename</span>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ssh-keygen -t rsa -b 4096 -f key-filename
 </pre></div>
 </div>
 <figure class="align-default">
@@ -124,7 +124,7 @@
 <h2>Connect via SSH<a class="headerlink" href="#connect-via-ssh" title="Permalink to this headline"></a></h2>
 <p>Once the key is generated and public key submitted to the VM, the user needs only start the VM and then connect via ssh from the terminal to the VM. This is now a virtual environment that can be accessed anywhere.</p>
 <p>Go to the terminal and type:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ssh -i $PUBLICKEYFILENAME\
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ssh -i $PUBLICKEYFILENAME\
     -L localhost:$PORT:$DNS:$PORT \
     $USER@$DNS
 </pre></div>
@@ -152,7 +152,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, CSP.</p>
+    <p>&#169; Copyright 2022, Conservation Science Partners.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

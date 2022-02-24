@@ -1,7 +1,8 @@
 15-prep-data-for-app.py
 =======================
 
-This script does ABC.
+This script compiles predictions and associated information for ITV and ANA
+sites to be displayed in the web application.
 
 .. argparse::
    :filename: ../bin/15-prep-data-for-app.py

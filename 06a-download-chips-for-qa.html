@@ -38,14 +38,14 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="00a-background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00b-project-goals.html">Project goals</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00c-requirements.html">Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00d-quickstart.html">Quickstart</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Command line scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Command Line Scripts (bin)</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="01-usgs-station-acquire.html">01-usgs-station-acquire.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="02-preprocess-data.html">02-preprocess-data.py</a></li>
@@ -94,13 +94,25 @@
              
   <section id="a-download-chips-for-qa-py">
 <h1>06a-download-chips-for-qa.py<a class="headerlink" href="#a-download-chips-for-qa-py" title="Permalink to this headline"></a></h1>
-<p>This script does ABC.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="mi">06</span><span class="n">a</span><span class="o">-</span><span class="n">download</span><span class="o">-</span><span class="n">chips</span><span class="o">-</span><span class="k">for</span><span class="o">-</span><span class="n">qa</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">day</span><span class="o">-</span><span class="n">tolerance</span> <span class="n">DAY_TOLERANCE</span><span class="p">]</span>
-                                    <span class="p">[</span><span class="o">--</span><span class="n">cloud</span><span class="o">-</span><span class="n">thr</span> <span class="n">CLOUD_THR</span><span class="p">]</span>
-                                    <span class="p">[</span><span class="o">--</span><span class="n">buffer</span><span class="o">-</span><span class="n">distance</span> <span class="n">BUFFER_DISTANCE</span><span class="p">]</span>
-                                    <span class="p">[</span><span class="o">--</span><span class="n">mask</span><span class="o">-</span><span class="n">method1</span> <span class="p">{</span><span class="n">lulc</span><span class="p">,</span><span class="n">scl</span><span class="p">}]</span>
-                                    <span class="p">[</span><span class="o">--</span><span class="n">mask</span><span class="o">-</span><span class="n">method2</span> <span class="p">{</span><span class="n">mndwi</span><span class="p">,</span><span class="n">ndvi</span><span class="p">,}]</span>
-                                    <span class="p">[</span><span class="o">--</span><span class="n">composite</span> <span class="p">{</span><span class="n">rgb</span><span class="p">,</span><span class="n">cir</span><span class="p">,</span><span class="n">swir</span><span class="p">}]</span>
+<p>This script downloads the chips generated in bin/05-prep-qa-chip-dataset.py to
+the local filesytem to be used for sample QA/QC. PNGs depicting the sentinel 2
+image and water mask corresponing to the associated training sample will be
+written to a new directory:
+data/qa_chips/&lt;buffer-distance&gt;m_cloudthr&lt;cloud_thr&gt;_&lt;mask-method1&gt;&lt;mask_method2&gt;_masking/.
+One this is run, the data scientist can go through the saved PNG files
+and delete the images that correspond to poor-quality samples. Each PNG is
+named according to the unique ID that corresponds to the sample that it
+represents, so in subsequent steps, training samples that should be kept (i.e.
+are high-quality) and used in model training can be identified based on which
+files remain on the local filesystem. It is recommended that this script be run
+on a local machine as opposed to an Azure VM, as it is easier to preview and
+delete files on a local machine.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: 06a-download-chips-for-qa.py [-h] [--day-tolerance DAY_TOLERANCE]
+                                    [--cloud-thr CLOUD_THR]
+                                    [--buffer-distance BUFFER_DISTANCE]
+                                    [--mask-method1 {lulc,scl}]
+                                    [--mask-method2 {mndwi,ndvi,}]
+                                    [--composite {rgb,cir,swir}]
 </pre></div>
 </div>
 <section id="Named Arguments">
@@ -148,7 +160,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, CSP.</p>
+    <p>&#169; Copyright 2022, Conservation Science Partners.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

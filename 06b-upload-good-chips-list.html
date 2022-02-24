@@ -38,14 +38,14 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="00a-background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00b-project-goals.html">Project goals</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00c-requirements.html">Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00d-quickstart.html">Quickstart</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Command line scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Command Line Scripts (bin)</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="01-usgs-station-acquire.html">01-usgs-station-acquire.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="02-preprocess-data.html">02-preprocess-data.py</a></li>
@@ -94,14 +94,18 @@
              
   <section id="b-upload-good-chips-list-py">
 <h1>06b-upload-good-chips-list.py<a class="headerlink" href="#b-upload-good-chips-list-py" title="Permalink to this headline"></a></h1>
-<p>This script does ABC.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="mi">06</span><span class="n">b</span><span class="o">-</span><span class="n">upload</span><span class="o">-</span><span class="n">good</span><span class="o">-</span><span class="n">chips</span><span class="o">-</span><span class="nb">list</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span>
-                                     <span class="p">[</span><span class="o">--</span><span class="n">qa</span><span class="o">-</span><span class="n">chip</span><span class="o">-</span><span class="nb">list</span><span class="o">-</span><span class="n">name</span> <span class="n">QA_CHIP_LIST_NAME</span><span class="p">]</span>
-                                     <span class="p">[</span><span class="o">--</span><span class="n">day</span><span class="o">-</span><span class="n">tolerance</span> <span class="n">DAY_TOLERANCE</span><span class="p">]</span>
-                                     <span class="p">[</span><span class="o">--</span><span class="n">cloud</span><span class="o">-</span><span class="n">thr</span> <span class="n">CLOUD_THR</span><span class="p">]</span>
-                                     <span class="p">[</span><span class="o">--</span><span class="n">buffer</span><span class="o">-</span><span class="n">distance</span> <span class="n">BUFFER_DISTANCE</span><span class="p">]</span>
-                                     <span class="p">[</span><span class="o">--</span><span class="n">mask</span><span class="o">-</span><span class="n">method1</span> <span class="p">{</span><span class="n">lulc</span><span class="p">,</span><span class="n">scl</span><span class="p">}]</span>
-                                     <span class="p">[</span><span class="o">--</span><span class="n">mask</span><span class="o">-</span><span class="n">method2</span> <span class="p">{</span><span class="n">mndwi</span><span class="p">,</span><span class="n">ndvi</span><span class="p">,}]</span>
+<p>This script identifies the files that remain on the local filesytem after
+performing QA/QC following bin/06a-download-chips-for-qa.py, records their
+unique sample IDs, and uploads this list to Azure Blob Storage to be used later
+on to filter the training data to only include high-quality samples that were
+not removed during QA/QC.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: 06b-upload-good-chips-list.py [-h]
+                                     [--qa-chip-list-name QA_CHIP_LIST_NAME]
+                                     [--day-tolerance DAY_TOLERANCE]
+                                     [--cloud-thr CLOUD_THR]
+                                     [--buffer-distance BUFFER_DISTANCE]
+                                     [--mask-method1 {lulc,scl}]
+                                     [--mask-method2 {mndwi,ndvi,}]
 </pre></div>
 </div>
 <section id="Named Arguments">
@@ -148,7 +152,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, CSP.</p>
+    <p>&#169; Copyright 2022, Conservation Science Partners.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

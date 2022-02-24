@@ -38,14 +38,14 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="00a-background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00b-project-goals.html">Project goals</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00c-requirements.html">Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00d-quickstart.html">Quickstart</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Command line scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Command Line Scripts (bin)</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="01-usgs-station-acquire.html">01-usgs-station-acquire.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="02-preprocess-data.html">02-preprocess-data.py</a></li>
@@ -94,13 +94,20 @@
              
   <section id="mlp-grid-search-py">
 <h1>09-MLP-grid-search.py<a class="headerlink" href="#mlp-grid-search-py" title="Permalink to this headline"></a></h1>
-<p>This script does ABC.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="mi">09</span><span class="o">-</span><span class="n">MLP</span><span class="o">-</span><span class="n">grid</span><span class="o">-</span><span class="n">search</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">n</span><span class="o">-</span><span class="n">workers</span> <span class="n">N_WORKERS</span><span class="p">]</span>
-                             <span class="p">[</span><span class="o">--</span><span class="n">cloud</span><span class="o">-</span><span class="n">thr</span> <span class="n">CLOUD_THR</span><span class="p">]</span>
-                             <span class="p">[</span><span class="o">--</span><span class="n">buffer</span><span class="o">-</span><span class="n">distance</span> <span class="n">BUFFER_DISTANCE</span><span class="p">]</span>
-                             <span class="p">[</span><span class="o">--</span><span class="n">mask</span><span class="o">-</span><span class="n">method1</span> <span class="p">{</span><span class="n">lulc</span><span class="p">,</span><span class="n">scl</span><span class="p">}]</span>
-                             <span class="p">[</span><span class="o">--</span><span class="n">mask</span><span class="o">-</span><span class="n">method2</span> <span class="p">{</span><span class="n">mndwi</span><span class="p">,</span><span class="n">ndvi</span><span class="p">,}]</span>
-                             <span class="p">[</span><span class="o">--</span><span class="n">n</span><span class="o">-</span><span class="n">folds</span> <span class="n">N_FOLDS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">seed</span> <span class="n">SEED</span><span class="p">]</span>
+<p>This script performs the grid search for hyperparameter optimization and saves
+loss statistics and other model information from each model that will be used to
+identify the “best” model. Individual model results will be saved on the local
+filesystem as JSON files in a folder named according to the arguments to this
+script:
+output/mlp/&lt;buffer-distance&gt;m_cloudthr&lt;cloud-thr&gt;_&lt;mask-method1&gt;&lt;mask-method2&gt;_masking_&lt;n-folds&gt;folds_seed&lt;seed&gt;/.
+File names for each model output are shortened hashes based on the
+hyperparameters for that given model.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: 09-MLP-grid-search.py [-h] [--n-workers N_WORKERS]
+                             [--cloud-thr CLOUD_THR]
+                             [--buffer-distance BUFFER_DISTANCE]
+                             [--mask-method1 {lulc,scl}]
+                             [--mask-method2 {mndwi,ndvi,}]
+                             [--n-folds N_FOLDS] [--seed SEED]
 </pre></div>
 </div>
 <section id="Named Arguments">
@@ -151,7 +158,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, CSP.</p>
+    <p>&#169; Copyright 2022, Conservation Science Partners.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

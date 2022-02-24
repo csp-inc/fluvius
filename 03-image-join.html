@@ -38,14 +38,14 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="00a-background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00b-project-goals.html">Project goals</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00c-requirements.html">Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00d-quickstart.html">Quickstart</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Command line scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Command Line Scripts (bin)</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="01-usgs-station-acquire.html">01-usgs-station-acquire.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="02-preprocess-data.html">02-preprocess-data.py</a></li>
@@ -94,13 +94,19 @@
              
   <section id="image-join-py">
 <h1>03-image-join.py<a class="headerlink" href="#image-join-py" title="Permalink to this headline"></a></h1>
-<p>This script queries the STAC API (the catalog of all remote sensing URLs that exist on Azure) for field based observations of suspended sediment concentration, and returns a list of image URLs that match the observations with respect to space and time.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="mi">03</span><span class="o">-</span><span class="n">image</span><span class="o">-</span><span class="n">join</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">data</span><span class="o">-</span><span class="n">src</span> <span class="p">{</span><span class="n">itv</span><span class="p">,</span><span class="n">ana</span><span class="p">,</span><span class="n">usgs</span><span class="p">,</span><span class="n">usgsi</span><span class="p">}]</span>
-                        <span class="p">[</span><span class="o">--</span><span class="n">day</span><span class="o">-</span><span class="n">tolerance</span> <span class="n">DAY_TOLERANCE</span><span class="p">]</span>
-                        <span class="p">[</span><span class="o">--</span><span class="n">cloud</span><span class="o">-</span><span class="n">thr</span> <span class="n">CLOUD_THR</span><span class="p">]</span>
-                        <span class="p">[</span><span class="o">--</span><span class="n">buffer</span><span class="o">-</span><span class="n">distance</span> <span class="n">BUFFER_DISTANCE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">write</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">csv</span><span class="p">]</span>
-                        <span class="p">[</span><span class="o">--</span><span class="n">write</span><span class="o">-</span><span class="n">chips</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">mask</span><span class="o">-</span><span class="n">method1</span> <span class="p">{</span><span class="n">lulc</span><span class="p">,</span><span class="n">scl</span><span class="p">}]</span>
-                        <span class="p">[</span><span class="o">--</span><span class="n">mask</span><span class="o">-</span><span class="n">method2</span> <span class="p">{</span><span class="n">mndwi</span><span class="p">,</span><span class="n">ndvi</span><span class="p">,}]</span>
+<p>This script queries the STAC API (the catalog of all remote sensing URLs that
+exist on Azure) for field based observations of suspended sediment
+concentration, and returns a list of image URLs and aggregated features
+that match the observations with respect to space and time. This script prepares
+inputs and writes them to Azure Blob Storage for use in bin/04-data-merge.py
+Optionally, images can be written to cloud storage for use in subsequent QA/QC
+and modeling steps.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: 03-image-join.py [-h] [--data-src {itv,ana,usgs,usgsi}]
+                        [--day-tolerance DAY_TOLERANCE]
+                        [--cloud-thr CLOUD_THR]
+                        [--buffer-distance BUFFER_DISTANCE] [--write-to-csv]
+                        [--write-chips] [--mask-method1 {lulc,scl}]
+                        [--mask-method2 {mndwi,ndvi,}]
 </pre></div>
 </div>
 <section id="Named Arguments">
@@ -155,7 +161,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, CSP.</p>
+    <p>&#169; Copyright 2022, Conservation Science Partners.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

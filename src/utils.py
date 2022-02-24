@@ -6,6 +6,7 @@ import numpy as np
 import datetime
 import pandas as pd
 import sys
+import json
 import fsspec
 import pickle
 import torch
@@ -146,15 +147,9 @@ def fit_mlp_cv(
     n_layers = len(layer_out_neurons)
     torch.set_num_threads(1)
     # Read the data
-    # TODO update these filepaths once python version of data partitioning is done, will need to be defined based on mask_method2 and mask_method2 args to function, as well as buffer, day tol, etc.
     fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
 
-    # if mask_method2 == "ndvi":
-    #     fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
-    # elif mask_method2 == "mndwi":
-    #      fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_5folds.csv"
-
-    data = pd.read_csv(fp)
+    data = pd.read_csv(fp, storage_options=storage_options)
 
     data = data[data["partition"] != "testing"]
     data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
@@ -376,26 +371,23 @@ def fit_mlp_full(
         min_water_pixels=20,
         layer_out_neurons=[24, 12, 6],
         weight_decay=1e-2,
-        verbose=True,
-        model_out = "output/top_model"
+        n_folds=5,
+        seed=123,
+        verbose=True
     ):    
     n_layers = len(layer_out_neurons)
 
     # Read the data
-    # TODO update these filepaths once python version of data partitioning is done, will need to be defined based on mask_method2 and mask_method2 args to function, as well as buffer, day tol, etc.
-    if mask_method2 == "ndvi":
-        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
-    elif mask_method2 == "mndwi":
-        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_5folds.csv"
+    fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
 
-    data = pd.read_csv(fp)
+    data = pd.read_csv(fp, storage_options=storage_options)
     data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
     
     response = "Log SSC (mg/L)"
     not_enough_water = data["n_water_pixels"] < min_water_pixels
     data.drop(not_enough_water[not_enough_water].index, inplace=True)
-    lnssc_0 = data["Log SSC (mg/L)"] == 0
-    data.drop(lnssc_0[lnssc_0].index, inplace=True)
+    ssc_0 = data["SSC (mg/L)"] == 0
+    data.drop(ssc_0[ssc_0].index, inplace=True)
 
     test = data[data["partition"] == "testing"]
     data = data[data["partition"] != "testing"]
@@ -527,21 +519,22 @@ def fit_mlp_full(
         "y_train_sample_id": list(data["sample_id"]),
         "y_test_sample_id": list(test["sample_id"]),
         #"X_test_scaled": X_test_scaled,
-        "y_obs_train": y_train,
+        "y_obs_train": list(y_train),
         "y_pred_train": train_pred_list,
-        "y_obs_test": y_test,
+        "y_obs_test": list(y_test),
         "y_pred_test": test_pred_list
     }
 
     # save the model!
-    torch.save(model.state_dict(), f"/content/output/{model_out}.pt")
+    model_out_fn_prefix = f"top_model_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}"
+    torch.save(model.state_dict(), f"/content/output/mlp/{model_out_fn_prefix}.pt")
 
-    with open(f"/content/output/{model_out}_metadata.pickle", 'wb') as f:
-        pickle.dump(output, f, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(f"/content/output/mlp/{model_out_fn_prefix}_metadata.json", 'w') as f:
+        json.dump(output, f)
 
     fs = fsspec.filesystem("az", **storage_options)
-    fs.put_file(f"/content/output/{model_out}.pt", f"model-output/{model_out}.pt", overwrite=True)
-    fs.put_file(f"/content/output/{model_out}_metadata.pickle", f"model-output/{model_out}_metadata.pickle", overwrite=True)
+    fs.put_file(f"/content/output/mlp/{model_out_fn_prefix}.pt", f"model-output/{model_out_fn_prefix}.pt", overwrite=True)
+    fs.put_file(f"/content/output/mlp/{model_out_fn_prefix}_metadata.json", f"model-output/{model_out_fn_prefix}_metadata.json", overwrite=True)
     
     return output
 

@@ -48,7 +48,7 @@ if __name__ == "__main__":
     n_folds = args.n_folds
     seed = args.seed
 
-    directory = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1" # was: args.path_to_models
+    directory = f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}" # was: args.path_to_models
     
     paths = [f"{directory}/{x}" for x in os.listdir(directory)]
 
@@ -78,5 +78,4 @@ if __name__ == "__main__":
 
         metadata = metadata.append(row_dict, ignore_index=True)
     
-    metadata.to_csv(f"output/{args.results_output}", index=False)
-    metadata.to_csv(f"az://model-output/mlp/grid_search_metadata_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1.csv", index=False, storage_options=storage_options)
+    metadata.to_csv(f"az://model-output/mlp/grid_search_metadata_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv", index=False, storage_options=storage_options)

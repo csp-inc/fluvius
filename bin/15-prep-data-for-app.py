@@ -9,10 +9,6 @@ import argparse
 if __name__ == "__main__":
     ############### Parse commnd line args ###################
     parser = argparse.ArgumentParser()
-    parser.add_argument('--day_tolerance',
-        default=8,
-        type=int,
-        help="accetable deviance (in days) around sample date for USGSI, ITV, and ANA sites")
     parser.add_argument('--cloud_thr',
         default=80,
         type=int,
@@ -41,7 +37,6 @@ if __name__ == "__main__":
 
     chip_size = args.buffer_distance
     cloud_thr = args.cloud_thr
-    day_tol = args.day_tolerance
     mm1 = args.mask_method1
     mm2 = args.mask_method2
     n_folds = args.n_folds

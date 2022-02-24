@@ -14,11 +14,6 @@ storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mse_to_minimize',
-        default="mean_mse",
-        choices=["mean_mse", "val_site_mse", "val_pooled_mse"],
-        help="Which MSE to use, mean of sites, pooled, or the mean of the pooled and mean site MSE?"
-    )
     parser.add_argument('--cloud_thr',
         default=80,
         type=int,
@@ -53,7 +48,7 @@ if __name__ == "__main__":
     n_folds = args.n_folds
     seed = args.seed
 
-    results = pd.read_csv(f"az://model-output/mlp/grid_search_metadata_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1.csv", storage_options=storage_options)
+    results = pd.read_csv(f"az://model-output/mlp/grid_search_metadata_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv", storage_options=storage_options)
 
     if not args.use_metadata_features:
         no_azimuth = ["mean_viewing_azimuth" not in results["features"][i] for i in range(0, (results.shape[0]))]
@@ -63,7 +58,7 @@ if __name__ == "__main__":
 
     # Eventually need to load this from blob storage, but pickle gives errors
     # Need to try switching to dill once we do the next grid search
-    with open(results.iloc[results[args.mse_to_minimize].argmin(), :]["path"], "rb") as f:
+    with open(results.iloc[results["mean_mse"].argmin(), :]["path"], "rb") as f:
         top_model = json.load(f)
 
     
@@ -81,6 +76,7 @@ if __name__ == "__main__":
         min_water_pixels=20,
         layer_out_neurons=top_model["layer_out_neurons"],
         weight_decay=top_model["weight_decay"],
-        verbose=True,
-        model_out=f"mlp/top_model_metadata_{args.mse_to_minimize}_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1"
+        n_folds=n_folds,
+        seed=seed,
+        verbose=True
     )

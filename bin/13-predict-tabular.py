@@ -2,7 +2,7 @@
 import sys, os
 sys.path.append('/content')
 from src.fluvius import WaterData
-import fsspec
+import json
 import pandas as pd
 import argparse
 import numpy as np
@@ -74,14 +74,16 @@ if __name__ == "__main__":
     n_folds = args.n_folds
     seed = args.seed
 
-    model_path = f"mlp/top_model_metadata_{args.mse_to_minimize}_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1"
+    fs = fsspec.filesystem("az", **storage_options)
+    model_path = f"model-output/top_model_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}"
+
     # Load in the top model metadata
-    with open(f"{model_path}_metadata.pickle", "rb") as f:
-        meta = pickle.load(f)
+    with fs.open(f"{model_path}_metadata.json", "r") as f:
+        meta = json.load(f)
 
     model = MultipleRegression(len(meta["features"]), len(meta["layer_out_neurons"]), meta["layer_out_neurons"], activation_function=eval(f'nn.{meta["activation"]}'))
 
-    with open(f"{model_path}.pt", "rb") as f:
+    with fs.open(f"{model_path}.pt", "rb") as f:
         model.load_state_dict(torch.load(f))
 
     pred_fileprefix = f"az://prediction-data/{args.data_src}-data/feature_data_buffer{buffer_distance}m_daytol0_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking"
@@ -89,7 +91,7 @@ if __name__ == "__main__":
     pred_features = pd.read_csv(f"{pred_fileprefix}.csv", storage_options=storage_options)
     pred_features["is_brazil"] = 1
     
-    data = pd.read_csv(meta["training_data"])
+    data = pd.read_csv(meta["training_data"], storage_options=storage_options)
     data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
 
     data = data[data["partition"] != "testing"]

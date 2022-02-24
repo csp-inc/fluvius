@@ -66,8 +66,8 @@ if __name__ == "__main__":
     min_water_pixels = 20
     partition_props = {
         "data_src": ["usgs", "ana", "itv"], 
-        "p_train": [1, 0.8, 0.1], # [1, 0.9, 0]
-        "p_test": [0, 0.2, 0.9] # [0, 0.1, 1]
+        "p_train": [1, 0.5, 0.5], # [1, 0.9, 0]
+        "p_test": [0, 0.5, 0.5] # [0, 0.1, 1]
         }
 
     # Set storage options for Azure blob storage

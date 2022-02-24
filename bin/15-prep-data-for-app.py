@@ -47,7 +47,6 @@ if __name__ == "__main__":
 
     chip_size = args.buffer_distance
     cloud_thr = args.cloud_thr
-    day_tol = args.day_tolerance
     mm1 = args.mask_method1
     mm2 = args.mask_method2
     n_folds = args.n_folds

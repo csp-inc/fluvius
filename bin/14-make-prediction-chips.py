@@ -1,9 +1,9 @@
 import os, sys
 sys.path.append("/content")
-import pickle, argparse
+import json, argparse
 from src.utils import MultipleRegression, predict_chip, RGB_MIN, RGB_MAX, GAMMA
 from sklearn.preprocessing import MinMaxScaler
-import torch, pickle, torch.nn as nn
+import torch, torch.nn as nn
 import pandas as pd, numpy as np, rasterio as rio
 from PIL import Image
 import fsspec
@@ -70,19 +70,19 @@ if __name__ == "__main__":
     # Create filesystem
     fs = fsspec.filesystem("az", **storage_options)
 
-    model_path = f"mlp/top_model_metadata_{args.mse_to_minimize}_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}_v1"
+    model_path =  f"model-output/top_model_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}"
 
     # Load in the top model metadata
-    with open(f"{model_path}_metadata.pickle", "rb") as f:
-        meta = pickle.load(f)
+    with fs.open(f"{model_path}_metadata.json", "rb") as f:
+        meta = json.load(f)
 
     model = MultipleRegression(len(meta["features"]), len(meta["layer_out_neurons"]), meta["layer_out_neurons"], activation_function=eval(f'nn.{meta["activation"]}'))
-    with open(f"{model_path}.pt", "rb") as f:
+    with fs.open(f"{model_path}.pt", "rb") as f:
         model.load_state_dict(torch.load(f))
     
     # Wrangle the training data to recreate the scaler and get info on features
     fp = meta["training_data"]
-    data = pd.read_csv(fp)
+    data = pd.read_csv(fp, storage_options=storage_options)
 
     features = meta["features"]
 
@@ -170,8 +170,7 @@ if __name__ == "__main__":
        'sentinel-2-l2a_B03', 'sentinel-2-l2a_B04', 'sentinel-2-l2a_B08',
        'sentinel-2-l2a_WVP', 'sentinel-2-l2a_B05', 'sentinel-2-l2a_B06',
        'sentinel-2-l2a_B07', 'sentinel-2-l2a_B8A', 'sentinel-2-l2a_B11',
-       'sentinel-2-l2a_B12', 'n_water_pixels', 'mean_viewing_azimuth',
-       'mean_viewing_zenith', 'mean_solar_azimuth', 'mean_solar_zenith',
+       'sentinel-2-l2a_B12', 'n_water_pixels',
        'sensing_time', 'is_brazil', 'Predicted Log SSC (mg/L)', 'has_obs',
        'raw_img_chip_href', 'water_chip_href', 'app_chip_href']
 

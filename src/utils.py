@@ -850,13 +850,19 @@ def predict_pixel_ssc(sentinel_values, sentinel_features, non_sentinel_values, n
     return np.exp(y_pred.item())
 
 
-def overlay_ssc_img(img, water, ssc_pixel_predictions, cramp="hot"):
+def overlay_ssc_img(img, water, ssc_pixel_predictions, has_aot, cramp="hot"):
+
+    if has_aot:
+        rgb = [3,2,1]
+    else:
+        rgb = [2,1,0]
+
     cm = plt.get_cmap(cramp)
     ssc = (cm(np.interp(ssc_pixel_predictions, (5, 100), (0, 1))) * 255).astype(np.uint8)[:, :, 0:3]
     img2 =  np.moveaxis(
         np.interp(
             np.clip(
-                img[[3,2,1], :, :], # Models always included RGB bands, which are always positioned a 3,2,1 in the list of features for each model -- beware, this is hard coded
+                img[rgb, :, :], # Models always included RGB bands, which are always positioned a 3,2,1 in the list of features for each model -- beware, this is hard coded
                 RGB_MIN,
                 RGB_MAX
             ), 
@@ -890,7 +896,9 @@ def predict_chip(features, sentinel_features, non_sentinel_features, observation
             img = ds.read([RIO_BANDS_ORDERED[x] for x in sentinel_features])
         with rio.open(observation["water_chip_href"]) as ds:
             water = ds.read(1)
-        
+    
+    has_aot = "sentinel-2-l2a_AOT" in sentinel_features
+
     predictions = np.empty(water.shape)
     predictions[(water == False)] = np.NaN
     predictions[(water == True)] = np.apply_along_axis(
@@ -904,6 +912,6 @@ def predict_chip(features, sentinel_features, non_sentinel_features, observation
         model)
     
     predictions = np.clip(predictions, a_min=0, a_max=np.nanquantile(predictions, 0.95))
-    pred_chip = overlay_ssc_img(img, water, predictions, cramp="inferno")
+    pred_chip = overlay_ssc_img(img, water, predictions, has_aot=has_aot, cramp="hot")
 
     return pred_chip 

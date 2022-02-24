@@ -111,7 +111,7 @@ if __name__ == "__main__":
     # Keep only prediction site chips that have 20 or more water pixels
     # Only keep prediction site chips that have < 50% clouds unless they have a corresponding observation in the training data
     pred_df["has_obs"] = [pred_df["Date-Time"].iloc[i] in list(data.loc[data["site_no"] == pred_df["sample_id"].iloc[i][0:8], ]["Date-Time_Remote"]) for i in range(0, len(pred_df))]
-    pred_df = pred_df.loc[(pred_df["n_water_pixels"] >= 20) & ((pred_df["has_obs"] == True) | (pred_df["Chip Cloud Pct"] <= 50)), ]
+    pred_df = pred_df.loc[(pred_df["n_water_pixels"] >= meta["min_water_pixels"]) & ((pred_df["has_obs"] == True) | (pred_df["Chip Cloud Pct"] <= 50)), ]
 
     # Generate hrefs for the image chips for prediction sites
     raw_img_hrefs = []

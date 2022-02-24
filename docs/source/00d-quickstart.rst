@@ -1,7 +1,7 @@
 Quickstart
 ==========
 
-Given the technical nature of this cloud environment, we describe here a workflow where a user can connect to an Azure Virtual Machine and use the terminal similar to a local based server. 
+Given the technical nature of this cloud environment, here we describe a workflow where a user can connect to an Azure Virtual Machine and use the terminal similar to a local based server. 
 
 Secure Shell (SSH)
 ******************

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 TAG=${1:-data}
-IMAGE=cspinc/fluvius
+IMAGE=cspinc/fluvius # TODO: get ghcr.io/csp-inc/fluvius working!
 IMAGENAME=$IMAGE:$TAG
 DPATH=docker/Dockerfile
 

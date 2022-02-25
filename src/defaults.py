@@ -3,11 +3,11 @@ import numpy as np
 args_info = {
     "get_instantaneous": {
         "action": "store_true", # ensures the default value is False
-        "help": "Get instantaneous flow data or modeled continuous data"
+        "help": "Get instantaneous flow data or modeled continuous data."
     },
     "write_to_csv": {
         "action": "store_true", # ensures the default value is False
-        "help": "Write out CSVs to ./data"
+        "help": "Write out CSVs to data/ on the local machine?"
     },
     "index_start": {
         "default": 0,
@@ -17,103 +17,105 @@ args_info = {
     "data_src": {
         "type": str,
         "choices": ["itv", "ana", "usgs", "usgsi"],
-        "help": "Data source code"
+        "help": "For which data source should this script run?"
     },
     "day_tolerance": {
         "default": 8,
         "type": int,
-        "help": "Days of search around sample date"
+        "help": "Days of search around sample date for a matching Sentinel \
+            2 image."
     },
     "cloud_thr": {
         "default": 80,
         "type": int,
-        "help": "Percent of cloud cover acceptable"
+        "help": "Percent of cloud cover acceptable in the Sentinel tile \
+            corresponding to the sample. If this threshold is surpassed, \
+            no Sentinel image chip will be collected for the sample."
     },
     "buffer_distance": {
         "default": 500,
         "type": int,
-        "help": "Search radius to use for reflectance data aggregation"
+        "help": "Square search radius (in meters) to use for reflectance data \
+            aggregation. This determines the size of the image chip that will \
+            be extracted and processed."
     },
     "write_chips": {
         "action": "store_true", # ensures the default value is False
-        "help": "Write chips to blob storage?"
+        "help": "Write image chips to blob storage? Should be set to true \
+            unless troubleshooting."
     },
     "mask_method1": {
         "default": "lulc",
         "type": str,
         "choices": ["lulc", "scl"],
-        "help": "Which data to use for masking non-water, scl only (\"scl\"), or io_lulc plus scl (\"lulc\")"
+        "help": "Which data to use for masking (removing) non-water in order \
+            to calculate aggreated reflectance values for only water pixels? \
+            Choose (\"scl\") to water pixels as identified based on the \
+            Scene Classification Layer that accompanies the Snetinel tile, \
+            or (\"lulc\") to use Impact Observatory's Land-Use/Land-Cover \
+            layer to identify water, and the Scene Classification Layer to \
+            remove clouds. Using \"lulc\" is strongly recommended."
     },
     "mask_method2": {
         "default": "mndwi",
         "type": str,
-        "choices": ["mndwi", "ndvi", ""],
-        "help": "Which additional normalized index to use, if any, to update the mask"
-    },
-    "out_filetype": {
-        "default": "csv",
-        "type": str,
-        "choices": ["csv", "json"],
-        "help": "Filetype for saved merged dataframe (csv or json)"
+        "choices": ["mndwi", "ndvi", "\"\""],
+        "help": "Which additional normalized index to use, if any, to update \
+        the mask to remove errors of ommission (pixels classified as water \
+        that shouldn't be) prior to calculated aggregated reflectance? If \
+        \"ndvi\", then only pixels with an NDVI value less than 0.25 \
+        will be retained. If \"mndwi\" (recommended) then only pixels with an \
+        MNDWI value greater than 0 will be retained. Of \"\", then no \
+        secondary mask is used."
     },
     "n_folds": {
         "default": 5,
         "type": int,
-        "help": "The number of folds to create for the training / validation set"
+        "help": "The number of folds to create for the training / validation \
+            set when fitting models using k-fold cross-validation."
     },
     "seed": {
         "default": 123,
         "type": int,
-        "help": "The seed (an integer) used to initialize the pseudorandom number generator"
-    },
-    "write_qa_chips": {
-        "action": "store_false", # ensures the default value is True
-        "help": "Should QA chips be written to blob storage?"
+        "help": "The seed (an integer) used to initialize the pseudorandom \
+            number generator for use in partitioning data."
     },
     "rgb_min": {
         "default": 100,
         "type": int,
-        "help": "Minimum reflectance value (corresponding to zero saturation of R, G, and B)"
+        "help": "Minimum reflectance value (corresponding to zero saturation \
+            of R, G, and B). Used for fine-tuning the visual representation \
+            of the chip both for app display and QA/QC chip creation."
     },
     "rgb_max": {
         "default": 4000,
         "type": int,
-        "help": "Maximum reflectance value (corresponding to full saturation of R, G, and B)"
+        "help": "Maximum reflectance value (corresponding to full saturation \
+            of R, G, and B). Used for fine-tuning the visual representation \
+            of the chip both for app display and QA/QC chip creation."
     },
     "gamma": {
         "default": 0.7,
         "type": float,
-        "help": "Gamma correction to use when generating the image chip"
-    },
-    "local_outpath": {
-        "default": None,
-        "type": str,
-        "help": "If desired, the local directory to which QA chips will be saved. If \"None\", the default, chips are not written locally"
+        "help": "Gamma correction to use when generating visual image chips. \
+            Used for fine-tuning the visual representation \
+            of the chip both for app display and QA/QC chip creation."
     },
     "composite": {
         "default": "rgb",
         "type": str,
         "choices": ["rgb", "cir", "swir"],
-        "help": "Which color composite to download. \"rgb\", color infrared (\"cir\"), or short-wave infrared (\"swir\")"
-    },
-    "qa_chip_list_name": {
-        "default": "good_chips.csv",
-        "type": str,
-        "help": "The file name for the list of good chips"
-        # The Azure filename for the list of good chips. " +
-        #      "Assumed to be in the \"modeling-data/chips/post-qa/{chip_size}" +
-        #      "m_cloudthr{cloud_thr}_{mm1}{mm2}_masking` directory\". " +
-        #      "This will be used to determine which samples in the feature " +
-        #      "dataframe to keep.
+        "help": "Which color composite to download (for the images used for \
+            performing QA). \"rgb\", color infrared (\"cir\"), or short-wave \
+            infrared (\"swir\")"
     },
     "n_workers": {
         "default": np.NaN,
         "type": int,
-        "help": "How many workers to use for fitting models in parallel (recommended not to go over number of physical cores)"
-    },
-    "model_path": {
-        "type": str,
-        "help": "The path to the model state file (.pt file) without the subscript"
+        "help": "How many workers to use for fitting models in parallel \
+            (recommended not to go over number of physical cores). If \"nan\", \
+            the default, the the number of workers will be set to the number \
+            of physical cores (recommended)."
     },
     "start_date": {
         "default": "2015-01-01",
@@ -124,11 +126,5 @@ args_info = {
         "default": "2021-12-31",
         "type": str,
         "help": "The latest date for which to generate prediction inputs"
-    },
-    "mse_to_minimize": {
-        "default": "mean_mse",
-        "type": str,
-        "choices": ["mean_mse", "val_site_mse", "val_pooled_mse"],
-        "help": "Which MSE to use, mean of sites, pooled, or the mean of the pooled and mean site MSE?"
     }
 }

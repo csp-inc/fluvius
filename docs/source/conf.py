@@ -67,3 +67,11 @@ html_css_files = [
 
 ## Don't do syntax highlighting in code
 highlight_language = 'none'
+
+# Replace "View page source" with "Edit on GitHub" links in
+html_context = {
+  'display_github': True,
+  'github_user': 'csp-inc',
+  'github_repo': 'fluvius',
+  'github_version': 'main/docs/source/',
+}

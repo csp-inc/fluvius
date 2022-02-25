@@ -318,7 +318,7 @@ class WaterData:
 
 class WaterStation:
     '''
-    Generalized water station data. May make child class for USGS, ANA, and ITV
+    Generalized water station data.
     '''
     def __init__(self, site_no, lat, lon, buffer, container, storage_options, data_source):
         self.site_no = site_no

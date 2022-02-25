@@ -6,7 +6,7 @@ import json
 import pandas as pd
 import argparse
 import numpy as np
-import torch, pickle, fsspec, torch.nn as nn
+import torch, fsspec, torch.nn as nn
 from src.utils import MultipleRegression
 from sklearn.preprocessing import MinMaxScaler
 import faulthandler
@@ -27,9 +27,6 @@ storage_options= {'account_name':os.environ['ACCOUNT_NAME'],
 
 def return_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model-path',
-        type=args_info["model_path"]["type"],
-        help=args_info["model_path"]["help"])
     parser.add_argument('--data-src',
         type=args_info["data_src"]["type"],
         choices=args_info["data_src"]["choices"],

@@ -32,11 +32,6 @@ def return_parser():
         default=args_info["buffer_distance"]["default"],
         type=args_info["buffer_distance"]["type"],
         help=args_info["buffer_distance"]["help"])
-    parser.add_argument('--out-filetype',
-        default=args_info["out_filetype"]["default"],
-        type=args_info["out_filetype"]["type"],
-        choices=args_info["out_filetype"]["choices"],
-        help=args_info["out_filetype"]["help"])
     parser.add_argument('--mask-method1',
         default=args_info["mask_method1"]["default"],
         type=args_info["mask_method1"]["type"],
@@ -47,9 +42,6 @@ def return_parser():
         type=args_info["mask_method2"]["type"],
         choices=args_info["mask_method2"]["choices"],
         help=args_info["mask_method2"]["help"])
-    parser.add_argument('--write-qa-chips',
-        action=args_info["write_qa_chips"]["action"],
-        help=args_info["write_qa_chips"]["help"])
     parser.add_argument('--rgb-min',
         default=args_info["rgb_min"]["default"],
         type=args_info["rgb_min"]["type"],
@@ -62,10 +54,6 @@ def return_parser():
         default=args_info["gamma"]["default"],
         type=args_info["gamma"]["type"],
         help=args_info["gamma"]["help"])
-    parser.add_argument('--local-outpath',
-        default=args_info["local_outpath"]["default"],
-        type=args_info["local_outpath"]["type"],
-        help=args_info["local_outpath"]["help"])
     return parser
 
 if __name__ == "__main__":
@@ -75,7 +63,6 @@ if __name__ == "__main__":
     chip_size = args.buffer_distance
     cloud_thr = args.cloud_thr
     day_tol = args.day_tolerance
-    write_qa_chips = args.write_qa_chips
 
     mm1 = args.mask_method1
     mm2 = args.mask_method2
@@ -106,44 +93,37 @@ if __name__ == "__main__":
             n_chip += len(chip_obs)
             for path in chip_obs:
                 for composite in composites:
-                    if (args.local_outpath != None) or write_qa_chips:
-                        with rio.open(f"az://{path}") as chip:
-                            rgb_raw = np.moveaxis(chip.read(band_combos[composite]), 0, -1)
-                            with rio.open(f"az://{path[:-4]}_water.tif") as mask:
-                                water = mask.read(1)
-                        rgb = (
-                            ((np.clip(rgb_raw, rgb_min, rgb_max) - rgb_min) /
-                                (rgb_max - rgb_min)) ** gamma * 255
-                            ).astype(np.uint8)
-                        water_rgb = copy.deepcopy(rgb)
+                    with rio.open(f"az://{path}") as chip:
+                        rgb_raw = np.moveaxis(chip.read(band_combos[composite]), 0, -1)
+                        with rio.open(f"az://{path[:-4]}_water.tif") as mask:
+                            water = mask.read(1)
+                    rgb = (
+                        ((np.clip(rgb_raw, rgb_min, rgb_max) - rgb_min) /
+                            (rgb_max - rgb_min)) ** gamma * 255
+                        ).astype(np.uint8)
+                    water_rgb = copy.deepcopy(rgb)
 
-                        # Set NA pixels to stand-out color based on 
-                        if composite == "rgb":
-                            water_rgb[water==0, 0] = 252
-                            water_rgb[water==0, 1] = 184
-                            water_rgb[water==0, 2] = 255
-                        elif composite == "cir":
-                            water_rgb[water==0, 0] = 166
-                            water_rgb[water==0, 1] = 232
-                            water_rgb[water==0, 2] = 139
-                        elif composite == "swir":
-                            water_rgb[water==0, 0] = 252
-                            water_rgb[water==0, 1] = 184
-                            water_rgb[water==0, 2] = 255
+                    # Set NA pixels to stand-out color based on 
+                    if composite == "rgb":
+                        water_rgb[water==0, 0] = 252
+                        water_rgb[water==0, 1] = 184
+                        water_rgb[water==0, 2] = 255
+                    elif composite == "cir":
+                        water_rgb[water==0, 0] = 166
+                        water_rgb[water==0, 1] = 232
+                        water_rgb[water==0, 2] = 139
+                    elif composite == "swir":
+                        water_rgb[water==0, 0] = 252
+                        water_rgb[water==0, 1] = 184
+                        water_rgb[water==0, 2] = 255
 
-                        qa_array = np.concatenate([rgb, water_rgb], axis = (1))
-                        qa_img = Image.fromarray(qa_array, "RGB")
+                    qa_array = np.concatenate([rgb, water_rgb], axis = (1))
+                    qa_img = Image.fromarray(qa_array, "RGB")
 
                     out_name = f"modeling-data/chips/qa/{composite}_{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{data_src}_{os.path.basename(path[:-4])}.png"
-
-                    if args.local_outpath is not None:
-                        if not os.path.exists(f'{args.local_outpath}'):
-                            os.makedirs(f'{args.local_outpath}')
-                        qa_img.save(f"{args.local_outpath}/{composite}_{data_src}_{os.path.basename(path[:-4])}.png")
-
-                    if write_qa_chips:
-                        with fs.open(out_name, "wb") as fn:
-                            qa_img.save(fn, "PNG")
+                    
+                    with fs.open(out_name, "wb") as fn:
+                        qa_img.save(fn, "PNG")
 
                 raw_img_url = f"https://fluviusdata.blob.core.windows.net/{path}"
                 rgb_water_url = f"https://fluviusdata.blob.core.windows.net/modeling-data/chips/qa/rgb_{chip_size}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking/{data_src}_{os.path.basename(path[:-4])}.png"

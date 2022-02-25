@@ -28,11 +28,6 @@ def return_parser():
         default=args_info["buffer_distance"]["default"],
         type=args_info["buffer_distance"]["type"],
         help=args_info["buffer_distance"]["help"])
-    parser.add_argument('--out-filetype',
-        default=args_info["out_filetype"]["default"],
-        type=args_info["out_filetype"]["type"],
-        choices=args_info["out_filetype"]["choices"],
-        help=args_info["out_filetype"]["help"])
     parser.add_argument('--mask-method1',
         default=args_info["mask_method1"]["default"],
         type=args_info["mask_method1"]["type"],
@@ -54,7 +49,6 @@ if __name__ == "__main__":
     buffer_distance = args.buffer_distance
     day_tolerance = args.day_tolerance
     cloud_thr = args.cloud_thr
-    out_filetype = args.out_filetype
     mm1 = args.mask_method1
     mm2 = args.mask_method2
 
@@ -129,7 +123,7 @@ if __name__ == "__main__":
 
     merged_df.drop(bad_ssc[bad_ssc].index, inplace=True)
 
-    # NOTE this is very hacky right now -- should revise/improve
+    # NOTE this is very hacky right now
     bad_rgb = ((merged_df["sentinel-2-l2a_B02"] == 0) &\
               (merged_df["sentinel-2-l2a_B03"] == 0) &\
               (merged_df["sentinel-2-l2a_B04"] == 0)) |\
@@ -139,10 +133,7 @@ if __name__ == "__main__":
 
     merged_df.drop(bad_rgb[bad_rgb].index, inplace=True)
     # write output
-    out_filepath = f"az://modeling-data/merged_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.{out_filetype}"
-    if out_filetype == "csv":
-        merged_df.to_csv(out_filepath, storage_options=storage_options)
-    elif out_filetype == "json":
-        merged_df.to_json(out_filepath, storage_options=storage_options)
+    out_filepath = f"az://modeling-data/merged_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv"
+    merged_df.to_csv(out_filepath, storage_options=storage_options)
 
     print(f"Done. Outputs written to {out_filepath}")

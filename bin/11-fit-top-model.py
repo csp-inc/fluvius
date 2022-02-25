@@ -15,11 +15,6 @@ storage_options = {"account_name":os.environ["ACCOUNT_NAME"],
 
 def return_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mse-to-minimize',
-        default=args_info["mse_to_minimize"]["default"],
-        type=args_info["mse_to_minimize"]["type"],
-        choices=args_info["mse_to_minimize"]["choices"],
-        help=args_info["mse_to_minimize"]["help"])
     parser.add_argument('--cloud-thr',
         default=args_info["cloud_thr"]["default"],
         type=args_info["cloud_thr"]["type"],
@@ -60,17 +55,10 @@ if __name__ == "__main__":
 
     results = pd.read_csv(f"az://model-output/mlp/grid_search_metadata_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv", storage_options=storage_options)
 
-    if not args.use_metadata_features:
-        no_azimuth = ["mean_viewing_azimuth" not in results["features"][i] for i in range(0, (results.shape[0]))]
-        results = results.loc[no_azimuth, :]
-
     results["mean_mse"] = (results["val_site_mse"] + results["val_pooled_mse"]) / 2
 
-    # Eventually need to load this from blob storage, but pickle gives errors
-    # Need to try switching to dill once we do the next grid search
     with open(results.iloc[results["mean_mse"].argmin(), :]["path"], "rb") as f:
         top_model = json.load(f)
-
     
     model_out = fit_mlp_full(
         features=top_model["features"],

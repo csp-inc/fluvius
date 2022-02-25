@@ -39,7 +39,7 @@ information.
 The following command line scripts represent the building blocks of the fluvius
 workflow. These scripts are meant to be run in the order specified by the
 numeric prefix in the filenames. All of these files can be found in 'bin/', and 
-should be executed from from the Fluvius repo's root directory (e.g.
+should be executed from the Fluvius repo's root directory (e.g.
 :code:`python3 bin/01-usgs-station-acquire.py`)
 
 .. toctree::

@@ -38,14 +38,18 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Home</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Welcome to the fluvius documentation!</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="00a-background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00b-project-goals.html">Project goals</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00c-requirements.html">Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="00d-quickstart.html">Quickstart</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Command Line Scripts (bin)</span></p>
+<p class="caption" role="heading"><span class="caption-text">Command Line Scripts</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="01-usgs-station-acquire.html">01-usgs-station-acquire.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="02-preprocess-data.html">02-preprocess-data.py</a></li>
@@ -104,48 +108,42 @@ hard-coded.</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: 08-partition-data.py [-h] [--day-tolerance DAY_TOLERANCE]
                             [--cloud-thr CLOUD_THR]
                             [--buffer-distance BUFFER_DISTANCE]
-                            [--out-filetype {csv,json}]
                             [--mask-method1 {lulc,scl}]
-                            [--mask-method2 {mndwi,ndvi,}] [--n-folds N_FOLDS]
-                            [--seed SEED]
+                            [--mask-method2 {mndwi,ndvi,&quot;&quot;}]
+                            [--n-folds N_FOLDS] [--seed SEED]
 </pre></div>
 </div>
 <section id="Named Arguments">
 <h2>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline"></a></h2>
 <dl class="option-list">
 <dt><kbd>--day-tolerance</kbd></dt>
-<dd><p>Days of search around sample date</p>
+<dd><p>Days of search around sample date for a matching Sentinel             2 image.</p>
 <p>Default: 8</p>
 </dd>
 <dt><kbd>--cloud-thr</kbd></dt>
-<dd><p>Percent of cloud cover acceptable</p>
+<dd><p>Percent of cloud cover acceptable in the Sentinel tile             corresponding to the sample. If this threshold is surpassed,             no Sentinel image chip will be collected for the sample.</p>
 <p>Default: 80</p>
 </dd>
 <dt><kbd>--buffer-distance</kbd></dt>
-<dd><p>Search radius to use for reflectance data aggregation</p>
+<dd><p>Square search radius (in meters) to use for reflectance data             aggregation. This determines the size of the image chip that will             be extracted and processed.</p>
 <p>Default: 500</p>
-</dd>
-<dt><kbd>--out-filetype</kbd></dt>
-<dd><p>Possible choices: csv, json</p>
-<p>Filetype for saved merged dataframe (csv or json)</p>
-<p>Default: “csv”</p>
 </dd>
 <dt><kbd>--mask-method1</kbd></dt>
 <dd><p>Possible choices: lulc, scl</p>
-<p>Which data to use for masking non-water, scl only (“scl”), or io_lulc plus scl (“lulc”)</p>
+<p>Which data to use for masking (removing) non-water in order             to calculate aggreated reflectance values for only water pixels?             Choose (“scl”) to water pixels as identified based on the             Scene Classification Layer that accompanies the Snetinel tile,             or (“lulc”) to use Impact Observatory’s Land-Use/Land-Cover             layer to identify water, and the Scene Classification Layer to             remove clouds. Using “lulc” is strongly recommended.</p>
 <p>Default: “lulc”</p>
 </dd>
 <dt><kbd>--mask-method2</kbd></dt>
-<dd><p>Possible choices: mndwi, ndvi,</p>
-<p>Which additional normalized index to use, if any, to update the mask</p>
+<dd><p>Possible choices: mndwi, ndvi, “”</p>
+<p>Which additional normalized index to use, if any, to update         the mask to remove errors of ommission (pixels classified as water         that shouldn’t be) prior to calculated aggregated reflectance? If         “ndvi”, then only pixels with an NDVI value less than 0.25         will be retained. If “mndwi” (recommended) then only pixels with an         MNDWI value greater than 0 will be retained. Of “”, then no         secondary mask is used.</p>
 <p>Default: “mndwi”</p>
 </dd>
 <dt><kbd>--n-folds</kbd></dt>
-<dd><p>The number of folds to create for the training / validation set</p>
+<dd><p>The number of folds to create for the training / validation             set when fitting models using k-fold cross-validation.</p>
 <p>Default: 5</p>
 </dd>
 <dt><kbd>--seed</kbd></dt>
-<dd><p>The seed (an integer) used to initialize the pseudorandom number generator</p>
+<dd><p>The seed (an integer) used to initialize the pseudorandom             number generator for use in partitioning data.</p>
 <p>Default: 123</p>
 </dd>
 </dl>

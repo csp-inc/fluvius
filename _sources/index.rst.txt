@@ -8,11 +8,24 @@ Welcome to the fluvius documentation!
 
 .. important::
 
-    This documentation was generated on |today|, and is rebuilt on push events to the main branch.
+    This documentation was generated on |today|, and is rebuilt on push events 
+    to the main branch.
 
-Project Fluvius uses satellite imagery and AI to monitor the health of rivers in the Amazon and the U.S. by enabling near real-time prediction of suspended sediment concentration. The web app is visible `here <https://fluviuswebapp.z22.web.core.windows.net>`_.
+Project Fluvius uses satellite imagery and AI to monitor the health of rivers in
+the Amazon and the U.S. by enabling near real-time prediction of suspended
+sediment concentration. This website serves as documetation for the code in the
+project's `GitHub repository <https://github.com/csp-inc/fluvius>`_. The web app
+can be viewed `here <https://fluviuswebapp.z22.web.core.windows.net>`_.
 
-In the following sections, we provide an introduction to the project, and setup information.
+In the following sections, we provide an introduction to the project, and setup
+information.
+
+.. toctree::
+   :hidden:
+   :caption: Home
+   :maxdepth: 0
+
+   self
 
 .. toctree::
    :caption: Getting Started
@@ -23,10 +36,14 @@ In the following sections, we provide an introduction to the project, and setup 
    00c-requirements
    00d-quickstart
 
-The following command line scripts represent the building blocks of the fluvius workflow. These scripts are meant to be run in the order specified by the numeric prefix in the filenames. All of these files can be found in 'bin/'.
+The following command line scripts represent the building blocks of the fluvius
+workflow. These scripts are meant to be run in the order specified by the
+numeric prefix in the filenames. All of these files can be found in 'bin/', and 
+should be executed from from the Fluvius repo's root directory (e.g.
+:code:`python3 bin/01-usgs-station-acquire.py`)
 
 .. toctree::
-   :caption: Command Line Scripts (bin)
+   :caption: Command Line Scripts
    :maxdepth: 1
 
    01-usgs-station-acquire
@@ -45,3 +62,10 @@ The following command line scripts represent the building blocks of the fluvius 
    13-predict-tabular
    14-make-prediction-chips
    15-prep-data-for-app
+
+
+Authors
+=======
+- `Vincent A. Landau <https://github.com/vlandau>`_ - Technical co-lead
+- `Luke J. Zachmann <https://github.com/lzachmann>`_ - Technical co-lead
+- `Tony Chang <https://github.com/tonychangmsu>`_ - Principal Investigator

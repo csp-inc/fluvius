@@ -3,7 +3,7 @@ import numpy as np
 args_info = {
     "get_instantaneous": {
         "action": "store_true", # ensures the default value is False
-        "help": "Get instantaneous flow data or modeled continuous data."
+        "help": "Get instantaneous flow data or modeled flow data."
     },
     "write_to_csv": {
         "action": "store_true", # ensures the default value is False

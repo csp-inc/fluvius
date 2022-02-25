@@ -5,7 +5,6 @@ import folium
 import numpy as np
 import datetime
 import pandas as pd
-import sys
 import json
 import fsspec
 import pickle
@@ -15,7 +14,7 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import generic_filter as gf
 
@@ -48,30 +47,6 @@ class MultipleRegression(nn.Module):
             x = self.layer_out(x)
 
             return (x)
-
-def train_test_validate_split(df, proportions, part_colname = "partition"):
-    """
-    Takes a DataFrame (`df`) and splits it into train, test, and validate
-    partitions. Returns a DataFrame with a new column, `part_colname` specifying
-    which partition each row belongs to. `proportions` is a list of length 3 with
-    desired proportions for train, test, and validate partitions, in that order.
-    """
-    if sum(proportions) != 1 | len(proportions) != 3:
-        sys.exit("Error: proportions must be length 3 and sum to 1.")
-
-    # first sample train data
-    train = df.sample(frac=proportions[0], random_state=2)
-    train[part_colname] = "train"
-    # drop train data from the df
-    test_validate = df.drop(train.index)
-    # sample test data
-    test = test_validate.sample(frac=proportions[1]/sum(proportions[1:3]), random_state=2)
-    test[part_colname] = "test"
-    #drop test data from test_validate, leaving you with validate in correct propotion
-    validate = test_validate.drop(test.index)
-    validate[part_colname] = "validate"
-
-    return pd.concat([train, test, validate])
 
 
 def dates_to_julian(stddate):

@@ -17,13 +17,6 @@ sediment concentration. This website serves as documetation for the code in the
 project's `GitHub repository <https://github.com/csp-inc/fluvius>`_. The web app
 can be viewed `here <https://fluviuswebapp.z22.web.core.windows.net>`_.
 
-.. raw:: html
-
-   <div class="container">
-      <iframe class="responsive-iframe" src="https://earthengine.google.com/iframes/timelapse_player_embed.html#v=-2.26579,-53.55277,5.657,latLng&t=1.45&ps=100&bt=19840101&et=20201231&startDwell=0&endDwell=0" frameborder="0" allowfullscreen></iframe>
-   </div>
-   <p style="margin-bottom:1cm;"></p>
-
 In the following sections, we provide an introduction to the project, and setup
 information.
 
@@ -69,7 +62,6 @@ should be executed from from the Fluvius repo's root directory (e.g.
    bin/13-predict-tabular
    bin/14-make-prediction-chips
    bin/15-prep-data-for-app
-
 
 Authors
 =======

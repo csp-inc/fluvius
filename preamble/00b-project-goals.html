@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project goals &mdash; fluvius 0.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/dark_mode_css/general.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/dark_mode_css/dark.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/dark_mode_js/default_dark.js"></script>
+        <script src="../_static/dark_mode_js/theme_switcher.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Requirements" href="00c-requirements.html" />
+    <link rel="prev" title="Background" href="00a-background.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> fluvius
+            <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Home</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Fluvius</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="00a-background.html">Background</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Project goals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="00c-requirements.html">Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="00d-quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Command Line Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bin/01-usgs-station-acquire.html">01-usgs-station-acquire.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/02-preprocess-data.html">02-preprocess-data.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/03-image-join.html">03-image-join.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/04-data-merge.html">04-data-merge.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/05-prep-qa-chip-dataset.html">05-prep-qa-chip-dataset.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/06a-download-chips-for-qa.html">06a-download-chips-for-qa.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/06b-upload-good-chips-list.html">06b-upload-good-chips-list.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/07-remove-bad-obs.html">07-remove-bad-obs.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/08-partition-data.html">08-partition-data.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/09-MLP-grid-search.html">09-MLP-grid-search.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/10-compile-grid-search-results.html">10-compile-grid-search-results.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/11-fit-top-model.html">11-fit-top-model.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/12-prediction-inputs.html">12-prediction-inputs.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/13-predict-tabular.html">13-predict-tabular.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/14-make-prediction-chips.html">14-make-prediction-chips.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/15-prep-data-for-app.html">15-prep-data-for-app.py</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">fluvius</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Project goals</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/preamble/00b-project-goals.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="project-goals">
+<h1>Project goals<a class="headerlink" href="#project-goals" title="Permalink to this headline"></a></h1>
+<p>The central focus of project fluvius aims to understand the response of river basins after forest disturbance and restoration. Other goals include the advancement of remote sensing, artificial intelligence, and ecosystem monitoring.</p>
+<p>Progress / successes:</p>
+<ul class="simple">
+<li><p>Developed an automated pipeline for core datasets, including preprocessing and storage on a cloud based platform</p></li>
+<li><p>Trained and evaluated various deep learning models to predict total suspended sediment (TSS) using water station data and satellite imagery</p></li>
+<li><p>Identified the top performing architectures using a hyperparameter grid search</p></li>
+<li><p>Used observations from sites withheld from training to evaluate the out-of-sample predictive performance of the top model, and compared our performance to existing benchmarks</p></li>
+</ul>
+<p>Future work:</p>
+<ul class="simple">
+<li><p>Deploy the deep learning model on the entire Itacaiúnas River watershed over space and time</p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="00a-background.html" class="btn btn-neutral float-left" title="Background" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="00c-requirements.html" class="btn btn-neutral float-right" title="Requirements" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Conservation Science Partners.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

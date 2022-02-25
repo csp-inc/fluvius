@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Requirements &mdash; fluvius 0.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/dark_mode_css/general.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/dark_mode_css/dark.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/dark_mode_js/default_dark.js"></script>
+        <script src="../_static/dark_mode_js/theme_switcher.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Quickstart" href="00d-quickstart.html" />
+    <link rel="prev" title="Project goals" href="00b-project-goals.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> fluvius
+            <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Home</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Fluvius</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="00a-background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="00b-project-goals.html">Project goals</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Requirements</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#resource-group">Resource Group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#azure-virtual-machine">Azure Virtual Machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#azure-blob-storage">Azure Blob Storage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#docker">Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#authentication">Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-credentials">Building Credentials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-docker">Running Docker</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="00d-quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Command Line Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bin/01-usgs-station-acquire.html">01-usgs-station-acquire.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/02-preprocess-data.html">02-preprocess-data.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/03-image-join.html">03-image-join.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/04-data-merge.html">04-data-merge.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/05-prep-qa-chip-dataset.html">05-prep-qa-chip-dataset.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/06a-download-chips-for-qa.html">06a-download-chips-for-qa.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/06b-upload-good-chips-list.html">06b-upload-good-chips-list.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/07-remove-bad-obs.html">07-remove-bad-obs.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/08-partition-data.html">08-partition-data.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/09-MLP-grid-search.html">09-MLP-grid-search.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/10-compile-grid-search-results.html">10-compile-grid-search-results.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/11-fit-top-model.html">11-fit-top-model.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/12-prediction-inputs.html">12-prediction-inputs.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/13-predict-tabular.html">13-predict-tabular.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/14-make-prediction-chips.html">14-make-prediction-chips.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bin/15-prep-data-for-app.html">15-prep-data-for-app.py</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">fluvius</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Requirements</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/preamble/00c-requirements.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="requirements">
+<h1>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline"></a></h1>
+<section id="resource-group">
+<h2>Resource Group<a class="headerlink" href="#resource-group" title="Permalink to this headline"></a></h2>
+<p>Users must create a resource group within the Active Directory they are working in. See this documentation <a class="reference external" href="https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/manage-resource-groups-portal">here</a>.</p>
+</section>
+<section id="azure-virtual-machine">
+<h2>Azure Virtual Machine<a class="headerlink" href="#azure-virtual-machine" title="Permalink to this headline"></a></h2>
+<p>For individual projects, users can <a class="reference external" href="https://docs.microsoft.com/en-us/azure/virtual-machines/linux/quick-create-portal">create a virtual machine</a>. To allow use of the various open source libraries required for this project, we suggest using an Ubunut Linux based VM. See pricing <a class="reference external" href="https://azure.microsoft.com/en-us/pricing/details/virtual-machines/linux/">here</a>.</p>
+</section>
+<section id="azure-blob-storage">
+<h2>Azure Blob Storage<a class="headerlink" href="#azure-blob-storage" title="Permalink to this headline"></a></h2>
+<p>Users must have an Azure Blob Storage account and an associated <a class="reference external" href="https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction">storage container</a> for data to be transfered from the Microsoft Planetary Computer. See following <a class="reference external" href="https://planetarycomputer.microsoft.com/">link</a> to acquire a planetary computer account.</p>
+</section>
+<section id="docker">
+<h2>Docker<a class="headerlink" href="#docker" title="Permalink to this headline"></a></h2>
+<p>This pipeline requires Docker to function properly. Please install <a class="reference external" href="https://docs.docker.com/engine/install/ubuntu/">Docker Engine</a> for your environment, on the same machine to which you cloned this repository.</p>
+</section>
+<section id="authentication">
+<h2>Authentication<a class="headerlink" href="#authentication" title="Permalink to this headline"></a></h2>
+<p>This pipeline requires authentication to both Azure Blob Storage and Planetary Computer. If you do not wish to use your account, and instead use the CSP service account to log into these services, please contact <a class="reference external" href="https://www.csp-inc.org/about-us/contact-us/">CSP</a>. If, however, you wish to use your own credentials for authenticating to Blob Storage and Planetary Computer, please follow the instructions contained within the “Building Environment Variables” section of the User Guide.</p>
+</section>
+<section id="building-credentials">
+<h2>Building Credentials<a class="headerlink" href="#building-credentials" title="Permalink to this headline"></a></h2>
+<p>To do store the initial data processing results you will need to provide your credentials by modifying a <cite>credentials</cite> file, which will populate the environment variables used in the script pipeline to send data to blob storage.</p>
+</section>
+<section id="running-docker">
+<h2>Running Docker<a class="headerlink" href="#running-docker" title="Permalink to this headline"></a></h2>
+<p>The Docker container that runs the pipeline has all the dependencies pre-installed to work for data extraction and modeling. <a class="reference external" href="https://docs.docker.com/engine/reference/run/">Example docker run</a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="00b-project-goals.html" class="btn btn-neutral float-left" title="Project goals" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="00d-quickstart.html" class="btn btn-neutral float-right" title="Quickstart" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Conservation Science Partners.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

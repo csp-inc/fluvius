@@ -5,10 +5,6 @@ from src.defaults import args_info
 
 def return_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--qa-chip-list-name',
-        default=args_info["qa_chip_list_name"]["default"],
-        type=args_info["qa_chip_list_name"]["type"],
-        help=args_info["qa_chip_list_name"]["help"])
     parser.add_argument('--day-tolerance',
         default=args_info["day_tolerance"]["default"],
         type=args_info["day_tolerance"]["type"],

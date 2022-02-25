@@ -1,5 +1,5 @@
-[![Docker](https://github.com/csp-inc/fluvius/actions/workflows/docker.yml/badge.svg?branch=ljz%2Fdev)](https://github.com/csp-inc/fluvius/actions/workflows/docker.yml)
-[![GitHub Pages](https://github.com/csp-inc/fluvius/actions/workflows/gh-pages.yml/badge.svg?branch=ljz%2Fdev)](https://github.com/csp-inc/fluvius/actions/workflows/gh-pages.yml)
+[![Docker](https://github.com/csp-inc/fluvius/actions/workflows/docker.yml/badge.svg?branch=main)](https://github.com/csp-inc/fluvius/actions/workflows/docker.yml)
+[![GitHub Pages](https://github.com/csp-inc/fluvius/actions/workflows/gh-pages.yml/badge.svg?branch=main)](https://github.com/csp-inc/fluvius/actions/workflows/gh-pages.yml)
 
 # fluvius
 

@@ -9,6 +9,7 @@ on:
       - "docs/source/**"
       - ".github/actions/document/**"
       - ".github/workflows/gh-pages.yml"
+      - "src/defaults.py"
       - "!README.md" # don't rebuild on changes to the project README
   # pull_request: # triggers workflow on pull request events
   #   branches: [ "main" ] # ensures changes are "mergeable"

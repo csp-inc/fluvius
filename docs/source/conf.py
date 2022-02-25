@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'fluvius'
-copyright = '2022, CSP'
-author = 'CSP'
+copyright = '2022, Conservation Science Partners'
+author = 'Conservation Science Partners'
 
 # The full version, including alpha/beta/rc tags
 release = '0.1'
@@ -31,7 +31,7 @@ release = '0.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'myst_parser', 'sphinxarg.ext'
+    'myst_parser', 'sphinxarg.ext', 'sphinx.ext.autodoc', 'sphinx_rtd_dark_mode'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -47,11 +47,23 @@ exclude_patterns = []
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
 html_theme = "sphinx_rtd_theme" # "alabaster"
 html_logo = "_static/logo.jpg"
+html_favicon = "favicon.ico"
+
+# user starts in dark mode
+default_dark_mode = True
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# These paths are either relative to html_static_path
+# or fully qualified paths (eg. https://...)
+html_css_files = [
+    'css/custom.css',
+]
+
+## Don't do syntax highlighting in code
+highlight_language = 'none'

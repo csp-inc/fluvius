@@ -5,6 +5,7 @@ import multiprocessing as mp
 import pickle, hashlib, argparse, psutil
 import torch.nn as nn
 import json
+import numpy as np
 from src.defaults import args_info
     
 def return_parser():
@@ -179,7 +180,11 @@ if __name__ == "__main__":
         else:
             print("Model output already exists. Skipping...")
 
-    print(f"Beginning model fits with {args.n_workers} workers in parallel...")        
-  
-    my_pool = mp.Pool(processes=args.n_workers)
+    n_workers = args.n_workers
+    if np.isnan(n_workers):
+        n_workers = psutil.cpu_count(logical = False)
+
+    print(f"Beginning model fits with {n_workers} workers in parallel...")        
+
+    my_pool = mp.Pool(processes=n_workers)
     my_pool.map(fit_model, permutations, chunksize=4)

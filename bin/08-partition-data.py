@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import os, sys
 sys.path.append("/content")
-# from src.utils import train_test_validate_split
 import datetime as dt
 import argparse
 from src.defaults import args_info
@@ -22,11 +21,6 @@ def return_parser():
         default=args_info["buffer_distance"]["default"],
         type=args_info["buffer_distance"]["type"],
         help=args_info["buffer_distance"]["help"])
-    parser.add_argument('--out-filetype',
-        default=args_info["out_filetype"]["default"],
-        type=args_info["out_filetype"]["type"],
-        choices=args_info["out_filetype"]["choices"],
-        help=args_info["out_filetype"]["help"])
     parser.add_argument('--mask-method1',
         default=args_info["mask_method1"]["default"],
         type=args_info["mask_method1"]["type"],
@@ -55,7 +49,7 @@ if __name__ == "__main__":
     chip_size = args.buffer_distance
     day_tolerance = args.day_tolerance
     cloud_thr = args.cloud_thr
-    out_filetype = args.out_filetype
+    out_filetype = "csv"
     mm1 = args.mask_method1
     mm2 = args.mask_method2
     n_folds = args.n_folds

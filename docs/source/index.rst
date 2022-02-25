@@ -3,17 +3,20 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to the fluvius documentation!
-=====================================
+Fluvius
+=======
 
 .. important::
 
     This documentation was generated on |today|, and is rebuilt on push events 
     to the main branch.
 
-Project Fluvius uses satellite imagery and AI to monitor the health of rivers in
-the Amazon and the U.S. by enabling near real-time prediction of suspended
-sediment concentration. This website serves as documetation for the code in the
+Project fluvius is a collaboration between the `Analytics Lab at Conservation Science
+Partners <https://analytics-lab.org/>`_, the `Instituto Tecnologico Vale <www.itv.org>`_, 
+and `Microsoft Brazil <https://www.microsoft.com/en-us/ai/ai-for-earth>`_. Project Fluvius 
+uses satellite imagery and AI to monitor the health of rivers in
+the Amazon and the U.S. by enabling prediction of suspended sediment concentration. 
+This website serves as documetation for the code in the
 project's `GitHub repository <https://github.com/csp-inc/fluvius>`_. The web app
 can be viewed `here <https://fluviuswebapp.z22.web.core.windows.net>`_.
 
@@ -39,7 +42,7 @@ information.
 The following command line scripts represent the building blocks of the fluvius
 workflow. These scripts are meant to be run in the order specified by the
 numeric prefix in the filenames. All of these files can be found in 'bin/', and 
-should be executed from from the Fluvius repo's root directory (e.g.
+should be executed from the Fluvius repo's root directory (e.g.
 :code:`python3 bin/01-usgs-station-acquire.py`)
 
 .. toctree::

@@ -11,6 +11,11 @@ on:
       - ".github/workflows/gh-pages.yml"
       - "src/defaults.py"
       - "!README.md" # don't rebuild on changes to the project README
+  workflow_run:
+    workflows: [ "Docker" ]
+    branches: [ "main" ]
+    types: 
+      - completed
   # pull_request: # triggers workflow on pull request events
   #   branches: [ "main" ] # ensures changes are "mergeable"
 

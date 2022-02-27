@@ -95,8 +95,6 @@ if __name__ == "__main__":
 
     # Getting station feature data in for loop
     stations = ds.df["site_no"]
-    cloud_threshold = cloud_thr
-    day_tol = day_tolerance
     for station in stations:
         try:
             ds.get_station_data(station)
@@ -107,7 +105,7 @@ if __name__ == "__main__":
                 continue
             else:
                 ds.station[station].get_cloud_filtered_image_df(cloud_thr)
-                ds.station[station].merge_image_df_with_samples(day_tol)
+                ds.station[station].merge_image_df_with_samples(day_tolerance)
                 if len(ds.station[station].merged_df) == 0:
                     print(f"No cloud-free images for station {station}. Skipping...")
                     continue

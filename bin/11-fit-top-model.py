@@ -1,6 +1,6 @@
 import os, sys, pandas as pd, pickle, copy, argparse, json
 sys.path.append("/content")
-from src.utils import fit_mlp_full, MultipleRegression
+from src.utils import fit_mlp_full
 from src.defaults import args_info
 
 with open("/content/credentials") as f:

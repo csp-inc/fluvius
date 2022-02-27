@@ -2,7 +2,7 @@ import os, sys, itertools
 sys.path.append("/content")
 from src.utils import fit_mlp_cv
 import multiprocessing as mp
-import pickle, hashlib, argparse, psutil
+import hashlib, argparse, psutil
 import torch.nn as nn
 import json
 import numpy as np
@@ -45,6 +45,10 @@ def return_parser():
 if __name__ == "__main__":
 
     args = return_parser().parse_args()
+
+    n_workers = args.n_workers
+    if np.isnan(n_workers):
+        n_workers = psutil.cpu_count(logical = False)
     cloud_thr = args.cloud_thr
     buffer_distance = args.buffer_distance
     mm1 = args.mask_method1
@@ -63,9 +67,7 @@ if __name__ == "__main__":
                        "account_key":os.environ["BLOB_KEY"]}
     
     #### Set possible values for each argument
-    buffer_distance = 500
     day_tolerance = 8
-    cloud_thr = 80
     min_water_pixels = 20
 
     features = [
@@ -123,9 +125,9 @@ if __name__ == "__main__":
         ]
     ]
 
-    epochs = [15000]
-    batch_size = [16, 32]
     learning_rate = [0.0001, 0.0005]
+    batch_size = [16, 32]
+    epochs = [15000]
 
     layer_out_neurons = [
         [5, 3, 2],
@@ -135,8 +137,9 @@ if __name__ == "__main__":
         [6, 3]
     ]
 
-    activation = [nn.PReLU(num_parameters=1), nn.SELU()]
     weight_decay = [0, 1e-2]
+    activation = [nn.PReLU(num_parameters=1), nn.SELU()]
+    
     permutations = list(
         itertools.product(
             features,
@@ -148,6 +151,7 @@ if __name__ == "__main__":
             activation,
         )
     )
+
     print(f"Fitting {len(permutations)} models...")
     if not os.path.exists(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}"):
         os.makedirs(f"output/mlp/{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}")
@@ -165,24 +169,19 @@ if __name__ == "__main__":
                 epochs=args[3],
                 storage_options=storage_options,
                 activation_function=args[6],
-                day_tolerance=8,
+                day_tolerance=day_tolerance,
                 cloud_thr=cloud_thr,
                 mask_method1=mm1,
-                mask_method2="mndwi",
-                min_water_pixels=20,
+                mask_method2=mm2,
+                min_water_pixels=min_water_pixels,
                 layer_out_neurons=args[4],
                 weight_decay=args[5],
                 verbose=False
             )
-            
             with open(fn, 'w') as f:
                 json.dump(model_out, f)
         else:
             print("Model output already exists. Skipping...")
-
-    n_workers = args.n_workers
-    if np.isnan(n_workers):
-        n_workers = psutil.cpu_count(logical = False)
 
     print(f"Beginning model fits with {n_workers} workers in parallel...")        
 

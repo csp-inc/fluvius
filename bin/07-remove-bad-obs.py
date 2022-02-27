@@ -1,6 +1,4 @@
 import os, pandas as pd, argparse
-
-from pandas.core.algorithms import diff
 from src.defaults import args_info
 
 def return_parser():

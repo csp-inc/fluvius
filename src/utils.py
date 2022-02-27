@@ -112,7 +112,7 @@ def fit_mlp_cv(
         cloud_thr=80,
         mask_method1="lulc",
         mask_method2="mndwi",
-        min_water_pixels=10,
+        min_water_pixels=20,
         layer_out_neurons=[4, 4, 2],
         weight_decay=1e-2,
         n_folds=5,
@@ -526,7 +526,7 @@ def fit_mlp_full_nolog(
         cloud_thr=80,
         mask_method1="lulc",
         mask_method2="mndwi",
-        min_water_pixels=10,
+        min_water_pixels=20,
         layer_out_neurons=[24, 12, 6],
         weight_decay=1e-2,
         verbose=True,
@@ -535,7 +535,7 @@ def fit_mlp_full_nolog(
     n_layers = len(layer_out_neurons)
 
     # Read the data
-    # TODO update these filepaths once python version of data partitioning is done, will need to be defined based on mask_method2 and mask_method2 args to function, as well as buffer, day tol, etc.
+    # TODO: update these filepaths once python version of data partitioning is done, will need to be defined based on mask_method2 and mask_method2 args to function, as well as buffer, day tol, etc.
     if mask_method2 == "ndvi":
         fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
     elif mask_method2 == "mndwi":

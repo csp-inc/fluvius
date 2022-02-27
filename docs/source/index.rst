@@ -66,6 +66,12 @@ should be executed from the Fluvius repo's root directory (e.g.
    bin/14-make-prediction-chips
    bin/15-prep-data-for-app
 
+.. toctree::
+   :caption: Internals
+   :maxdepth: 1
+
+   utils
+
 Authors
 =======
 - `Vincent A. Landau <https://github.com/vlandau>`_ - Technical co-lead

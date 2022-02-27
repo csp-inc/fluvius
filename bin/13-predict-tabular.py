@@ -1,7 +1,6 @@
 ### Environment setup
 import sys, os
 sys.path.append('/content')
-from src.fluvius import WaterData
 import json
 import pandas as pd
 import argparse

@@ -1,10 +1,6 @@
-from pystac_client import Client
-import planetary_computer as pc
 import os
 import pandas as pd
 import fsspec
-import numpy as np
-import geopandas as gpd
 import argparse
 from src.defaults import args_info
 

@@ -122,8 +122,9 @@ def fit_mlp_cv(
     n_layers = len(layer_out_neurons)
     torch.set_num_threads(1)
     # Read the data
+    # fp = f"data/partitioned_feature_data_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
+    # data = pd.read_csv(fp)
     fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
-
     data = pd.read_csv(fp, storage_options=storage_options)
 
     data = data[data["partition"] != "testing"]
@@ -514,7 +515,7 @@ def fit_mlp_full(
     return output
 
 
-def fit_mlp_full_nolog(
+def fit_mlp_full_nolog( # TODO: delete or deprecate?
         features,
         learning_rate,
         batch_size,

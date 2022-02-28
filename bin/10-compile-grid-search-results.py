@@ -1,4 +1,6 @@
-import os, pandas as pd, argparse, json
+import os, sys, argparse, json
+import pandas as pd
+sys.path.append("/content")
 from src.defaults import args_info
 
 with open("/content/credentials") as f:

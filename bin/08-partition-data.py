@@ -137,10 +137,10 @@ if __name__ == "__main__":
             "n_sites": x["site_no"].nunique(),
             "n_obs": x["sample_id"].nunique()
         })) # does not include explicit zeros (e.g., the zero count for the usgs test partition)
-    # print(partitions_summary.reset_index())
-    # ps_path = f"data/partitions_summary_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv"
-    ps_filepath = f"az://modeling-data/partitions_summary_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv"
+    
+    # ps_filepath = f"data/partitions_summary_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv"
     # partitions_summary.to_csv(ps_filepath)
+    ps_filepath = f"az://modeling-data/partitions_summary_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv"
     partitions_summary.to_csv(ps_filepath, storage_options=storage_options)
 
     # create folds
@@ -183,12 +183,12 @@ if __name__ == "__main__":
     # out.drop(["fold"], axis = 1, inplace=True)
     out["partition"] = ["testing" if np.isnan(x) else "training" for x in out["fold"]]
 
+    # out_filepath = f"data/partitioned_feature_data_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.{out_filetype}"
     out_filepath = f"az://modeling-data/partitioned_feature_data_buffer{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.{out_filetype}"
     if out_filetype == "csv":
         # out.to_csv(out_filepath)
         out.to_csv(out_filepath, storage_options=storage_options)
     elif out_filetype == "json":
-        # "Okay"
         out.to_json(out_filepath, storage_options=storage_options)
 
     print(f"Done. Outputs written to {out_filepath}")

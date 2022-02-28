@@ -46,7 +46,7 @@ def return_parser():
 if __name__ == "__main__":
     
     args = return_parser().parse_args()
-    cloud_thr = args.cloud_thr
+    cloud_thr = args.cloud_thr # TODO: talk to Vincent, I'm not sure these make sense if they are 'inherited' from the top model
     buffer_distance = args.buffer_distance
     mm1 = args.mask_method1
     mm2 = args.mask_method2
@@ -55,6 +55,7 @@ if __name__ == "__main__":
 
     results = pd.read_csv(f"az://model-output/mlp/grid_search_metadata_{buffer_distance}m_cloudthr{cloud_thr}_{mm1}{mm2}_masking_{n_folds}folds_seed{seed}.csv", storage_options=storage_options)
 
+    # Compute the overall mean MSE as the average of the site MSE (mean of the site mean MSEs) and the pooled MSE.
     results["mean_mse"] = (results["val_site_mse"] + results["val_pooled_mse"]) / 2
 
     with open(results.iloc[results["mean_mse"].argmin(), :]["path"], "rb") as f:
@@ -69,8 +70,8 @@ if __name__ == "__main__":
         activation_function=eval(f'nn.{top_model["activation"]}'),
         day_tolerance=top_model["day_tolerance"],
         cloud_thr=top_model["cloud_thr"],
-        mask_method1="lulc",
-        mask_method2="mndwi",
+        mask_method1=mm1,
+        mask_method2=mm2,
         min_water_pixels=20,
         layer_out_neurons=top_model["layer_out_neurons"],
         weight_decay=top_model["weight_decay"],

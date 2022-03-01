@@ -539,13 +539,13 @@ def fit_mlp_full(
     return output
 
 
-def plot_obs_predict(obs_pred, title, units = "log(SSC)", savefig=False, outfn=""):
+def plot_obs_predict(obs_pred, title, units="log(SSC)", savefig=False, outfn=""):
     plt.figure(figsize=(8,8))
     max_val = np.maximum(np.max(obs_pred.iloc[:,0]), np.max(obs_pred.iloc[:,1]))
     plt.plot(list(range(0, round(max_val) + 1)), list(range(0,round(max_val) + 1)), color="black", label="One-to-one 1 line")
-    plt.scatter(obs_pred["pred"], obs_pred["obs"])
-    plt.xlabel(f"{units} Predicted")
-    plt.ylabel(f"{units} Observed")
+    plt.scatter(obs_pred["obs"], obs_pred["pred"])
+    plt.xlabel(f"{units} Observed")
+    plt.ylabel(f"{units} Predicted")
     plt.title(title)
     plt.legend()
     if savefig:

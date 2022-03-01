@@ -121,7 +121,8 @@ RUN pip3 install \
     sphinx==4.2.0 \
     myst-parser==0.17.0 \
     sphinx-argparse==0.3.1 \
-    sphinx-rtd-theme==1.0.0
+    sphinx-rtd-theme==1.0.0 \
+    sphinx-rtd-dark-mode==1.2.4
 
 # Install azcopy
 RUN curl -L https://azcopyvnext.azureedge.net/release20210901/azcopy_linux_amd64_10.12.1.tar.gz > /tmp/azcopy.tar.gz

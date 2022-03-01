@@ -3,17 +3,20 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to the fluvius documentation!
-=====================================
+Fluvius
+=======
 
 .. important::
 
     This documentation was generated on |today|, and is rebuilt on push events 
     to the main branch.
 
-Project Fluvius uses satellite imagery and AI to monitor the health of rivers in
-the Amazon and the U.S. by enabling near real-time prediction of suspended
-sediment concentration. This website serves as documetation for the code in the
+Project fluvius is a collaboration between the `Analytics Lab at Conservation Science
+Partners <https://analytics-lab.org/>`_, the `Instituto Tecnologico Vale <www.itv.org>`_, 
+and `Microsoft Brazil <https://www.microsoft.com/en-us/ai/ai-for-earth>`_. Project Fluvius 
+uses satellite imagery and AI to monitor the health of rivers in
+the Amazon and the U.S. by enabling prediction of suspended sediment concentration. 
+This website serves as documetation for the code in the
 project's `GitHub repository <https://github.com/csp-inc/fluvius>`_. The web app
 can be viewed `here <https://fluviuswebapp.z22.web.core.windows.net>`_.
 
@@ -31,38 +34,37 @@ information.
    :caption: Getting Started
    :maxdepth: 1
 
-   00a-background
-   00b-project-goals
-   00c-requirements
-   00d-quickstart
+   preamble/00a-background
+   preamble/00b-project-goals
+   preamble/00c-requirements
+   preamble/00d-quickstart
 
 The following command line scripts represent the building blocks of the fluvius
 workflow. These scripts are meant to be run in the order specified by the
 numeric prefix in the filenames. All of these files can be found in 'bin/', and 
-should be executed from from the Fluvius repo's root directory (e.g.
+should be executed from the Fluvius repo's root directory (e.g.
 :code:`python3 bin/01-usgs-station-acquire.py`)
 
 .. toctree::
    :caption: Command Line Scripts
    :maxdepth: 1
 
-   01-usgs-station-acquire
-   02-preprocess-data
-   03-image-join
-   04-data-merge
-   05-prep-qa-chip-dataset
-   06a-download-chips-for-qa
-   06b-upload-good-chips-list
-   07-remove-bad-obs
-   08-partition-data
-   09-MLP-grid-search
-   10-compile-grid-search-results
-   11-fit-top-model
-   12-prediction-inputs
-   13-predict-tabular
-   14-make-prediction-chips
-   15-prep-data-for-app
-
+   bin/01-usgs-station-acquire
+   bin/02-preprocess-data
+   bin/03-image-join
+   bin/04-data-merge
+   bin/05-prep-qa-chip-dataset
+   bin/06a-download-chips-for-qa
+   bin/06b-upload-good-chips-list
+   bin/07-remove-bad-obs
+   bin/08-partition-data
+   bin/09-MLP-grid-search
+   bin/10-compile-grid-search-results
+   bin/11-fit-top-model
+   bin/12-prediction-inputs
+   bin/13-predict-tabular
+   bin/14-make-prediction-chips
+   bin/15-prep-data-for-app
 
 Authors
 =======

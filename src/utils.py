@@ -112,13 +112,61 @@ def fit_mlp_cv(
         cloud_thr=80,
         mask_method1="lulc",
         mask_method2="mndwi",
-        min_water_pixels=10,
+        min_water_pixels=20,
         layer_out_neurons=[4, 4, 2],
         weight_decay=1e-2,
         n_folds=5,
         seed=123,
         verbose=True
-    ):    
+    ):   
+    """
+    Fit an MLP model using crossfold validation. This function is used to run models
+    for the hyperparameter grid search.
+
+    Arguments:
+    features: List. A list of strings corresponding to the features that should
+        be used for model training. Must contain a subset of the following:
+        ["sentinel-2-l2a_AOT","sentinel-2-l2a_B02", "sentinel-2-l2a_B03", 
+        "sentinel-2-l2a_B04", "sentinel-2-l2a_B08", "sentinel-2-l2a_WVP", 
+        "sentinel-2-l2a_B05", "sentinel-2-l2a_B06", "sentinel-2-l2a_B07", 
+        "sentinel-2-l2a_B8A", "sentinel-2-l2a_B11", "sentinel-2-l2a_B12", 
+        "mean_viewing_azimuth", "mean_viewing_zenith", "mean_solar_azimuth",
+        "is_brazil"]
+    learning_rate: Float. The starting learning rate to use for training.
+    batch_size: Integer. The batch size to use for training.
+    epochs: Integer. The number of training epochs to run.
+    storage_options: Dictionary. A dictionary with the storage name and 
+        connection string to connect to Azure blob storage.
+    activation_function: The function (from torch.nn) to use for activation 
+        layers in the MLP. Default nn.SELU()
+    buffer_distance: Integer. The buffer distance used for preprocessing training
+        data (command line arg to bin/ scripts). Default 500
+    day_tolerance: Integer. The maximum threshold used during data preprocessing
+        for the number of days between an observation and associated Sentinel 2
+        chip (command line arg to bin/ scripts). Default 8.
+    cloud_thr: Float (0-100). The percent of cloud cover acceptable in the Sentinel 
+        tile corresponding to any given sample during data preprocessing. 
+        (command line arg to bin/ scripts). Default 80.
+    mask_method1: String ("lulc" or "scl"): The primary mask method used to
+        prepare training data (command line arg to bin/ scripts). Default "lulc"
+    mask_method2: String ("mndwi", "ndvi", or ""): The secondary mask method used
+        to prepare training data (command line arg to bin/ scripts). Default "mndwi".
+    min_water_pixels: Integer. The minimum number of water pixels used to calculate 
+        aggregate reflectances for a given sample. Samples with fewer than this
+        number of water pixels will not be used in training. Default 20.
+    layer_out_neurons: List of Integers. A list of length equal to the desired
+        number of hidden layers in the MLP, with elements corresponding to the 
+        number of neurons desired for each layer. Default [4, 4, 2].
+    weight_decay: Float. The weight decay to use when calculating loss. 
+        Default 1e-2.
+    n_folds: Integer. The number of folds in the training data (command line
+        argument in bin/ scripts). Default 5.
+    seed: Integer. The seed used to initialize the pseudorandom number generator
+        for use in partitioning data into train/validate folds and a separate
+        test partition. Default 123.
+    verbose: Boolean. Should output on training progress be printed? Default True.
+    """
+
     n_layers = len(layer_out_neurons)
     torch.set_num_threads(1)
     # Read the data
@@ -515,6 +563,18 @@ def fit_mlp_full(
 
 
 def plot_obs_predict(obs_pred, title, units="log(SSC)", savefig=False, outfn=""):
+    """
+    Plot observations vs. Predictions:
+    
+    Arguments:
+    obs_pred: A Pandas DataFrame containing a column of predictions called "pred"
+        and a column of observations called "obs".
+    title: String. The title for the plot
+    units: String. The units/labal that should be used in axes.
+    savefig: Boolean. Should the plot be saved
+    outfn: String. If savefig is True, the file name where the plot should be
+        saved
+    """
     plt.figure(figsize=(8,8))
     max_val = np.maximum(np.max(obs_pred.iloc[:,0]), np.max(obs_pred.iloc[:,1]))
     plt.plot(list(range(0, round(max_val) + 1)), list(range(0,round(max_val) + 1)), color="black", label="One-to-one 1 line")

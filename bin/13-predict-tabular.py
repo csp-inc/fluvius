@@ -77,7 +77,7 @@ if __name__ == "__main__":
     with fs.open(f"{model_path}_metadata.json", "r") as f:
         meta = json.load(f)
 
-    model = MultipleRegression(len(meta["features"]), len(meta["layer_out_neurons"]), meta["layer_out_neurons"], activation_function=eval(f'nn.{meta["activation"]}'))
+    model = MultipleRegression(len(meta["features"]), meta["layer_out_neurons"], activation_function=eval(f'nn.{meta["activation"]}'))
 
     with fs.open(f"{model_path}.pt", "rb") as f:
         model.load_state_dict(torch.load(f))

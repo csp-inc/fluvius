@@ -17,11 +17,57 @@ from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import generic_filter as gf
 
-import sys
-sys.path.append('/content')
-from src.fluvius import MultipleRegression
+class MultipleRegression(nn.Module):
+    """A custom class for use in PyTorch that builds an MLP model based on 
+    user-supplied parameters.
+    """
 
-# Utility functions.
+    def __init__(self, num_features, layer_out_neurons, activation_function):
+        """Initializes the MLP based on user-provided parameters.
+
+        Parameters
+        ----------
+        num_features : int
+            The number of features for the model (i.e. the number of neurons in 
+            the first layer)
+        layer_out_neurons : list of int
+            A list of length equal to the desired number of hidden layers in the 
+            MLP, with elements corresponding to the number of neurons desired for
+            each layer.
+        activation_function : function
+            The function (from torch.nn) to use for activation layers in the MLP. 
+        """
+
+        super(MultipleRegression, self).__init__()
+
+        self.layer_out_neurons = layer_out_neurons
+        n_layers = len(layer_out_neurons)
+        self.n_layers = n_layers
+
+        most_recent_n_neurons = layer_out_neurons[0]
+        self.layer_1 = nn.Linear(num_features, layer_out_neurons[0])
+
+        for i in range(2, n_layers + 1):
+            setattr(
+                self,
+                f"layer_{i}",
+                nn.Linear(layer_out_neurons[i-2], layer_out_neurons[i-1])
+            )
+            most_recent_n_neurons = layer_out_neurons[i-1]
+
+        self.layer_out = nn.Linear(most_recent_n_neurons, 1)
+        self.activate = activation_function
+
+
+    def forward(self, inputs):
+        x = self.activate(self.layer_1(inputs))
+        for i in range(2, self.n_layers + 1):
+            x = self.activate(getattr(self, f"layer_{i}")(x))
+        x = self.layer_out(x)
+
+        return (x)
+
+
 def normalized_diff(b1, b2):
     b1 = b1.astype(float)
     b2 = b2.astype(float)
@@ -106,12 +152,12 @@ def fit_mlp_cv(
     features : list of str
         A list of strings corresponding to the features that 
         should be used for model training. Must contain a subset of the following:
-        `["sentinel-2-l2a_AOT","sentinel-2-l2a_B02", "sentinel-2-l2a_B03", 
+        ["sentinel-2-l2a_AOT", "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", 
         "sentinel-2-l2a_B04", "sentinel-2-l2a_B08", "sentinel-2-l2a_WVP", 
         "sentinel-2-l2a_B05", "sentinel-2-l2a_B06", "sentinel-2-l2a_B07", 
         "sentinel-2-l2a_B8A", "sentinel-2-l2a_B11", "sentinel-2-l2a_B12", 
         "mean_viewing_azimuth", "mean_viewing_zenith", "mean_solar_azimuth",
-        "is_brazil"]`
+        "is_brazil"]
     learning_rate : float
         The starting learning rate to use for training.
     batch_size : int
@@ -164,8 +210,6 @@ def fit_mlp_cv(
     n_layers = len(layer_out_neurons)
     torch.set_num_threads(1)
     # Read the data
-    # fp = f"data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
-    # data = pd.read_csv(fp)
     fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
     data = pd.read_csv(fp, storage_options=storage_options)
 
@@ -226,7 +270,7 @@ def fit_mlp_cv(
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        model = MultipleRegression(num_features, n_layers, layer_out_neurons, activation_function)
+        model = MultipleRegression(num_features, layer_out_neurons, activation_function)
         model.to(device)
 
         criterion = nn.MSELoss()
@@ -391,7 +435,74 @@ def fit_mlp_full(
         n_folds=5,
         seed=123,
         verbose=True
-    ):    
+    ):
+    """Fit an MLP model using the entire training set. This function is used to
+    fit the top model identified from the grid search using all of the training
+    data. Two files are written to Azure Blob storage: a model checkpoint 
+    (.pt file), and a model metadata file (.json). Files are witten to the 
+    model-outputs container in the fluviusdata storage account. NOTE: Running 
+    this function will overwrite results on Azure Blob Storage, so use this 
+    function with caution.
+
+    Parameters
+    ----------
+    features : list of str
+        A list of strings corresponding to the features that 
+        should be used for model training. Must contain a subset of the following:
+        `["sentinel-2-l2a_AOT", "sentinel-2-l2a_B02", "sentinel-2-l2a_B03", 
+        "sentinel-2-l2a_B04", "sentinel-2-l2a_B08", "sentinel-2-l2a_WVP", 
+        "sentinel-2-l2a_B05", "sentinel-2-l2a_B06", "sentinel-2-l2a_B07", 
+        "sentinel-2-l2a_B8A", "sentinel-2-l2a_B11", "sentinel-2-l2a_B12", 
+        "mean_viewing_azimuth", "mean_viewing_zenith", "mean_solar_azimuth",
+        "is_brazil"]`
+    learning_rate : float
+        The starting learning rate to use for training.
+    batch_size : int
+        The batch size to use for training.
+    epochs : int
+        The number of training epochs to run.
+    storage_options : dict
+        A dictionary with the storage name and connection string to connect to 
+        Azure blob storage
+    activation_function : function, default=nn.PReLU(num_parameters=1)
+        The function (from torch.nn) to use for activation layers in the MLP. 
+    buffer_distance : int, default=500
+        The buffer distance used for preprocessing training data (command line 
+        arg to bin/ scripts).
+    day_tolerance : int, default=8
+        The maximum threshold used during data preprocessing for the number of 
+        days between an observation and associated Sentinel 2 chip (command line
+        arg to bin/ scripts).
+    cloud_thr : float, default=80
+        The percent of cloud cover (0-100) acceptable in the Sentinel tile corresponding
+        to any given sample during data preprocessing. (command line arg to bin/
+        scripts).
+    mask_method1 : str, default="lulc"
+        The primary mask method ("lulc" or "scl") used to prepare training data
+        (command line arg to bin/ scripts).
+    mask_method2 : str, default="mndwi"
+        The secondary mask method ("mndwi", "ndvi", or "") used to prepare 
+        training data (command line arg to bin/ scripts). 
+    min_water_pixels : int, default=20
+        The minimum number of water pixels used to calculate aggregate 
+        reflectances for a given sample. Samples with fewer than this number of
+        water pixels will not be used in training.
+    layer_out_neurons : list of int, default=[4, 4, 2]
+        A list of length equal to the desired number of hidden layers in the 
+        MLP, with elements corresponding to the number of neurons desired for
+        each layer.
+    weight_decay : float, default=1e-2
+        The weight decay to use when calculating loss.
+    n_folds : int, default=5
+        The number of folds in the training data (command line argument in bin/
+        scripts).
+    seed : int, default=123
+        The seed used to initialize the pseudorandom number generator for use in
+        partitioning data into train/validate folds and a separate test 
+        partition.
+    verbose : bool, default=True
+        Should output on training progress be printed?
+    """    
     n_layers = len(layer_out_neurons)
 
     # Read the data
@@ -442,7 +553,7 @@ def fit_mlp_full(
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = MultipleRegression(num_features, n_layers, layer_out_neurons, activation_function)
+    model = MultipleRegression(num_features, layer_out_neurons, activation_function)
     model.to(device)
 
     criterion = nn.MSELoss()

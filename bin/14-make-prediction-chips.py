@@ -23,7 +23,7 @@ def return_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-src',
         type=args_info["data_src"]["type"],
-        choices=args_info["data_src"]["choices"], # TODO: just ["itv", "ana"]?
+        choices=args_info["data_src"]["choices"], # NOTE: just ["itv", "ana"]?
         help=args_info["data_src"]["help"])
     parser.add_argument('--cloud-thr',
         default=args_info["cloud_thr"]["default"],

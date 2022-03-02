@@ -1,7 +1,7 @@
 fluvius module
 ==============
 
-.. automodule:: fluvius
+.. automodule:: src.fluvius
    :members:
    :undoc-members:
    :show-inheritance:

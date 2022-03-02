@@ -46,7 +46,7 @@ def return_parser():
 if __name__ == "__main__":
     
     args = return_parser().parse_args()
-    cloud_thr = args.cloud_thr # TODO: talk to Vincent, I'm not sure these make sense if they are 'inherited' from the top model
+    cloud_thr = args.cloud_thr
     buffer_distance = args.buffer_distance
     mm1 = args.mask_method1
     mm2 = args.mask_method2
@@ -68,8 +68,9 @@ if __name__ == "__main__":
         epochs=top_model["epochs"],
         storage_options=storage_options,
         activation_function=eval(f'nn.{top_model["activation"]}'),
+        buffer_distance=buffer_distance,
         day_tolerance=top_model["day_tolerance"],
-        cloud_thr=top_model["cloud_thr"],
+        cloud_thr=cloud_thr,
         mask_method1=mm1,
         mask_method2=mm2,
         min_water_pixels=20,

@@ -318,7 +318,7 @@ class WaterData:
 
 class WaterStation:
     '''
-    Generalized water station data. May make child class for USGS, ANA, and ITV
+    Generalized water station data.
     '''
     def __init__(self, site_no, lat, lon, buffer, container, storage_options, data_source):
         self.site_no = site_no
@@ -681,11 +681,9 @@ class WaterStation:
                     img, img_meta, img_trans = self.get_spectral_chip(hrefs_10m, hrefs_20m, True)
                     print(f"Image shape: {img.shape}")
                     if mask_method2 == "ndvi":
-                        # TODO: verify, revisit threshold, etc.
                         ndvi = normalized_diff(img[:, :, 4], img[:, :, 3])
                         mask2 = (ndvi < 0.25) # keep only non-vegetated pixels
                     elif mask_method2 == 'mndwi':
-                        # TODO: verify
                         mndwi = normalized_diff(img[:, :, 2], img[:, :, 10])
                         mask2 = (mndwi > 0) # keep only 'water' pixels
                     else:

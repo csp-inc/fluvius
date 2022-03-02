@@ -70,7 +70,7 @@ should be executed from the Fluvius repo's root directory (e.g.
    :caption: Internals
    :maxdepth: 1
 
-   utils
+   modules
 
 Authors
 =======

@@ -36,7 +36,6 @@ class MultipleRegression(nn.Module):
                 most_recent_n_neurons = layer_out_neurons[i-1]
 
             self.layer_out = nn.Linear(most_recent_n_neurons, 1)
-            # self.activate = torch.nn.PReLU(num_parameters=1, init=0.1)
             self.activate = activation_function
 
 
@@ -106,7 +105,7 @@ def fit_mlp_cv(
         batch_size,
         epochs,
         storage_options,
-        activation_function=nn.SELU(),
+        activation_function=nn.PReLU(num_parameters=1),
         buffer_distance=500,
         day_tolerance=8,
         cloud_thr=80,
@@ -118,13 +117,61 @@ def fit_mlp_cv(
         n_folds=5,
         seed=123,
         verbose=True
-    ):    
+    ):   
+    """
+    Fit an MLP model using crossfold validation. This function is used to run models
+    for the hyperparameter grid search.
+
+    Arguments:
+    features: List. A list of strings corresponding to the features that should
+        be used for model training. Must contain a subset of the following:
+        ["sentinel-2-l2a_AOT","sentinel-2-l2a_B02", "sentinel-2-l2a_B03", 
+        "sentinel-2-l2a_B04", "sentinel-2-l2a_B08", "sentinel-2-l2a_WVP", 
+        "sentinel-2-l2a_B05", "sentinel-2-l2a_B06", "sentinel-2-l2a_B07", 
+        "sentinel-2-l2a_B8A", "sentinel-2-l2a_B11", "sentinel-2-l2a_B12", 
+        "mean_viewing_azimuth", "mean_viewing_zenith", "mean_solar_azimuth",
+        "is_brazil"]
+    learning_rate: Float. The starting learning rate to use for training.
+    batch_size: Integer. The batch size to use for training.
+    epochs: Integer. The number of training epochs to run.
+    storage_options: Dictionary. A dictionary with the storage name and 
+        connection string to connect to Azure blob storage.
+    activation_function: The function (from torch.nn) to use for activation 
+        layers in the MLP. Default nn.PReLU(num_parameters=1).
+    buffer_distance: Integer. The buffer distance used for preprocessing training
+        data (command line arg to bin/ scripts). Default 500.
+    day_tolerance: Integer. The maximum threshold used during data preprocessing
+        for the number of days between an observation and associated Sentinel 2
+        chip (command line arg to bin/ scripts). Default 8.
+    cloud_thr: Float (0-100). The percent of cloud cover acceptable in the Sentinel 
+        tile corresponding to any given sample during data preprocessing. 
+        (command line arg to bin/ scripts). Default 80.
+    mask_method1: String ("lulc" or "scl"): The primary mask method used to
+        prepare training data (command line arg to bin/ scripts). Default "lulc"
+    mask_method2: String ("mndwi", "ndvi", or ""): The secondary mask method used
+        to prepare training data (command line arg to bin/ scripts). Default "mndwi".
+    min_water_pixels: Integer. The minimum number of water pixels used to calculate 
+        aggregate reflectances for a given sample. Samples with fewer than this
+        number of water pixels will not be used in training. Default 20.
+    layer_out_neurons: List of Integers. A list of length equal to the desired
+        number of hidden layers in the MLP, with elements corresponding to the 
+        number of neurons desired for each layer. Default [4, 4, 2].
+    weight_decay: Float. The weight decay to use when calculating loss. 
+        Default 1e-2.
+    n_folds: Integer. The number of folds in the training data (command line
+        argument in bin/ scripts). Default 5.
+    seed: Integer. The seed used to initialize the pseudorandom number generator
+        for use in partitioning data into train/validate folds and a separate
+        test partition. Default 123.
+    verbose: Boolean. Should output on training progress be printed? Default True.
+    """
+
     n_layers = len(layer_out_neurons)
     torch.set_num_threads(1)
     # Read the data
-    # fp = f"data/partitioned_feature_data_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
+    # fp = f"data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
     # data = pd.read_csv(fp)
-    fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
+    fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
     data = pd.read_csv(fp, storage_options=storage_options)
 
     data = data[data["partition"] != "testing"]
@@ -303,7 +350,6 @@ def fit_mlp_cv(
         # Track validation R^2 per epoch per fold
         val_R2_fold.append(val_R2)
 
-
     output = {
         "training_data": fp,
         "buffer_distance": buffer_distance,
@@ -338,7 +384,7 @@ def fit_mlp_full(
         batch_size,
         epochs,
         storage_options,
-        activation_function=nn.SELU(),
+        activation_function=nn.PReLU(num_parameters=1),
         buffer_distance=500,
         day_tolerance=8,
         cloud_thr=80,
@@ -354,7 +400,7 @@ def fit_mlp_full(
     n_layers = len(layer_out_neurons)
 
     # Read the data
-    fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
+    fp = f"az://modeling-data/partitioned_feature_data_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}.csv"
 
     data = pd.read_csv(fp, storage_options=storage_options)
     data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
@@ -502,7 +548,7 @@ def fit_mlp_full(
     }
 
     # save the model!
-    model_out_fn_prefix = f"top_model_buffer{buffer_distance}m_daytol8_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}"
+    model_out_fn_prefix = f"top_model_buffer{buffer_distance}m_daytol{day_tolerance}_cloudthr{cloud_thr}percent_{mask_method1}{mask_method2}_masking_{n_folds}folds_seed{seed}"
     torch.save(model.state_dict(), f"/content/output/mlp/{model_out_fn_prefix}.pt")
 
     with open(f"/content/output/mlp/{model_out_fn_prefix}_metadata.json", 'w') as f:
@@ -515,198 +561,25 @@ def fit_mlp_full(
     return output
 
 
-def fit_mlp_full_nolog( # TODO: delete or deprecate?
-        features,
-        learning_rate,
-        batch_size,
-        epochs,
-        storage_options,
-        activation_function=nn.SELU(),
-        buffer_distance=500,
-        day_tolerance=8,
-        cloud_thr=80,
-        mask_method1="lulc",
-        mask_method2="mndwi",
-        min_water_pixels=20,
-        layer_out_neurons=[24, 12, 6],
-        weight_decay=1e-2,
-        verbose=True,
-        model_out = "output/top_model"
-    ):    
-    n_layers = len(layer_out_neurons)
-
-    # Read the data
-    # TODO: update these filepaths once python version of data partitioning is done, will need to be defined based on mask_method2 and mask_method2 args to function, as well as buffer, day tol, etc.
-    if mask_method2 == "ndvi":
-        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcndvi_masking_12folds.csv"
-    elif mask_method2 == "mndwi":
-        fp = f"/content/local/partitioned_feature_data_buffer500m_daytol8_cloudthr80percent_lulcmndwi_masking_5folds.csv"
-
-    data = pd.read_csv(fp)
-    data["Log SSC (mg/L)"] = np.log(data["SSC (mg/L)"])
-
-    test = data[data["partition"] == "testing"]
-    data = data[data["partition"] != "testing"]
+def plot_obs_predict(obs_pred, title, units="log(SSC)", savefig=False, outfn=""):
+    """
+    Plot observations vs. Predictions:
     
-    response = "SSC (mg/L)"
-    not_enough_water = data["n_water_pixels"] < min_water_pixels
-    data.drop(not_enough_water[not_enough_water].index, inplace=True)
-    lnssc_0 = data["Log SSC (mg/L)"] == 0
-    data.drop(lnssc_0[lnssc_0].index, inplace=True)
-
-    scaler = MinMaxScaler()
-    X_train_scaled = scaler.fit_transform(data[features])
-    X_test_scaled = scaler.transform(test[features])
-
-    y_train = data[response] / 100
-    y_test = test[response] / 100
-
-    X_train_scaled, y_train = np.array(X_train_scaled), np.array(y_train)
-    X_test_scaled, y_test = np.array(X_test_scaled), np.array(y_test)
-
-    class RegressionDataset(Dataset):
-
-        def __init__(self, X_data, y_data):
-            self.X_data = X_data
-            self.y_data = y_data
-
-        def __getitem__(self, index):
-            return self.X_data[index], self.y_data[index]
-
-        def __len__ (self):
-            return len(self.X_data)
-
-    train_dataset = RegressionDataset(torch.from_numpy(X_train_scaled).float(), torch.from_numpy(y_train).float())
-    test_dataset = RegressionDataset(torch.from_numpy(X_test_scaled).float(), torch.from_numpy(y_test).float())
-
-    num_features = X_train_scaled.shape[1]
-
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-    train_loader_all = DataLoader(dataset=train_dataset, batch_size=1)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=1)
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    model = MultipleRegression(num_features, n_layers, layer_out_neurons, activation_function)
-    model.to(device)
-
-    criterion = nn.MSELoss()
-    optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=0.9)
-    scheduler = optim.lr_scheduler.MultiStepLR(
-            optimizer,
-            milestones=[7500, 10000, 12500, 14000],
-            gamma=0.1
-        )
-
-    train_loss_list = []
-
-    # Train the model
-    for e in range(1, epochs+1):
-        # TRAINING
-        train_epoch_loss = 0
-        model.train()
-
-        for X_train_batch, y_train_batch in train_loader:
-            # grab data to iteration and send to CPU
-            X_train_batch, y_train_batch = X_train_batch.to(device), y_train_batch.to(device)
-
-            def closure():
-                # Zero gradients
-                optimizer.zero_grad()
-                # Forward pass
-                y_train_pred = torch.exp(model(X_train_batch))
-                # Compute loss
-                train_loss = criterion(y_train_pred, y_train_batch.unsqueeze(1))
-                # Backward pass
-                train_loss.backward()
-
-                return train_loss
-
-            # Update weights
-            optimizer.step(closure)
-
-            # Update the running loss
-            train_loss = closure()
-            train_epoch_loss += train_loss.item()
-        
-        train_loss_list.append(train_epoch_loss/len(train_loader))
-
-        scheduler.step()
-        
-        if (e % 50 == 0) and verbose:
-            print(f"Epoch {e}/{epochs} | Train Loss: {train_epoch_loss/len(train_loader):.5f}", end="\r")
-    
-    train_pred_list = []
-    with torch.no_grad():
-        model.eval()
-        for X_batch, _ in train_loader_all:
-            X_batch = X_batch.to(device)
-            y_pred = (torch.exp(model(X_batch)).cpu().squeeze()).tolist()
-            train_pred_list.append(y_pred)
-
-    test_pred_list = []
-    with torch.no_grad():
-        model.eval()
-        for X_batch, _ in test_loader:
-            X_batch = X_batch.to(device)
-            test_pred = (torch.exp(model(X_batch)).cpu().squeeze()).tolist()
-            test_pred_list.append(test_pred)
-
-    test_pred = np.array(test_pred_list)
-    test_se = list((test_pred - y_test)**2)
-
-    site_test = list(test["site_no"])
-
-    group_means = [np.mean(test_se[site_test == a]) for a in np.unique(site_test)]
-    test_site_mse = np.mean(group_means)
-    test_pooled_mse = np.mean(test_se)
-
-    output = {
-        "training_data": fp,
-        "buffer_distance": buffer_distance,
-        "day_tolerance": day_tolerance,
-        "cloud_thr": cloud_thr,
-        "min_water_pixels": min_water_pixels,
-        "features": features,
-        "learning_rate": learning_rate,
-        "batch_size": batch_size,
-        "layer_out_neurons": layer_out_neurons,
-        "epochs": epochs,
-        "weight_decay": weight_decay,
-        "activation": f"{activation_function}",
-        "train_loss": train_loss_list,
-        "train_pooled_mse": train_loss_list[-1],
-        "test_site_mse": test_site_mse,
-        "test_pooled_mse": test_pooled_mse,
-        "y_train_sample_id": list(data["sample_id"]),
-        "y_test_sample_id": list(test["sample_id"]),
-        #"X_test_scaled": X_test_scaled,
-        "y_obs_train": y_train,
-        "y_pred_train": train_pred_list,
-        "y_obs_test": y_test,
-        "y_pred_test": test_pred_list
-    }
-
-    # save the model!
-    torch.save(model.state_dict(), f"/content/output/{model_out}.pt")
-
-    with open(f"/content/output/{model_out}_metadata.pickle", 'wb') as f:
-        pickle.dump(output, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-    fs = fsspec.filesystem("az", **storage_options)
-    fs.put_file(f"/content/output/{model_out}.pt", f"model-output/{model_out}.pt", overwrite=True)
-    fs.put_file(f"/content/output/{model_out}_metadata.pickle", f"model-output/{model_out}_metadata.pickle", overwrite=True)
-    
-    return output
-
-
-def plot_obs_predict(obs_pred, title, units = "log(SSC)", savefig=False, outfn=""):
+    Arguments:
+    obs_pred: A Pandas DataFrame containing a column of predictions called "pred"
+        and a column of observations called "obs".
+    title: String. The title for the plot
+    units: String. The units/labal that should be used in axes.
+    savefig: Boolean. Should the plot be saved
+    outfn: String. If savefig is True, the file name where the plot should be
+        saved
+    """
     plt.figure(figsize=(8,8))
     max_val = np.maximum(np.max(obs_pred.iloc[:,0]), np.max(obs_pred.iloc[:,1]))
     plt.plot(list(range(0, round(max_val) + 1)), list(range(0,round(max_val) + 1)), color="black", label="One-to-one 1 line")
-    plt.scatter(obs_pred["pred"], obs_pred["obs"])
-    plt.xlabel(f"{units} Predicted")
-    plt.ylabel(f"{units} Observed")
+    plt.scatter(obs_pred["obs"], obs_pred["pred"])
+    plt.xlabel(f"{units} Observed")
+    plt.ylabel(f"{units} Predicted")
     plt.title(title)
     plt.legend()
     if savefig:
@@ -719,7 +592,6 @@ def plot_obs_predict(obs_pred, title, units = "log(SSC)", savefig=False, outfn="
 
 
 def denoise(image, operation = "erosion", kernel_size = 3, iterations = 1):
-
     """
     Morphological operations
 

@@ -7,7 +7,6 @@ import datetime
 import pandas as pd
 import json
 import fsspec
-import pickle
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -18,34 +17,15 @@ from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import generic_filter as gf
 
-class MultipleRegression(nn.Module):
-        def __init__(self, num_features, n_layers, layer_out_neurons, activation_function):
-            super(MultipleRegression, self).__init__()
-            self.n_layers = n_layers
-            self.layer_out_neurons = layer_out_neurons
+import sys
+sys.path.append('/content')
+from src.fluvius import MultipleRegression
 
-            most_recent_n_neurons = layer_out_neurons[0]
-            self.layer_1 = nn.Linear(num_features, layer_out_neurons[0])
-
-            for i in range(2, n_layers + 1):
-                setattr(
-                    self,
-                    f"layer_{i}",
-                    nn.Linear(layer_out_neurons[i-2], layer_out_neurons[i-1])
-                )
-                most_recent_n_neurons = layer_out_neurons[i-1]
-
-            self.layer_out = nn.Linear(most_recent_n_neurons, 1)
-            self.activate = activation_function
-
-
-        def forward(self, inputs):
-            x = self.activate(self.layer_1(inputs))
-            for i in range(2, self.n_layers + 1):
-                x = self.activate(getattr(self, f"layer_{i}")(x))
-            x = self.layer_out(x)
-
-            return (x)
+# Utility functions.
+def normalized_diff(b1, b2):
+    b1 = b1.astype(float)
+    b2 = b2.astype(float)
+    return (b1 - b2) / (b1 + b2)
 
 
 def dates_to_julian(stddate):

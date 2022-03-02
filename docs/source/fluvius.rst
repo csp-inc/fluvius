@@ -1,5 +1,5 @@
-fluvius module
-==============
+Classes
+=======
 
 .. automodule:: src.fluvius
    :members:

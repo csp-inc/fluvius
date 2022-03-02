@@ -1,6 +1,5 @@
 #web scrapping libraries
 from bs4 import BeautifulSoup as bs
-from pandas.core.dtypes.missing import na_value_for_dtype
 import requests
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
@@ -20,17 +19,20 @@ from rasterio import features
 from rasterio import warp
 from rasterio import windows
 from rasterio.enums import Resampling
+import torch.nn as nn
 from PIL import Image
 import matplotlib.pyplot as plt
 #planetary computer libraries
 from pystac_client import Client
-from pystac.extensions.projection import ProjectionExtension as proj
 from pystac.extensions.raster import RasterExtension as raster
 import planetary_computer as pc
 from pystac.extensions.eo import EOExtension as eo
 from azure.storage.blob import BlobClient
 import stackstac
 import traceback
+import sys
+sys.path.append('/content')
+from src.utils import normalized_diff
 
 BANDS_10M = ['AOT', 'B02', 'B03', 'B04', 'B08', 'WVP']
 BANDS_20M = ['B05', 'B06', 'B07', 'B8A', 'B11', "B12"]
@@ -811,8 +813,32 @@ class WaterStation:
         ax[3].axis('off')
 
 
-# Utility functions.
-def normalized_diff(b1, b2):
-    b1 = b1.astype(float)
-    b2 = b2.astype(float)
-    return (b1 - b2) / (b1 + b2)
+class MultipleRegression(nn.Module):
+        def __init__(self, num_features, n_layers, layer_out_neurons, activation_function):
+            super(MultipleRegression, self).__init__()
+            self.n_layers = n_layers
+            self.layer_out_neurons = layer_out_neurons
+
+            most_recent_n_neurons = layer_out_neurons[0]
+            self.layer_1 = nn.Linear(num_features, layer_out_neurons[0])
+
+            for i in range(2, n_layers + 1):
+                setattr(
+                    self,
+                    f"layer_{i}",
+                    nn.Linear(layer_out_neurons[i-2], layer_out_neurons[i-1])
+                )
+                most_recent_n_neurons = layer_out_neurons[i-1]
+
+            self.layer_out = nn.Linear(most_recent_n_neurons, 1)
+            self.activate = activation_function
+
+
+        def forward(self, inputs):
+            x = self.activate(self.layer_1(inputs))
+            for i in range(2, self.n_layers + 1):
+                x = self.activate(getattr(self, f"layer_{i}")(x))
+            x = self.layer_out(x)
+
+            return (x)
+

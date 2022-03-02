@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fluvius module &mdash; fluvius 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+      <link rel="stylesheet" href="_static/dark_mode_css/general.css" type="text/css" />
+      <link rel="stylesheet" href="_static/dark_mode_css/dark.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/dark_mode_js/default_dark.js"></script>
+        <script src="_static/dark_mode_js/theme_switcher.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="utils module" href="utils.html" />
+    <link rel="prev" title="src" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> fluvius
+            <img src="_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Home</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Fluvius</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="preamble/00a-background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preamble/00b-project-goals.html">Project goals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preamble/00c-requirements.html">Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preamble/00d-quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Command Line Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="bin/01-usgs-station-acquire.html">01-usgs-station-acquire.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/02-preprocess-data.html">02-preprocess-data.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/03-image-join.html">03-image-join.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/04-data-merge.html">04-data-merge.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/05-prep-qa-chip-dataset.html">05-prep-qa-chip-dataset.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/06a-download-chips-for-qa.html">06a-download-chips-for-qa.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/06b-upload-good-chips-list.html">06b-upload-good-chips-list.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/07-remove-bad-obs.html">07-remove-bad-obs.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/08-partition-data.html">08-partition-data.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/09-MLP-grid-search.html">09-MLP-grid-search.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/10-compile-grid-search-results.html">10-compile-grid-search-results.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/11-fit-top-model.html">11-fit-top-model.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/12-prediction-inputs.html">12-prediction-inputs.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/13-predict-tabular.html">13-predict-tabular.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/14-make-prediction-chips.html">14-make-prediction-chips.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/15-prep-data-for-app.html">15-prep-data-for-app.py</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Internals</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">fluvius module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">utils module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">fluvius</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">src</a> &raquo;</li>
+      <li>fluvius module</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/csp-inc/fluvius/blob/main/docs/source/fluvius.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.fluvius">
+<span id="fluvius-module"></span><h1>fluvius module<a class="headerlink" href="#module-src.fluvius" title="Permalink to this headline"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Station">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">src.fluvius.</span></span><span class="sig-name descname"><span class="pre">USGS_Station</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">site_no</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instantaneous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([2013,</span> <span class="pre">2014,</span> <span class="pre">2015,</span> <span class="pre">2016,</span> <span class="pre">2017,</span> <span class="pre">2018,</span> <span class="pre">2019,</span> <span class="pre">2020,</span> <span class="pre">2021])</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Station" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Station.create_driver">
+<span class="sig-name descname"><span class="pre">create_driver</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Station.create_driver" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Station.get_url_text">
+<span class="sig-name descname"><span class="pre">get_url_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Station.get_url_text" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Station.get_water_attribute">
+<span class="sig-name descname"><span class="pre">get_water_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attribute</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Station.get_water_attribute" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Station.get_water_df">
+<span class="sig-name descname"><span class="pre">get_water_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sleep_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_to_csv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Station.get_water_df" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Station.get_water_url">
+<span class="sig-name descname"><span class="pre">get_water_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attribute</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Station.get_water_url" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Station.process_soup">
+<span class="sig-name descname"><span class="pre">process_soup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">soup</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Station.process_soup" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Water_DB">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">src.fluvius.</span></span><span class="sig-name descname"><span class="pre">USGS_Water_DB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Water_DB" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Water_DB.create_driver">
+<span class="sig-name descname"><span class="pre">create_driver</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Water_DB.create_driver" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Water_DB.get_marker_info">
+<span class="sig-name descname"><span class="pre">get_marker_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">marker_text</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Water_DB.get_marker_info" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Water_DB.get_station_df">
+<span class="sig-name descname"><span class="pre">get_station_df</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Water_DB.get_station_df" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Water_DB.get_url_text">
+<span class="sig-name descname"><span class="pre">get_url_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Water_DB.get_url_text" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Water_DB.process_soup">
+<span class="sig-name descname"><span class="pre">process_soup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">soup</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Water_DB.process_soup" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.fluvius.WaterData">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">src.fluvius.</span></span><span class="sig-name descname"><span class="pre">WaterData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_distance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterData" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterData.generate_map">
+<span class="sig-name descname"><span class="pre">generate_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterData.generate_map" title="Permalink to this definition"></a></dt>
+<dd><p>plots web map using folium</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterData.get_available_station_list">
+<span class="sig-name descname"><span class="pre">get_available_station_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterData.get_available_station_list" title="Permalink to this definition"></a></dt>
+<dd><p>Searches the blob container and saves the list of directories</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterData.get_source_df">
+<span class="sig-name descname"><span class="pre">get_source_df</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterData.get_source_df" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the station dataframe &lt;pandas.DataFrame&gt;</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterData.get_station_data">
+<span class="sig-name descname"><span class="pre">get_station_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterData.get_station_data" title="Permalink to this definition"></a></dt>
+<dd><p>gets all the station data if station is None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterData.sort_station_data">
+<span class="sig-name descname"><span class="pre">sort_station_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterData.sort_station_data" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">src.fluvius.</span></span><span class="sig-name descname"><span class="pre">WaterStation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">site_no</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_options</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_source</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Generalized water station data.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.build_catalog">
+<span class="sig-name descname"><span class="pre">build_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sentinel-2-l2a'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.build_catalog" title="Permalink to this definition"></a></dt>
+<dd><p>Use pystac-client to search for Sentinel 2 L2A data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.check_response">
+<span class="sig-name descname"><span class="pre">check_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/content/log/response.log'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.check_response" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.chip_cloud_analysis">
+<span class="sig-name descname"><span class="pre">chip_cloud_analysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scl</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.chip_cloud_analysis" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.drop_bad_usgs_obs">
+<span class="sig-name descname"><span class="pre">drop_bad_usgs_obs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.drop_bad_usgs_obs" title="Permalink to this definition"></a></dt>
+<dd><p>Some stations from USGS have two measurements of instantaneous computed
+discharge. This method drops observations for which the two measurements
+are not equal. Note that the method only applies to “usgs” stations. If
+WaterStation.data_source is not equal to “usgs”, the method does nothing,
+so it can be safely applied to WaterStations from any data source with
+minimal performance impact.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.format_time">
+<span class="sig-name descname"><span class="pre">format_time</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.format_time" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_area_of_interest">
+<span class="sig-name descname"><span class="pre">get_area_of_interest</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_area_of_interest" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_chip_features">
+<span class="sig-name descname"><span class="pre">get_chip_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">write_chips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_save_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'data/chips_default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_method1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lulc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_method2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_chip_features" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_chip_metadata">
+<span class="sig-name descname"><span class="pre">get_chip_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signed_url</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_chip_metadata" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_cloud_filtered_image_df">
+<span class="sig-name descname"><span class="pre">get_cloud_filtered_image_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cloud_thr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_cloud_filtered_image_df" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_io_lulc_chip">
+<span class="sig-name descname"><span class="pre">get_io_lulc_chip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epsg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_io_lulc_chip" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_scl_chip">
+<span class="sig-name descname"><span class="pre">get_scl_chip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signed_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_meta_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_scl_chip" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_spectral_chip">
+<span class="sig-name descname"><span class="pre">get_spectral_chip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hrefs_10m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hrefs_20m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_meta_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_spectral_chip" title="Permalink to this definition"></a></dt>
+<dd><p>Returns an image with one or more bands along the 3rd dimension from a signed url (one for each band)
+:param hrefs_10m: hrefs for the 10 meter Sentinel bands
+:type hrefs_10m: list
+:param hrefs_20m: hrefs for the 20 meter Sentinel bands
+:type hrefs_20m: list</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_time_bounds">
+<span class="sig-name descname"><span class="pre">get_time_bounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_time_bounds" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_visual_chip">
+<span class="sig-name descname"><span class="pre">get_visual_chip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signed_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_meta_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_visual_chip" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.merge_image_df_with_samples">
+<span class="sig-name descname"><span class="pre">merge_image_df_with_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">day_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.merge_image_df_with_samples" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.perform_chip_cloud_analysis">
+<span class="sig-name descname"><span class="pre">perform_chip_cloud_analysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.perform_chip_cloud_analysis" title="Permalink to this definition"></a></dt>
+<dd><p>#with concurrent.futures.ProcessPoolExecutor() as executor:
+#dt_list = [chip_cloud_analyisis(dt) for dt in executor.map(get_scl_chip )]</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.upload_local_to_blob">
+<span class="sig-name descname"><span class="pre">upload_local_to_blob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">localfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobname</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.upload_local_to_blob" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.visualize_chip">
+<span class="sig-name descname"><span class="pre">visualize_chip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.visualize_chip" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.write_chip_to_local">
+<span class="sig-name descname"><span class="pre">write_chip_to_local</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_meta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_transform</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_root_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.write_chip_to_local" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.fluvius.normalized_diff">
+<span class="sig-prename descclassname"><span class="pre">src.fluvius.</span></span><span class="sig-name descname"><span class="pre">normalized_diff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">b1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.normalized_diff" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="src" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="utils.html" class="btn btn-neutral float-right" title="utils module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Conservation Science Partners.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

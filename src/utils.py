@@ -118,52 +118,67 @@ def fit_mlp_cv(
         seed=123,
         verbose=True
     ):   
-    """
-    Fit an MLP model using crossfold validation. This function is used to run models
-    for the hyperparameter grid search.
+    """Fit an MLP model using crossfold validation. This function is used to run
+    models for the hyperparameter grid search.
 
-    Arguments:
-    features: List. A list of strings corresponding to the features that should
-    be used for model training. Must contain a subset of the following:
-    ["sentinel-2-l2a_AOT","sentinel-2-l2a_B02", "sentinel-2-l2a_B03", 
-    "sentinel-2-l2a_B04", "sentinel-2-l2a_B08", "sentinel-2-l2a_WVP", 
-    "sentinel-2-l2a_B05", "sentinel-2-l2a_B06", "sentinel-2-l2a_B07", 
-    "sentinel-2-l2a_B8A", "sentinel-2-l2a_B11", "sentinel-2-l2a_B12", 
-    "mean_viewing_azimuth", "mean_viewing_zenith", "mean_solar_azimuth",
-    "is_brazil"] 
-    learning_rate: Float. The starting learning rate to use for training.
-    batch_size: Integer. The batch size to use for training.
-    epochs: Integer. The number of training epochs to run.
-    storage_options: Dictionary. A dictionary with the storage name and 
-    connection string to connect to Azure blob storage.
-    activation_function: The function (from torch.nn) to use for activation 
-    layers in the MLP. Default nn.PReLU(num_parameters=1).
-    buffer_distance: Integer. The buffer distance used for preprocessing training
-    data (command line arg to bin/ scripts). Default 500
-    day_tolerance: Integer. The maximum threshold used during data preprocessing
-    for the number of days between an observation and associated Sentinel 2
-    chip (command line arg to bin/ scripts). Default 8.
-    cloud_thr: Float (0-100). The percent of cloud cover acceptable in the Sentinel 
-    tile corresponding to any given sample during data preprocessing. 
-    (command line arg to bin/ scripts). Default 80.
-    mask_method1: String ("lulc" or "scl"): The primary mask method used to
-    prepare training data (command line arg to bin/ scripts). Default "lulc"
-    mask_method2: String ("mndwi", "ndvi", or ""): The secondary mask method used
-    to prepare training data (command line arg to bin/ scripts). Default "mndwi".
-    min_water_pixels: Integer. The minimum number of water pixels used to calculate 
-    aggregate reflectances for a given sample. Samples with fewer than this
-    number of water pixels will not be used in training. Default 20.
-    layer_out_neurons: List of Integers. A list of length equal to the desired
-    number of hidden layers in the MLP, with elements corresponding to the 
-    number of neurons desired for each layer. Default [4, 4, 2].
-    weight_decay: Float. The weight decay to use when calculating loss. 
-    Default 1e-2.
-    n_folds: Integer. The number of folds in the training data (command line
-    argument in bin/ scripts). Default 5.
-    seed: Integer. The seed used to initialize the pseudorandom number generator
-    for use in partitioning data into train/validate folds and a separate
-    test partition. Default 123.
-    verbose: Boolean. Should output on training progress be printed? Default True.
+    Parameters
+    ----------
+    features : list of str
+        A list of strings corresponding to the features that 
+        should be used for model training. Must contain a subset of the following:
+        `["sentinel-2-l2a_AOT","sentinel-2-l2a_B02", "sentinel-2-l2a_B03", 
+        "sentinel-2-l2a_B04", "sentinel-2-l2a_B08", "sentinel-2-l2a_WVP", 
+        "sentinel-2-l2a_B05", "sentinel-2-l2a_B06", "sentinel-2-l2a_B07", 
+        "sentinel-2-l2a_B8A", "sentinel-2-l2a_B11", "sentinel-2-l2a_B12", 
+        "mean_viewing_azimuth", "mean_viewing_zenith", "mean_solar_azimuth",
+        "is_brazil"]`
+    learning_rate : float
+        The starting learning rate to use for training.
+    batch_size : int
+        The batch size to use for training.
+    epochs : int
+        The number of training epochs to run.
+    storage_options : dict
+        A dictionary with the storage name and connection string to connect to 
+        Azure blob storage
+    activation_function : function, default=nn.PReLU(num_parameters=1)
+        The function (from torch.nn) to use for activation layers in the MLP. 
+    buffer_distance : int, default=500
+        The buffer distance used for preprocessing training data (command line 
+        arg to bin/ scripts).
+    day_tolerance : int, default=8
+        The maximum threshold used during data preprocessing for the number of 
+        days between an observation and associated Sentinel 2 chip (command line
+        arg to bin/ scripts).
+    cloud_thr : float, default=80
+        The percent of cloud cover (0-100) acceptable in the Sentinel tile corresponding
+        to any given sample during data preprocessing. (command line arg to bin/
+        scripts).
+    mask_method1 : str, default="lulc"
+        The primary mask method ("lulc" or "scl") used to prepare training data
+        (command line arg to bin/ scripts).
+    mask_method2 : str, default="mndwi"
+        The secondary mask method ("mndwi", "ndvi", or "") used to prepare 
+        training data (command line arg to bin/ scripts). 
+    min_water_pixels : int, default=20
+        The minimum number of water pixels used to calculate aggregate 
+        reflectances for a given sample. Samples with fewer than this number of
+        water pixels will not be used in training.
+    layer_out_neurons : list of int, default=[4, 4, 2]
+        A list of length equal to the desired number of hidden layers in the 
+        MLP, with elements corresponding to the number of neurons desired for
+        each layer.
+    weight_decay : float, default=1e-2
+        The weight decay to use when calculating loss.
+    n_folds : int, default=5
+        The number of folds in the training data (command line argument in bin/
+        scripts).
+    seed : int, default=123
+        The seed used to initialize the pseudorandom number generator for use in
+        partitioning data into train/validate folds and a separate test 
+        partition.
+    verbose : bool, default=True
+        Should output on training progress be printed?
     """
 
     n_layers = len(layer_out_neurons)

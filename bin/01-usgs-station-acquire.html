@@ -105,7 +105,7 @@
              
   <section id="usgs-station-acquire-py">
 <h1>01-usgs-station-acquire.py<a class="headerlink" href="#usgs-station-acquire-py" title="Permalink to this headline"></a></h1>
-<p>Creates CSV files for all USGS water quality stations.</p>
+<p>This script runs a web scraper to collect USGS water station data from the National Real-Time Water Quality web tool (<a class="reference external" href="https://nrtwq.usgs.gov">https://nrtwq.usgs.gov</a>). The script will query through the full list of available sites and create CSV files for all USGS water quality stations that can be stored to Azure Blob Storage for use in the bin/04-data-merge.py script.</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: 01-usgs-station-acquire.py [-h] [--get-instantaneous] [--write-to-csv]
                                   [--index-start INDEX_START]
 </pre></div>

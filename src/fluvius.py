@@ -49,8 +49,19 @@ BAD_USGS_COLS = ["Instantaneous computed discharge (cfs)_x",
                  "Instantaneous computed discharge (cfs)_y"]
 
 class USGS_Water_DB:
+    """A custom class for storing for querying the http://nrtwq.usgs.gov data portal and 
+    storing data to Pandas DataFrame format.
+    """
 
     def __init__(self, verbose=False):
+        """Initializes the class to create web driver set source url.
+        
+        Parameters
+        ----------
+        verbose : bool
+            Sets the verbosity of the web scrapping query.
+        """
+
         self.source_url = 'https://nrtwq.usgs.gov'
         self.verbose = verbose
         self.create_driver()
@@ -111,8 +122,26 @@ class USGS_Water_DB:
 
 
 class USGS_Station:
+    """A custom clss for storing USGS Station datatype. Specific functions collect 
+    station instantaneous and modeled discharge and suspended sediment concentration.
+    """
+
 
     def __init__(self, site_no, instantaneous=False, verbose=False, year_range=np.arange(2013,2022)):
+    """Initializes the USGS_Station class based on user-provided parameters.
+
+    Parameters
+    ----------
+    site_no : <str>
+        The 8 digit USGS station site number that is zero padded.
+    instantaneous : <bool>
+        Sets data query for instantaneous recorded data only.
+    verbose : <bool>
+        Sets the query verbosity.
+    year_range : <numpy int array>
+        Numpy array of year range to search.
+    """
+
         self.site_no = site_no
         self.instantaneous = instantaneous
         self.verbose = verbose
@@ -216,8 +245,28 @@ class USGS_Station:
 
 
 class WaterData:
+    """A custom class for collecting database of water quality station data. 
+    """
 
     def __init__(self, data_source, container, buffer_distance, storage_options):
+        """Initializes the WaterData class to open database of stored station data 
+        for data inspection and individual station data loading.
+
+        Parameters
+        ----------
+        data_source : <str>
+            String denoting station source ('usgs', 'usgsi', 'itv', or 'ana').
+        container : <str>
+            Name of Azure Blob Storage container where water station data is stored.
+        buffer_distance : <int>
+            Buffer distance around station latitude and longitude in meters for 
+            data visualization and query.
+        storage_options : <dict>
+            Azure Blob Storage permissions for data loading in format,
+            {'account_name': 'storage account name','account_key': 'storage account key'}.
+            
+        """
+
         self.container = container
         self.data_source = data_source
         self.buffer = buffer_distance
@@ -320,7 +369,7 @@ class WaterData:
 
 class WaterStation:
     '''
-    Generalized water station data.
+    Generalized water station data class. 
     '''
     def __init__(self, site_no, lat, lon, buffer, container, storage_options, data_source):
         self.site_no = site_no

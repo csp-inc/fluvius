@@ -14,7 +14,6 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-
 # -- Project information -----------------------------------------------------
 
 project = 'fluvius'
@@ -31,8 +30,7 @@ release = '0.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'myst_parser', 'sphinxarg.ext', 'sphinx.ext.napoleon', 
-    'sphinx_rtd_dark_mode'
+    'myst_parser', 'sphinxarg.ext', 'sphinx.ext.napoleon'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -53,7 +51,7 @@ html_logo = "_static/logo.jpg"
 html_favicon = "favicon.ico"
 
 # user starts in dark mode
-default_dark_mode = True
+# default_dark_mode = True
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

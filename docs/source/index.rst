@@ -68,9 +68,11 @@ should be executed from the Fluvius repo's root directory (e.g.
 
 .. toctree::
    :caption: Internals
-   :maxdepth: 1
+   :maxdepth: 4
 
-   modules
+   fluvius
+   utils
+
 
 Authors
 =======

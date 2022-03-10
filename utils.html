@@ -4,12 +4,10 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>utils module &mdash; fluvius 0.1 documentation</title>
+  <title>Utility Functions &mdash; fluvius 0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
-      <link rel="stylesheet" href="_static/dark_mode_css/general.css" type="text/css" />
-      <link rel="stylesheet" href="_static/dark_mode_css/dark.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
@@ -19,12 +17,10 @@
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/dark_mode_js/default_dark.js"></script>
-        <script src="_static/dark_mode_js/theme_switcher.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="fluvius module" href="fluvius.html" /> 
+    <link rel="prev" title="Classes" href="fluvius.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -75,11 +71,8 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Internals</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="fluvius.html">fluvius module</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">utils module</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="fluvius.html">Classes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Utility Functions</a></li>
 </ul>
 
         </div>
@@ -96,8 +89,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="modules.html">src</a> &raquo;</li>
-      <li>utils module</li>
+      <li>Utility Functions</li>
       <li class="wy-breadcrumbs-aside">
               <a href="https://github.com/csp-inc/fluvius/blob/main/docs/source/utils.rst" class="fa fa-github"> Edit on GitHub</a>
       </li>
@@ -108,7 +100,7 @@
            <div itemprop="articleBody">
              
   <section id="module-src.utils">
-<span id="utils-module"></span><h1>utils module<a class="headerlink" href="#module-src.utils" title="Permalink to this headline"></a></h1>
+<span id="utility-functions"></span><h1>Utility Functions<a class="headerlink" href="#module-src.utils" title="Permalink to this headline"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="src.utils.fit_mlp_cv">
 <span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">fit_mlp_cv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_options</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PReLU(num_parameters=1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_distance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">day_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cloud_thr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">80</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_method1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lulc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_method2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mndwi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_water_pixels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_out_neurons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[4,</span> <span class="pre">4,</span> <span class="pre">2]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_folds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">123</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.fit_mlp_cv" title="Permalink to this definition"></a></dt>
@@ -119,7 +111,64 @@ models for the hyperparameter grid search.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>features</strong> (<em>list of str</em>) – A list of strings corresponding to the features that
 should be used for model training. Must contain a subset of the following:
-<cite>[“sentinel-2-l2a_AOT”,”sentinel-2-l2a_B02”, “sentinel-2-l2a_B03”,
+[“sentinel-2-l2a_AOT”, “sentinel-2-l2a_B02”, “sentinel-2-l2a_B03”,
+“sentinel-2-l2a_B04”, “sentinel-2-l2a_B08”, “sentinel-2-l2a_WVP”,
+“sentinel-2-l2a_B05”, “sentinel-2-l2a_B06”, “sentinel-2-l2a_B07”,
+“sentinel-2-l2a_B8A”, “sentinel-2-l2a_B11”, “sentinel-2-l2a_B12”,
+“mean_viewing_azimuth”, “mean_viewing_zenith”, “mean_solar_azimuth”,
+“is_brazil”]</p></li>
+<li><p><strong>learning_rate</strong> (<em>float</em>) – The starting learning rate to use for training.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – The batch size to use for training.</p></li>
+<li><p><strong>epochs</strong> (<em>int</em>) – The number of training epochs to run.</p></li>
+<li><p><strong>storage_options</strong> (<em>dict</em>) – A dictionary with the storage name and connection string to connect to
+Azure blob storage</p></li>
+<li><p><strong>activation_function</strong> (<em>function</em><em>, </em><em>default=nn.PReLU</em><em>(</em><em>num_parameters=1</em><em>)</em>) – The function (from torch.nn) to use for activation layers in the MLP.</p></li>
+<li><p><strong>buffer_distance</strong> (<em>int</em><em>, </em><em>default=500</em>) – The buffer distance used for preprocessing training data (command line
+arg to bin/ scripts).</p></li>
+<li><p><strong>day_tolerance</strong> (<em>int</em><em>, </em><em>default=8</em>) – The maximum threshold used during data preprocessing for the number of
+days between an observation and associated Sentinel 2 chip (command line
+arg to bin/ scripts).</p></li>
+<li><p><strong>cloud_thr</strong> (<em>float</em><em>, </em><em>default=80</em>) – The percent of cloud cover (0-100) acceptable in the Sentinel tile corresponding
+to any given sample during data preprocessing. (command line arg to bin/
+scripts).</p></li>
+<li><p><strong>mask_method1</strong> (<em>str</em><em>, </em><em>default=&quot;lulc&quot;</em>) – The primary mask method (“lulc” or “scl”) used to prepare training data
+(command line arg to bin/ scripts).</p></li>
+<li><p><strong>mask_method2</strong> (<em>str</em><em>, </em><em>default=&quot;mndwi&quot;</em>) – The secondary mask method (“mndwi”, “ndvi”, or “”) used to prepare
+training data (command line arg to bin/ scripts).</p></li>
+<li><p><strong>min_water_pixels</strong> (<em>int</em><em>, </em><em>default=20</em>) – The minimum number of water pixels used to calculate aggregate
+reflectances for a given sample. Samples with fewer than this number of
+water pixels will not be used in training.</p></li>
+<li><p><strong>layer_out_neurons</strong> (<em>list of int</em><em>, </em><em>default=</em><em>[</em><em>4</em><em>, </em><em>4</em><em>, </em><em>2</em><em>]</em>) – A list of length equal to the desired number of hidden layers in the
+MLP, with elements corresponding to the number of neurons desired for
+each layer.</p></li>
+<li><p><strong>weight_decay</strong> (<em>float</em><em>, </em><em>default=1e-2</em>) – The weight decay to use when calculating loss.</p></li>
+<li><p><strong>n_folds</strong> (<em>int</em><em>, </em><em>default=5</em>) – The number of folds in the training data (command line argument in bin/
+scripts).</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>default=123</em>) – The seed used to initialize the pseudorandom number generator for use in
+partitioning data into train/validate folds and a separate test
+partition.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Should output on training progress be printed?</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.utils.fit_mlp_full">
+<span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">fit_mlp_full</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_options</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PReLU(num_parameters=1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_distance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">day_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cloud_thr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">80</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_method1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lulc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_method2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mndwi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_water_pixels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_out_neurons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[24,</span> <span class="pre">12,</span> <span class="pre">6]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_folds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">123</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.fit_mlp_full" title="Permalink to this definition"></a></dt>
+<dd><p>Fit an MLP model using the entire training set. This function is used to
+fit the top model identified from the grid search using all of the training
+data. Two files are written to Azure Blob storage: a model checkpoint
+(.pt file), and a model metadata file (.json). Files are witten to the
+model-outputs container in the fluviusdata storage account. NOTE: Running
+this function will overwrite results on Azure Blob Storage, so use this
+function with caution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>features</strong> (<em>list of str</em>) – A list of strings corresponding to the features that
+should be used for model training. Must contain a subset of the following:
+<cite>[“sentinel-2-l2a_AOT”, “sentinel-2-l2a_B02”, “sentinel-2-l2a_B03”,
 “sentinel-2-l2a_B04”, “sentinel-2-l2a_B08”, “sentinel-2-l2a_WVP”,
 “sentinel-2-l2a_B05”, “sentinel-2-l2a_B06”, “sentinel-2-l2a_B07”,
 “sentinel-2-l2a_B8A”, “sentinel-2-l2a_B11”, “sentinel-2-l2a_B12”,
@@ -167,7 +216,7 @@ partition.</p></li>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="fluvius.html" class="btn btn-neutral float-left" title="fluvius module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fluvius.html" class="btn btn-neutral float-left" title="Classes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

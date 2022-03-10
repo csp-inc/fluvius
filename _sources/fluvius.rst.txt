@@ -1,7 +1,5 @@
-fluvius module
-==============
+Classes
+=======
 
-.. automodule:: src.fluvius
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. autoclass:: src.utils.MultipleRegression
+   :members: __init__

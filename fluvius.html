@@ -103,6 +103,314 @@
   <section id="classes">
 <h1>Classes<a class="headerlink" href="#classes" title="Permalink to this headline"></a></h1>
 <dl class="py class">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Water_DB">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">src.fluvius.</span></span><span class="sig-name descname"><span class="pre">USGS_Water_DB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Water_DB" title="Permalink to this definition"></a></dt>
+<dd><p>A custom class for storing for querying the <a class="reference external" href="http://nrtwq.usgs.gov">http://nrtwq.usgs.gov</a> data portal and
+storing data to Pandas DataFrame format.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Water_DB.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Water_DB.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes the class to create web driver set source url.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>verbose</strong> (<em>bool</em>) – Sets the verbosity of the web scrapping query.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Station">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">src.fluvius.</span></span><span class="sig-name descname"><span class="pre">USGS_Station</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">site_no</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instantaneous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([2013,</span> <span class="pre">2014,</span> <span class="pre">2015,</span> <span class="pre">2016,</span> <span class="pre">2017,</span> <span class="pre">2018,</span> <span class="pre">2019,</span> <span class="pre">2020,</span> <span class="pre">2021])</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Station" title="Permalink to this definition"></a></dt>
+<dd><p>A custom class for storing USGS Station data. Specific functions collect
+station instantaneous and modeled discharge and suspended sediment concentration.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.USGS_Station.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">site_no</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instantaneous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([2013,</span> <span class="pre">2014,</span> <span class="pre">2015,</span> <span class="pre">2016,</span> <span class="pre">2017,</span> <span class="pre">2018,</span> <span class="pre">2019,</span> <span class="pre">2020,</span> <span class="pre">2021])</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.USGS_Station.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes the USGS_Station class based on user-provided parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>site_no</strong> (<em>str</em>) – The 8 digit USGS station site number that is zero padded.</p></li>
+<li><p><strong>instantaneous</strong> (<em>bool</em>) – Sets data query for instantaneous recorded data only.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – Sets the query verbosity.</p></li>
+<li><p><strong>year_range</strong> (<em>numpy int array</em>) – Numpy array of year range to search.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.fluvius.WaterData">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">src.fluvius.</span></span><span class="sig-name descname"><span class="pre">WaterData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_distance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterData" title="Permalink to this definition"></a></dt>
+<dd><p>A custom class for collecting database of water quality station data.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterData.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_distance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterData.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes the WaterData class to open database of stored station data
+for data inspection and individual station data loading.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_source</strong> (<em>str</em>) – String denoting station source (‘usgs’, ‘usgsi’, ‘itv’, or ‘ana’).</p></li>
+<li><p><strong>container</strong> (<em>str</em>) – Name of Azure Blob Storage container where water station data is stored.</p></li>
+<li><p><strong>buffer_distance</strong> (<em>int</em>) – Buffer distance around station latitude and longitude in meters for
+data visualization and query.</p></li>
+<li><p><strong>storage_options</strong> (<em>dict</em>) – Azure Blob Storage permissions for data loading in format,
+{‘account_name’: ‘storage account name’,’account_key’: ‘storage account key’}.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterData.get_available_station_list">
+<span class="sig-name descname"><span class="pre">get_available_station_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterData.get_available_station_list" title="Permalink to this definition"></a></dt>
+<dd><p>Searches the blob container and saves the list of directories containing
+field measurement data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterData.get_source_df">
+<span class="sig-name descname"><span class="pre">get_source_df</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterData.get_source_df" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dataframe &lt;pandas.DataFrame&gt; containing  metadata for each station.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterData.get_station_data">
+<span class="sig-name descname"><span class="pre">get_station_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterData.get_station_data" title="Permalink to this definition"></a></dt>
+<dd><p>Extracts measurement and metadata for a station. Gets all the station
+data if station is None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>station</strong> (<em>str</em><em>, </em><em>default=None</em>) – The station for which to extract data. Iteratively extracts
+information for all stations and sets a lits of the resulting
+WaterStations as an attribute.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">src.fluvius.</span></span><span class="sig-name descname"><span class="pre">WaterStation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">site_no</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_options</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_source</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation" title="Permalink to this definition"></a></dt>
+<dd><p>A generalized water station data class. Each WaterStation contains SSC
+and other measurement data, as well as metadata about the sampling location itself.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">site_no</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_options</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_source</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initialize a WaterStation based on a site that appears in WaterData.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>site_no</strong> (<em>str</em>) – The string identifier corresponding to the site for which a WaterStation
+instance will be created.</p></li>
+<li><p><strong>lat</strong> (<em>double</em>) – The latitude of the site’s coordinates.</p></li>
+<li><p><strong>lon</strong> (<em>double</em>) – The longitude of the site’s coordinates.</p></li>
+<li><p><strong>buffer</strong> (<em>int</em>) – The buffer used for generating a square AOI that will be used to
+extract image chips.</p></li>
+<li><p><strong>container</strong> (<em>str</em>) – The storage container in fluviusdata storage account that houses
+raw data for the site.</p></li>
+<li><p><strong>storage_options</strong> (<em>dict</em>) – Azure Blob Storage permissions for data loading in format,
+{‘account_name’: ‘storage account name’,’account_key’: ‘storage account key’}.</p></li>
+<li><p><strong>data_source</strong> (<em>str</em>) – One of itv, ana, usgs, or usgsi, describing the original source of the data.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.build_catalog">
+<span class="sig-name descname"><span class="pre">build_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sentinel-2-l2a'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.build_catalog" title="Permalink to this definition"></a></dt>
+<dd><p>Use pystac-client to search for Sentinel 2 L2A data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>collection</strong> (<em>str</em><em>, </em><em>default='sentinel-2-l2a'</em>) – The collection name (as it appears in the Planetary Computer data
+catalogue). The default value should be used.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.chip_cloud_analysis">
+<span class="sig-name descname"><span class="pre">chip_cloud_analysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scl</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.chip_cloud_analysis" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate the total cloud cover percentage within an SCL image chip.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>scl</strong> (<em>numpy array</em>) – The numpy array containing Scene Classification Layer (SCL) data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.drop_bad_usgs_obs">
+<span class="sig-name descname"><span class="pre">drop_bad_usgs_obs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.drop_bad_usgs_obs" title="Permalink to this definition"></a></dt>
+<dd><p>Some stations from USGS have two measurements of instantaneous computed
+discharge. This method drops observations for which the two measurements
+are not equal. Note that the method only applies to “usgs” stations. If
+WaterStation.data_source is not equal to “usgs”, the method does nothing,
+so it can be safely applied to WaterStations from any data source with
+minimal performance impact.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_area_of_interest">
+<span class="sig-name descname"><span class="pre">get_area_of_interest</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_area_of_interest" title="Permalink to this definition"></a></dt>
+<dd><p>Create and return a polygon delineating the desired chip boundary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_chip_features">
+<span class="sig-name descname"><span class="pre">get_chip_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">write_chips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_save_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'data/chips_default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_method1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lulc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_method2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_chip_features" title="Permalink to this definition"></a></dt>
+<dd><p>Extract and aggregate reflectance and metadata features for each of
+the SSC measurements at the WaterStation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>write_chips</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Write chips to local storage? Useful for debugging.</p></li>
+<li><p><strong>local_save_dir</strong> (<em>str</em><em>, </em><em>default=&quot;data/chips_default&quot;</em>) – If write_chips=True, the directory to which image chips will be
+saved.</p></li>
+<li><p><strong>mask_method1</strong> (<em>str</em><em>, </em><em>default=&quot;lulc&quot;</em>) – Which data to use for masking (removing) non-water in order
+to calculate aggreated reflectance values for only water pixels?
+Choose (“scl”) to water pixels as identified based on the
+Scene Classification Layer that accompanies the Snetinel tile,
+or (“lulc”) to use Impact Observatory’s Land-Use/Land-Cover
+layer to identify water, and the Scene Classification Layer to
+remove clouds. Using “lulc” is strongly recommended.</p></li>
+<li><p><strong>mask_method2</strong> (<em>str</em><em> , </em><em>default=&quot;mndwi&quot;</em>) – Which additional normalized index to use, if any, to update
+the mask to remove errors of ommission (pixels classified as water
+that shouldn’t be) prior to calculated aggregated reflectance? If
+“ndvi”, then only pixels with an NDVI value less than 0.25
+will be retained. If “mndwi” (recommended) then only pixels with
+an MNDWI value greater than 0 will be retained. Of “”, then no
+secondary mask is used.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_chip_metadata">
+<span class="sig-name descname"><span class="pre">get_chip_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signed_url</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_chip_metadata" title="Permalink to this definition"></a></dt>
+<dd><p>Extract metadata (sensing time, and mean solar and viewing azimuths
+and zeniths) for an image chip.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>signed_url</strong> (<em>str</em>) – The Planetary-Computer-signed url for the Sentinel 2 image asset.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_cloud_filtered_image_df">
+<span class="sig-name descname"><span class="pre">get_cloud_filtered_image_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cloud_thr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_cloud_filtered_image_df" title="Permalink to this definition"></a></dt>
+<dd><p>Get an dataframe with asset URLs corresponding to images that have
+cloud cover less than cloud_thr, and set it as an attribute to the
+WaterStation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cloud_thr</strong> (<em>float</em><em>, </em><em>0-100</em>) – The maximum cloud cover tolerance. The data frame will only include
+information on assets from Sentinel 2 tiles that have a total cloud
+cover percentage less than or equal to cloud_thr.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_io_lulc_chip">
+<span class="sig-name descname"><span class="pre">get_io_lulc_chip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epsg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_io_lulc_chip" title="Permalink to this definition"></a></dt>
+<dd><p>Extract the Impact Observatory Land-Use/Land-Cover chip for the
+WaterStation AOI. Returns a numpy array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>epsg</strong> (<em>int</em>) – The espg to which the the IO/LULC data should be projected.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_scl_chip">
+<span class="sig-name descname"><span class="pre">get_scl_chip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signed_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_meta_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_scl_chip" title="Permalink to this definition"></a></dt>
+<dd><p>Extract the Scene Classification Layer (SCL) chip for the
+WaterStation AOI. Returns a numpy array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>signed_url</strong> (<em>str</em>) – The Planetary-Computer-signed url for the Sentinel 2 SCL image
+asset.</p></li>
+<li><p><strong>return_meta_transform</strong> (<em>bool</em>) – Return image transformation metadadata? If true, then a 3-tuple is
+returned. The first element is the SCL chip, the second is the
+raster metadata, and the third is the raster transform.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_spectral_chip">
+<span class="sig-name descname"><span class="pre">get_spectral_chip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hrefs_10m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hrefs_20m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_meta_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_spectral_chip" title="Permalink to this definition"></a></dt>
+<dd><p>Returns an image (as a numpy array) with one or more bands along the 3rd
+dimension from a signed url (one for each band).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hrefs_10m</strong> (<em>list</em>) – hrefs for the 10 meter Sentinel bands.</p></li>
+<li><p><strong>hrefs_20m</strong> (<em>list</em>) – hrefs for the 20 meter Sentinel bands.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.get_visual_chip">
+<span class="sig-name descname"><span class="pre">get_visual_chip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signed_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_meta_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.get_visual_chip" title="Permalink to this definition"></a></dt>
+<dd><p>Extract the visual chip (RGB) for the WaterStation
+AOI. Returns a Pillow Image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>signed_url</strong> (<em>str</em>) – The Planetary-Computer-signed url for the Sentinel 2 image asset.</p></li>
+<li><p><strong>return_meta_transform</strong> (<em>bool</em>) – Return image transformation metadadata? If true, then a 3-tuple is
+returned. The first element is the visual chip, the second is the
+raster metadata, and the third is the raster transform.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.merge_image_df_with_samples">
+<span class="sig-name descname"><span class="pre">merge_image_df_with_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">day_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.merge_image_df_with_samples" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Match Sentinel 2 assets to in situ SSC measurements. Returns a data</dt><dd><p>frame with asset information that is matched to in situ SSC measurements
+and sets it as an attribute for the WaterStation.</p>
+</dd>
+<dt>day_tolerance<span class="classifier">float, default=8</span></dt><dd><p>The maximum allowable number of days between an SSC measurement and
+Sentinel 2 acquisition for the acquisition to be matched to the SSC
+measurement.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.fluvius.WaterStation.perform_chip_cloud_analysis">
+<span class="sig-name descname"><span class="pre">perform_chip_cloud_analysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.fluvius.WaterStation.perform_chip_cloud_analysis" title="Permalink to this definition"></a></dt>
+<dd><p>Get the percentage of clouds for each chip corresponding to the
+WaterStation SSC measurement dates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>quiet</strong> (<em>bool</em>) – Prinf informational output during processing?</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="src.utils.MultipleRegression">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">MultipleRegression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_out_neurons</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation_function</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.MultipleRegression" title="Permalink to this definition"></a></dt>
 <dd><p>A custom class for use in PyTorch that builds an MLP model based on

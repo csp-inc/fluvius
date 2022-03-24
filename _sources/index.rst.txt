@@ -13,7 +13,7 @@ Fluvius
 
 Fluvius is a collaboration between the `Analytics Lab at Conservation Science
 Partners <https://analytics-lab.org/>`_, the `Instituto Tecnologico Vale <www.itv.org>`_, 
-and `Microsoft Brazil <https://www.microsoft.com/en-us/ai/ai-for-earth>`_. Project Fluvius 
+and `Microsoft Brazil <https://www.microsoft.com/en-us/ai/ai-for-earth>`_. Fluvius 
 uses satellite imagery and AI to monitor the health of rivers in
 the Amazon and the U.S. by enabling prediction of suspended sediment concentration. 
 This website serves as documetation for the code in the

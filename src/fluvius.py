@@ -1,6 +1,5 @@
 #web scrapping libraries
 from bs4 import BeautifulSoup as bs
-from pandas.core.dtypes.missing import na_value_for_dtype
 import requests
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
@@ -20,17 +19,20 @@ from rasterio import features
 from rasterio import warp
 from rasterio import windows
 from rasterio.enums import Resampling
+import torch.nn as nn
 from PIL import Image
 import matplotlib.pyplot as plt
 #planetary computer libraries
 from pystac_client import Client
-from pystac.extensions.projection import ProjectionExtension as proj
 from pystac.extensions.raster import RasterExtension as raster
 import planetary_computer as pc
 from pystac.extensions.eo import EOExtension as eo
 from azure.storage.blob import BlobClient
 import stackstac
 import traceback
+import sys
+sys.path.append('/content')
+from src.utils import normalized_diff
 
 BANDS_10M = ['AOT', 'B02', 'B03', 'B04', 'B08', 'WVP']
 BANDS_20M = ['B05', 'B06', 'B07', 'B8A', 'B11', "B12"]
@@ -47,8 +49,19 @@ BAD_USGS_COLS = ["Instantaneous computed discharge (cfs)_x",
                  "Instantaneous computed discharge (cfs)_y"]
 
 class USGS_Water_DB:
+    """A custom class for storing for querying the http://nrtwq.usgs.gov data portal and 
+    storing data to Pandas DataFrame format.
+    """
 
     def __init__(self, verbose=False):
+        """Initializes the class to create web driver set source url.
+        
+        Parameters
+        ----------
+        verbose : bool
+            Sets the verbosity of the web scrapping query.
+        """
+
         self.source_url = 'https://nrtwq.usgs.gov'
         self.verbose = verbose
         self.create_driver()
@@ -109,8 +122,26 @@ class USGS_Water_DB:
 
 
 class USGS_Station:
+    """A custom class for storing USGS Station data. Specific functions collect 
+    station instantaneous and modeled discharge and suspended sediment concentration.
+    """
+
 
     def __init__(self, site_no, instantaneous=False, verbose=False, year_range=np.arange(2013,2022)):
+        """Initializes the USGS_Station class based on user-provided parameters.
+
+        Parameters
+        ----------
+        site_no : str
+            The 8 digit USGS station site number that is zero padded.
+        instantaneous : bool
+            Sets data query for instantaneous recorded data only.
+        verbose : bool
+            Sets the query verbosity.
+        year_range : numpy int array
+            Numpy array of year range to search.
+        """
+
         self.site_no = site_no
         self.instantaneous = instantaneous
         self.verbose = verbose
@@ -214,8 +245,28 @@ class USGS_Station:
 
 
 class WaterData:
+    """A custom class for collecting database of water quality station data. 
+    """
 
     def __init__(self, data_source, container, buffer_distance, storage_options):
+        """Initializes the WaterData class to open database of stored station data 
+        for data inspection and individual station data loading.
+
+        Parameters
+        ----------
+        data_source : str
+            String denoting station source ('usgs', 'usgsi', 'itv', or 'ana').
+        container : str
+            Name of Azure Blob Storage container where water station data is stored.
+        buffer_distance : int
+            Buffer distance around station latitude and longitude in meters for 
+            data visualization and query.
+        storage_options : dict
+            Azure Blob Storage permissions for data loading in format,
+            {'account_name': 'storage account name','account_key': 'storage account key'}.
+            
+        """
+
         self.container = container
         self.data_source = data_source
         self.buffer = buffer_distance
@@ -228,7 +279,8 @@ class WaterData:
 
     def get_available_station_list(self):
         '''
-        Searches the blob container and saves the list of directories
+        Searches the blob container and saves the list of directories containing
+        field measurement data.
         '''
         fs = fsspec.filesystem(self.filesystem, \
                 account_name=self.storage_options['account_name'], \
@@ -238,7 +290,7 @@ class WaterData:
 
     def get_source_df(self):
         '''
-        Returns the station dataframe <pandas.DataFrame>
+        Returns a dataframe <pandas.DataFrame> containing  metadata for each station.
         '''
         source_url = f'az://{self.container}/{self.data_source}_station_metadata.csv'
         source_df = pd.read_csv(source_url, storage_options=self.storage_options)
@@ -289,7 +341,15 @@ class WaterData:
 
     def get_station_data(self, station=None):
         '''
-        gets all the station data if station is None.
+        Extracts measurement and metadata for a station. Gets all the station 
+        data if station is None.
+
+        Parameters
+        ----------
+        station : str, default=None
+            The station for which to extract data. Iteratively extracts 
+            information for all stations and sets a lits of the resulting 
+            WaterStations as an attribute.
         '''
         if any(self.df['site_no'] == str(station)):
             lat = self.df[self.df['site_no'] == str(station)].Latitude.iloc[0]
@@ -317,10 +377,35 @@ class WaterData:
 
 
 class WaterStation:
-    '''
-    Generalized water station data.
-    '''
+    """A generalized water station data class. Each WaterStation contains SSC 
+    and other measurement data, as well as metadata about the sampling location itself. 
+    """
+
     def __init__(self, site_no, lat, lon, buffer, container, storage_options, data_source):
+        """Initialize a WaterStation based on a site that appears in WaterData.
+        
+        Parameters
+        ----------
+        site_no: str
+            The string identifier corresponding to the site for which a WaterStation
+            instance will be created.
+        lat: double
+            The latitude of the site's coordinates.
+        lon: double
+            The longitude of the site's coordinates.
+        buffer: int
+            The buffer used for generating a square AOI that will be used to 
+            extract image chips.
+        container : str
+            The storage container in fluviusdata storage account that houses
+            raw data for the site.
+        storage_options : dict
+            Azure Blob Storage permissions for data loading in format,
+            {'account_name': 'storage account name','account_key': 'storage account key'}.
+        data_source : str
+            One of itv, ana, usgs, or usgsi, describing the original source of the data.
+
+        """
         self.site_no = site_no
         self.Latitude = lat
         self.Longitude = lon
@@ -341,6 +426,8 @@ class WaterStation:
         self.area_of_interest = self.get_area_of_interest()
 
     def get_area_of_interest(self):
+        """Create and return a polygon delineating the desired chip boundary.
+        """ 
         lat, lon = self.Latitude, self.Longitude
 
         y, x, zone, _ = utm.from_latlon(lat, lon)
@@ -378,8 +465,7 @@ class WaterStation:
 
 
     def drop_bad_usgs_obs(self):
-        """
-        Some stations from USGS have two measurements of instantaneous computed
+        """Some stations from USGS have two measurements of instantaneous computed
         discharge. This method drops observations for which the two measurements
         are not equal. Note that the method only applies to "usgs" stations. If
         WaterStation.data_source is not equal to "usgs", the method does nothing,
@@ -400,9 +486,14 @@ class WaterStation:
 
 
     def build_catalog(self, collection='sentinel-2-l2a'):
-        '''
-        Use pystac-client to search for Sentinel 2 L2A data
-        '''
+        """Use pystac-client to search for Sentinel 2 L2A data.
+
+        Parameters
+        ----------
+        collection : str, default='sentinel-2-l2a'
+            The collection name (as it appears in the Planetary Computer data 
+            catalogue). The default value should be used.
+        """
         catalog = Client.open("https://planetarycomputer.microsoft.com/api/stac/v1")
         print(f'building catalog for station {self.site_no} with {collection}!')
 
@@ -420,6 +511,17 @@ class WaterStation:
 
 
     def get_cloud_filtered_image_df(self, cloud_thr):
+        """Get an dataframe with asset URLs corresponding to images that have
+        cloud cover less than cloud_thr, and set it as an attribute to the 
+        WaterStation.
+        
+        Parameters
+        ----------
+        cloud_thr : float, 0-100
+            The maximum cloud cover tolerance. The data frame will only include
+            information on assets from Sentinel 2 tiles that have a total cloud
+            cover percentage less than or equal to cloud_thr.
+        """
         if not hasattr(self, 'catalog'):
             self.build_catalog()
         scene_list = sorted(self.catalog.get_items(), key=lambda item: eo.ext(item).cloud_cover)
@@ -447,6 +549,17 @@ class WaterStation:
 
 
     def merge_image_df_with_samples(self, day_tolerance=8):
+        """Match Sentinel 2 assets to in situ SSC measurements. Returns a data 
+        frame with asset information that is matched to in situ SSC measurements
+        and sets it as an attribute for the WaterStation.
+        
+        Parameters
+        ----------
+       day_tolerance : float, default=8
+            The maximum allowable number of days between an SSC measurement and 
+            Sentinel 2 acquisition for the acquisition to be matched to the SSC
+            measurement.
+        """
         self.merged_df = self.df.copy()
         self.merged_df['Date'] = pd.to_datetime(self.merged_df['Date-Time'])
         self.image_df['Date'] = pd.to_datetime(self.image_df['Date-Time'])
@@ -461,6 +574,19 @@ class WaterStation:
 
 
     def get_scl_chip(self, signed_url, return_meta_transform=False):
+        """Extract the Scene Classification Layer (SCL) chip for the 
+        WaterStation AOI. Returns a numpy array.
+        
+        Parameters
+        ----------
+        signed_url : str
+            The Planetary-Computer-signed url for the Sentinel 2 SCL image 
+            asset.
+        return_meta_transform : bool
+            Return image transformation metadadata? If true, then a 3-tuple is
+            returned. The first element is the SCL chip, the second is the
+            raster metadata, and the third is the raster transform.
+        """
         with rio.open(signed_url) as ds:
             aoi_bounds = features.bounds(self.area_of_interest)
             warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
@@ -485,6 +611,18 @@ class WaterStation:
 
 
     def get_visual_chip(self, signed_url, return_meta_transform=False):
+        """Extract the visual chip (RGB) for the WaterStation
+        AOI. Returns a Pillow Image.
+        
+        Parameters
+        ----------
+        signed_url : str
+            The Planetary-Computer-signed url for the Sentinel 2 image asset.
+        return_meta_transform : bool
+            Return image transformation metadadata? If true, then a 3-tuple is
+            returned. The first element is the visual chip, the second is the
+            raster metadata, and the third is the raster transform.
+        """
         with rio.open(signed_url) as ds:
             aoi_bounds = features.bounds(self.area_of_interest)
             warped_aoi_bounds = warp.transform_bounds('epsg:4326', ds.crs, *aoi_bounds)
@@ -499,6 +637,14 @@ class WaterStation:
 
 
     def get_io_lulc_chip(self, epsg):
+        """Extract the Impact Observatory Land-Use/Land-Cover chip for the 
+        WaterStation AOI. Returns a numpy array.
+        
+        Parameters
+        ----------
+        epsg : int
+            The espg to which the the IO/LULC data should be projected.
+        """
         catalog = Client.open("https://planetarycomputer.microsoft.com/api/stac/v1")
         search = catalog.search(
             collections=["io-lulc"],
@@ -526,11 +672,15 @@ class WaterStation:
 
 
     def get_spectral_chip(self, hrefs_10m, hrefs_20m, return_meta_transform=False):
-        """
-        Returns an image with one or more bands along the 3rd dimension from a signed url (one for each band)
-        Args:
-            hrefs_10m (list): hrefs for the 10 meter Sentinel bands
-            hrefs_20m (list): hrefs for the 20 meter Sentinel bands
+        """Returns an image (as a numpy array) with one or more bands along the 3rd
+        dimension from a signed url (one for each band).
+
+        Parameters
+        ----------
+        hrefs_10m : list
+            hrefs for the 10 meter Sentinel bands.
+        hrefs_20m : list
+            hrefs for the 20 meter Sentinel bands.
         """
         band_data_20m = list()
         for href in hrefs_20m:
@@ -577,6 +727,14 @@ class WaterStation:
 
 
     def get_chip_metadata(self, signed_url):
+        """Extract metadata (sensing time, and mean solar and viewing azimuths 
+        and zeniths) for an image chip.
+        
+        Parameters
+        ----------
+        signed_url : str
+            The Planetary-Computer-signed url for the Sentinel 2 image asset.
+        """
         req = requests.get(signed_url)
         soup = bs(req.text, "xml")
         mean_viewing_angles = soup.find_all("Mean_Viewing_Incidence_Angle")
@@ -603,11 +761,14 @@ class WaterStation:
 
 
     def perform_chip_cloud_analysis(self, quiet=False):
-        #probably can perform this in parallel
-        '''
-        #with concurrent.futures.ProcessPoolExecutor() as executor:
-        #dt_list = [chip_cloud_analyisis(dt) for dt in executor.map(get_scl_chip )]
-        '''
+        """Get the percentage of clouds for each chip corresponding to the 
+        WaterStation SSC measurement dates.
+        
+        Parameters
+        ----------
+        quiet : bool
+            Prinf informational output during processing?
+        """
         chip_clouds_list = []
         for i, sc in self.merged_df.iterrows():
             try:
@@ -622,6 +783,13 @@ class WaterStation:
 
 
     def chip_cloud_analysis(self, scl):
+        """Calculate the total cloud cover percentage within an SCL image chip.
+        
+        Parameters
+        ----------
+        scl : numpy array
+            The numpy array containing Scene Classification Layer (SCL) data.
+        """
         scl = np.array(scl)
         n_total_pxls = np.multiply(scl.shape[0], scl.shape[1])
         n_cloud_pxls = np.sum((scl>=7) & (scl<=10))
@@ -653,6 +821,33 @@ class WaterStation:
             mask_method1="lulc", # one of "lulc" or "scl". "lulc" also removes clouds using scl
             mask_method2=""
         ):
+        """Extract and aggregate reflectance and metadata features for each of 
+        the SSC measurements at the WaterStation.
+        
+        Parameters
+        ----------
+        write_chips : bool, default=False
+            Write chips to local storage? Useful for debugging.
+        local_save_dir : str, default="data/chips_default"
+            If write_chips=True, the directory to which image chips will be 
+            saved.
+        mask_method1 : str, default="lulc"
+            Which data to use for masking (removing) non-water in order
+            to calculate aggreated reflectance values for only water pixels?
+            Choose ("scl") to water pixels as identified based on the
+            Scene Classification Layer that accompanies the Snetinel tile,
+            or ("lulc") to use Impact Observatory's Land-Use/Land-Cover
+            layer to identify water, and the Scene Classification Layer to
+            remove clouds. Using "lulc" is strongly recommended.
+        mask_method2 : str , default="mndwi"
+            Which additional normalized index to use, if any, to update
+            the mask to remove errors of ommission (pixels classified as water
+            that shouldn't be) prior to calculated aggregated reflectance? If
+            "ndvi", then only pixels with an NDVI value less than 0.25
+            will be retained. If "mndwi" (recommended) then only pixels with
+            an MNDWI value greater than 0 will be retained. Of "", then no
+            secondary mask is used.
+        """
         reflectances = []
         n_water_pixels = []
         metadata = []
@@ -810,9 +1005,3 @@ class WaterStation:
         ax[3].set_title('Water Mask')
         ax[3].axis('off')
 
-
-# Utility functions.
-def normalized_diff(b1, b2):
-    b1 = b1.astype(float)
-    b2 = b2.astype(float)
-    return (b1 - b2) / (b1 + b2)

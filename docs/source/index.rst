@@ -11,7 +11,7 @@ Fluvius
     This documentation was generated on |today|, and is rebuilt on push events 
     to the main branch.
 
-Project fluvius is a collaboration between the `Analytics Lab at Conservation Science
+Fluvius is a collaboration between the `Analytics Lab at Conservation Science
 Partners <https://analytics-lab.org/>`_, the `Instituto Tecnologico Vale <www.itv.org>`_, 
 and `Microsoft Brazil <https://www.microsoft.com/en-us/ai/ai-for-earth>`_. Project Fluvius 
 uses satellite imagery and AI to monitor the health of rivers in

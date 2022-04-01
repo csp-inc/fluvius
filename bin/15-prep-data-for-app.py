@@ -129,9 +129,9 @@ if __name__ == "__main__":
             })
         
         site_name = [x["site_name"] for i,x in site_metadata.iterrows() if x["site_no"].zfill(8) == site][0]
-        river_name = list(site_loc_metadata.loc[site_loc_metadata["Name"] == site_name,:]["Nearest City"])[0]
-        city_name = list(site_loc_metadata.loc[site_loc_metadata["Name"] == site_name,:]["Nearest River"])[0]
-        print(site_name, river_name)
+        city_name = list(site_loc_metadata.loc[site_loc_metadata["Name"] == site_name,:]["Nearest City"])[0]
+        river_name = list(site_loc_metadata.loc[site_loc_metadata["Name"] == site_name,:]["Nearest River"])[0]
+        
         out_dicts.append({
             "region": region,
             "site_no": site,

@@ -71,6 +71,11 @@ if __name__ == "__main__":
     site_metadata = pd.read_csv(
         "az://app/station_metadata.csv",
         storage_options=storage_options)
+    site_loc_metadata = pd.read_csv(
+        "az://app/station_location_metadata.csv",
+        storage_options=storage_options,
+        encoding = "utf-8")
+    
     all_data = pd.read_csv(
         f"az://modeling-data/fluvius_data_post_qa_unpartitioned_buffer" +
         f"{chip_size}m_daytol8_cloudthr{cloud_thr}percent_{mm1}{mm2}_masking.csv",
@@ -122,11 +127,17 @@ if __name__ == "__main__":
                 "timestamp": round(time.mktime(dt.date.fromisoformat(row["Date-Time"]).timetuple()))*1000,
                 "pred_chip": row["app_chip_href"]
             })
-
+        
+        site_name = [x["site_name"] for i,x in site_metadata.iterrows() if x["site_no"].zfill(8) == site][0]
+        river_name = list(site_loc_metadata.loc[site_loc_metadata["Name"] == site_name,:]["Nearest City"])[0]
+        city_name = list(site_loc_metadata.loc[site_loc_metadata["Name"] == site_name,:]["Nearest River"])[0]
+        print(site_name, river_name)
         out_dicts.append({
             "region": region,
             "site_no": site,
-            "site_name": [x["site_name"] for i,x in site_metadata.iterrows() if x["site_no"].zfill(8) == site][0],
+            "site_name": site_name,
+            "nearest_city": city_name,
+            "nearest_river": river_name,
             "Longitude": lon,
             "Latitude": lat,
             "sample_data": samples,
@@ -134,5 +145,5 @@ if __name__ == "__main__":
         })
 
     # Push to final JSON data that app reads in
-    with fs.open('app/all_data_v4.json', 'w') as fn:
+    with fs.open('app/all_data_v5.json', 'w') as fn:
         json.dump(out_dicts, fn)

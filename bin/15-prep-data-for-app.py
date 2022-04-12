@@ -92,6 +92,7 @@ if __name__ == "__main__":
 
     out_dicts = []
     url_base = "https://fluviusdata.blob.core.windows.net/app/img"
+
     for site in sites:
         site_df = all_data[all_data["site_no"] == site].reset_index()
         region = site_df.region.iloc[0]
@@ -118,6 +119,27 @@ if __name__ == "__main__":
             })
         
         site_pred_df = prediction_data.loc[prediction_data["site_no"] == site, ].reset_index()
+
+        ### Simple regression for unadvised trend metric....
+        date_ints = np.array([(dt.datetime.strptime(date, '%Y-%m-%d').date() - dt.date(2015, 1,1)).days for date in site_pred_df["Date-Time_Remote"]])
+        preds = site_pred_df["Predicted Log SSC (mg/L)"].values
+
+        slope, intcpt = np.polyfit(date_ints, np.exp(preds), 1)
+        annual_slope = slope*365
+
+        # Regression against (still very biased) annual "rainy season" means
+        # site_pred_df["date_time"] = pd.to_datetime(site_pred_df["Date-Time_Remote"], format="%Y-%m-%d")
+        # site_pred_df["year"] = [date.year for date in site_pred_df["date_time"]]
+        # site_pred_df["month"] = [date.month for date in site_pred_df["date_time"]]
+        # rainy_months = [7,8,9,10,11,12]
+        # site_pred_df["rainy_season"] = [True if month in rainy_months else False for month in site_pred_df["month"]]
+
+        # rainy_obs = site_pred_df.loc[site_pred_df.rainy_season, : ].groupby("year")
+        # years = np.array(list(rainy_obs.groups.keys()))
+        # ssc_means = np.exp(np.array(rainy_obs["Predicted Log SSC (mg/L)"].mean()))
+
+        # slope2, intcpt2 = np.polyfit(years, ssc_means, 1)
+
         predictions = []
         for i, row in site_pred_df.iterrows():
             predictions.append({
@@ -141,7 +163,8 @@ if __name__ == "__main__":
             "Longitude": lon,
             "Latitude": lat,
             "sample_data": samples,
-            "predictions": predictions
+            "predictions": predictions,
+            "questionable_annual_trend_estimate": annual_slope 
         })
 
     # Push to final JSON data that app reads in
